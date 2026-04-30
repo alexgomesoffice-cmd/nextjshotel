@@ -12,7 +12,7 @@ const ROLE_REQUIRED: Record<string, string[]> = {
   '/bookings':         ['END_USER'],
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   const matched = Object.entries(ROLE_REQUIRED).find(([prefix]) =>
@@ -36,7 +36,7 @@ export function middleware(req: NextRequest) {
   }
 
   try {
-    const payload = verifyToken(token)
+    const payload = await verifyToken(token)
     if (!allowedRoles.includes(payload.actor_type)) {
       return NextResponse.redirect(new URL('/', req.url))
     }

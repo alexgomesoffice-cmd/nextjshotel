@@ -17,7 +17,7 @@ export async function requireAuth(
   }
 
   try {
-    const payload = verifyToken(token)
+    const payload = await verifyToken(token)
 
     if (await isBlacklisted(token)) {
       return { payload: null, error: NextResponse.json({ success: false, message: 'Token revoked' }, { status: 401 }) }

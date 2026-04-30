@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
 
     if (token) {
       try {
-        const payload = verifyToken(token)
+        const payload = await verifyToken(token)
         await blacklistToken(token, payload)
       } catch {
         // Token invalid or expired - just clear cookie

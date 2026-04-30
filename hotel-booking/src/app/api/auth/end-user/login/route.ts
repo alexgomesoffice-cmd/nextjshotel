@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Generate token
-    const token = signToken({
+    const token = await signToken({
       actor_id: user.id,
       actor_type: 'END_USER',
     })

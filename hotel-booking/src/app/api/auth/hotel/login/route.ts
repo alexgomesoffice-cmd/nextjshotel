@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate token
-    const token = signToken({
+    const token = await signToken({
       actor_id: actor.id,
       actor_type: actorType,
       hotel_id: actor.hotel_id,

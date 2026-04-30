@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
     })
 
     // Generate token
-    const token = signToken({
+    const token = await signToken({
       actor_id: admin.id,
       actor_type: 'SYSTEM_ADMIN',
     })

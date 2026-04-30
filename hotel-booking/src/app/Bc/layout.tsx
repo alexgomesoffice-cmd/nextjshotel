@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import "../globals.css";
+import "./globals.css";
 
 
 export const metadata: Metadata = {
   title: "Hotel Booking App"
 };
 
-export default function LogInLayout({
+export default function LoginLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -15,11 +15,7 @@ export default function LogInLayout({
     <html
       lang="en"
     >
-      <body >
-        
-        {children}
-        
-      </body>
+      <body >{children}</body>
     </html>
   );
 }

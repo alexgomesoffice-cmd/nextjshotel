@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken, blacklistToken } from '@/lib/jwt'
+import { verifyToken } from '@/lib/jwt'
+import { blacklistToken } from '@/lib/token-blacklist'
 
 export async function POST(req: NextRequest) {
   try {

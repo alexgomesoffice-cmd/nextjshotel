@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyToken, isBlacklisted } from './jwt'
+import { verifyToken } from './jwt'
+import { isBlacklisted } from './token-blacklist'
 import type { JwtPayload } from '@/types'
 
 type AuthResult =

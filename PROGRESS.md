@@ -1,6 +1,6 @@
 # Progress Report — Hotel Booking System
 
-> Documenting progress through Day 2 of the 7-Day Build Plan.
+> Documenting progress through Day 4 of the 7-Day Build Plan.
 > Comparing what was planned vs what was actually implemented.
 
 ---
@@ -155,15 +155,18 @@ All 67 API endpoints are fully functional across all roles:
 - ✅ `/api/hotel-sub-admin/bookings` — View bookings
 - ✅ `/api/hotel-sub-admin/bookings/[reference]/status` — Update booking status
 
-#### System Admin APIs (11 routes)
-- ✅ `/api/system-admin/users` — Manage end users
-- ✅ `/api/system-admin/hotels` — Manage hotels
-- ✅ `/api/system-admin/cities` — Manage cities
-- ✅ `/api/system-admin/hotel-types` — Manage types
-- ✅ `/api/system-admin/amenities` — Manage amenities
-- ✅ `/api/system-admin/admins` — Manage admins
-- ✅ `/api/system-admin/bookings` — View all bookings
-- ✅ User blocking, hotel suspension, verification endpoints
+#### System Admin APIs (Day 4 Implementation)
+- ✅ `/api/system-admin/users` (GET, PATCH) — View and update users
+- ✅ `/api/system-admin/users/[id]/block` (PATCH) — Block/unblock users
+- ✅ `/api/system-admin/hotels` (POST, GET) — Create hotel + detail + hotel admin using `$transaction`. Supports pagination/search.
+- ✅ `/api/system-admin/hotels/[id]` (GET, PATCH, DELETE) — Manage hotel details. Soft deletion updates `deleted_at`.
+- ✅ `/api/system-admin/hotels/[id]/suspend` (PATCH) — Set hotel to `SUSPENDED`
+- ✅ `/api/system-admin/admins` (POST, GET) — Create system admins.
+- ✅ `/api/system-admin/admins/[id]` (GET, PATCH) — Manage system admin details
+- ✅ `/api/system-admin/cities` (POST, GET, PATCH) — Manage cities (using `is_active` for toggling instead of hard deletes)
+- ✅ `/api/system-admin/hotel-types` (POST, GET, PATCH) — Manage hotel types
+- ✅ `/api/system-admin/amenities` (POST, GET, PATCH) — Manage global default amenities (`hotel_id: null`)
+- ✅ `/api/system-admin/bookings` (GET) — View all bookings. *Note: Switched Prisma model from `bookings` to `user_bookings` and relation from `user` to `end_user` to match the exact schema.*
 
 #### File Upload & Cron (2 routes)
 - ✅ `POST /api/upload` — Image upload with multer + sharp

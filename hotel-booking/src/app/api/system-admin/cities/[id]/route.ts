@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
-import { blockUserSchema } from '@/lib/validations/auth'
+import { updateCitySchema } from '@/lib/validations/metadata'
 
 type Params = {
   params: Promise<{ id: string }>
@@ -13,10 +13,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (auth.error) return auth.error
 
     const { id } = await params
-    const userId = parseInt(id)
+    const cityId = parseInt(id)
 
     const body = await req.json()
-    const result = blockUserSchema.safeParse(body)
+    const result = updateCitySchema.safeParse(body)
 
     if (!result.success) {
       return NextResponse.json(
@@ -25,20 +25,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
-    const userExists = await prisma.end_users.findUnique({ where: { id: userId, deleted_at: null } })
-    if (!userExists) {
-      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 })
+    const cityExists = await prisma.cities.findUnique({ where: { id: cityId } })
+    if (!cityExists) {
+      return NextResponse.json({ success: false, message: 'City not found' }, { status: 404 })
     }
 
-    const updatedUser = await prisma.end_users.update({
-      where: { id: userId },
-      data: { is_blocked: result.data.is_blocked },
-      select: { id: true, name: true, email: true, is_blocked: true },
+    const updatedCity = await prisma.cities.update({
+      where: { id: cityId },
+      data: result.data,
     })
 
-    return NextResponse.json({ success: true, message: `User ${result.data.is_blocked ? 'blocked' : 'unblocked'}`, data: updatedUser })
+    return NextResponse.json({ success: true, message: 'City updated', data: updatedCity })
   } catch (error) {
-    console.error('Failed to block/unblock user:', error)
+    console.error('Failed to update city:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }

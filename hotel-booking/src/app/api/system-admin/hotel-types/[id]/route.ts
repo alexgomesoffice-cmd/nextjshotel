@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
-import { blockUserSchema } from '@/lib/validations/auth'
+import { updateHotelTypeSchema } from '@/lib/validations/metadata'
 
 type Params = {
   params: Promise<{ id: string }>
@@ -13,10 +13,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (auth.error) return auth.error
 
     const { id } = await params
-    const userId = parseInt(id)
+    const typeId = parseInt(id)
 
     const body = await req.json()
-    const result = blockUserSchema.safeParse(body)
+    const result = updateHotelTypeSchema.safeParse(body)
 
     if (!result.success) {
       return NextResponse.json(
@@ -25,20 +25,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       )
     }
 
-    const userExists = await prisma.end_users.findUnique({ where: { id: userId, deleted_at: null } })
-    if (!userExists) {
-      return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 })
+    const typeExists = await prisma.hotel_types.findUnique({ where: { id: typeId } })
+    if (!typeExists) {
+      return NextResponse.json({ success: false, message: 'Hotel type not found' }, { status: 404 })
     }
 
-    const updatedUser = await prisma.end_users.update({
-      where: { id: userId },
-      data: { is_blocked: result.data.is_blocked },
-      select: { id: true, name: true, email: true, is_blocked: true },
+    const updatedType = await prisma.hotel_types.update({
+      where: { id: typeId },
+      data: result.data,
     })
 
-    return NextResponse.json({ success: true, message: `User ${result.data.is_blocked ? 'blocked' : 'unblocked'}`, data: updatedUser })
+    return NextResponse.json({ success: true, message: 'Hotel type updated', data: updatedType })
   } catch (error) {
-    console.error('Failed to block/unblock user:', error)
+    console.error('Failed to update hotel type:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }

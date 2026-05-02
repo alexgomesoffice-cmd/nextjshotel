@@ -3,11 +3,25 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Building2, Users, MapPin, Star, Settings, LogOut, Menu, X } from 'lucide-react'
+import { Building2, Users, MapPin, Star, Settings, LogOut, Menu, X, ChevronDown, ChevronRight } from 'lucide-react'
 
-const systemAdminLinks = [
+type NavLink = {
+  name: string
+  href?: string
+  icon: any
+  subLinks?: { name: string; href: string }[]
+}
+
+const systemAdminLinks: NavLink[] = [
   { name: 'Overview', href: '/dashboard/system', icon: Building2 },
-  { name: 'Hotels', href: '/dashboard/system/hotels', icon: Building2 },
+  { 
+    name: 'Hotels', 
+    icon: Building2,
+    subLinks: [
+      { name: 'All Hotels', href: '/dashboard/system/hotels' },
+      { name: 'Add Hotel', href: '/dashboard/system/hotels/new' }
+    ]
+  },
   { name: 'Cities', href: '/dashboard/system/cities', icon: MapPin },
   { name: 'Hotel Types', href: '/dashboard/system/hotel-types', icon: Star },
   { name: 'Amenities', href: '/dashboard/system/amenities', icon: Star },
@@ -25,6 +39,11 @@ export default function AdminLayout({
   const router = useRouter()
   const [user, setUser] = useState<{ name: string; email: string } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({ Hotels: true })
+
+  const toggleMenu = (menuName: string) => {
+    setOpenMenus(prev => ({ ...prev, [menuName]: !prev[menuName] }))
+  }
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
@@ -75,11 +94,51 @@ export default function AdminLayout({
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {systemAdminLinks.map((link) => {
               const Icon = link.icon
+
+              if (link.subLinks) {
+                const isOpen = openMenus[link.name]
+                return (
+                  <div key={link.name} className="space-y-1">
+                    <button 
+                      onClick={() => toggleMenu(link.name)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-muted-foreground font-medium hover:bg-muted transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-5 h-5" />
+                        <span>{link.name}</span>
+                      </div>
+                      {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </button>
+                    {isOpen && (
+                      <div className="space-y-1 ml-4 pl-4 border-l border-border">
+                        {link.subLinks.map((sub) => {
+                          const isSubActive = pathname === sub.href
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`flex items-center px-4 py-2 rounded-lg transition-colors text-sm ${
+                                isSubActive
+                                  ? 'bg-primary text-primary-foreground'
+                                  : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                              }`}
+                            >
+                              <span>{sub.name}</span>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
               const isActive = pathname === link.href
               return (
                 <Link
                   key={link.href}
-                  href={link.href}
+                  href={link.href!}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive

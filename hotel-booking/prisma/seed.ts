@@ -176,6 +176,53 @@ async function main() {
   console.log(`   Email: ${adminEmail}`)
   console.log(`   Password: ${adminPassword}`)
 
+  // 7. Seed Hotel and Hotel Admin
+  console.log('📦 Seeding hotel and hotel admin...')
+  const sysAdmin = await prisma.system_admins.findUnique({
+    where: { email: adminEmail }
+  })
+  
+  if (sysAdmin) {
+    const city = await prisma.cities.findUnique({ where: { name: 'Dhaka' } })
+    const hotelType = await prisma.hotel_types.findUnique({ where: { name: 'Hotel' } })
+
+    const hotel = await prisma.hotels.upsert({
+      where: { slug: 'grand-dhaka-hotel' },
+      update: {},
+      create: {
+        name: 'Grand Dhaka Hotel',
+        slug: 'grand-dhaka-hotel',
+        email: 'info@granddhaka.com',
+        address: '123 Main Street, Dhaka',
+        city_id: city?.id,
+        hotel_type_id: hotelType?.id,
+        created_by: sysAdmin.id,
+        approval_status: 'PUBLISHED',
+      }
+    })
+
+    const hotelAdminEmail = 'hotel@dhaka.com'
+    const hotelAdminPassword = 'hotel123'
+    const hashedHotelAdminPassword = await bcrypt.hash(hotelAdminPassword, 10)
+
+    await prisma.hotel_admins.upsert({
+      where: { email: hotelAdminEmail },
+      update: {},
+      create: {
+        name: 'Grand Dhaka Admin',
+        email: hotelAdminEmail,
+        password: hashedHotelAdminPassword,
+        hotel_id: hotel.id,
+        created_by: sysAdmin.id,
+        role_id: 1,
+        is_active: true,
+      }
+    })
+    console.log('   Hotel and Hotel Admin seeded')
+    console.log(`   Hotel Admin Email: ${hotelAdminEmail}`)
+    console.log(`   Hotel Admin Password: ${hotelAdminPassword}`)
+  }
+
   console.log('🎉 Seed completed!')
 }
 

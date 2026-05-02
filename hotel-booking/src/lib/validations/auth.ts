@@ -17,3 +17,28 @@ export const endUserRegisterSchema = z.object({
 // Login response type
 export type LoginInput = z.infer<typeof loginSchema>
 export type EndUserRegisterInput = z.infer<typeof endUserRegisterSchema>
+
+// System admin creation schema
+export const createSystemAdminSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
+
+export const updateSystemAdminSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  email: z.string().email('Invalid email address').optional(),
+  is_active: z.boolean().optional(),
+  is_blocked: z.boolean().optional(),
+})
+
+// System admin update user schema
+export const updateUserSchema = z.object({
+  name: z.string().min(2, 'Name must be at least 2 characters').optional(),
+  email: z.string().email('Invalid email address').optional(),
+})
+
+// System admin block user schema
+export const blockUserSchema = z.object({
+  is_blocked: z.boolean(),
+})

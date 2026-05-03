@@ -13,6 +13,7 @@ export const createHotelSchema = z.object({
     emergency_contact1: z.string().optional(),
     emergency_contact2: z.string().optional(),
     owner_name: z.string().optional(),
+    star_rating: z.number().min(1).max(5).optional(),
     latitude: z.number().optional(),
     longitude: z.number().optional(),
   }),
@@ -25,11 +26,13 @@ export const createHotelSchema = z.object({
     cancellation_policy: z.enum(['FLEXIBLE', 'MODERATE', 'STRICT', 'CUSTOM']).default('FLEXIBLE'),
     cancellation_hours: z.number().int().positive().optional(),
     refund_percent: z.number().int().min(0).max(100).optional(),
+    reception_no1: z.string().optional(),
+    reception_no2: z.string().optional(),
   }),
   admin: z.object({
-    name: z.string().min(2, 'Admin name is required'),
-    email: z.string().email('Valid email required'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    admin_name: z.string().min(2, 'Admin name is required'),
+    admin_email: z.string().email('Valid email required'),
+    admin_password: z.string().min(6, 'Password must be at least 6 characters'),
   }),
 })
 
@@ -44,6 +47,7 @@ export const updateHotelSchema = z.object({
   emergency_contact1: z.string().optional(),
   emergency_contact2: z.string().optional(),
   owner_name: z.string().optional(),
+  star_rating: z.number().min(1).max(5).optional(),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   description: z.string().optional(),
@@ -54,6 +58,8 @@ export const updateHotelSchema = z.object({
   cancellation_policy: z.enum(['FLEXIBLE', 'MODERATE', 'STRICT', 'CUSTOM']).optional(),
   cancellation_hours: z.number().int().positive().optional(),
   refund_percent: z.number().int().min(0).max(100).optional(),
+  reception_no1: z.string().optional(),
+  reception_no2: z.string().optional(),
 })
 
 export type CreateHotelInput = z.infer<typeof createHotelSchema>

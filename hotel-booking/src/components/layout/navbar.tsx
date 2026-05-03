@@ -133,15 +133,11 @@ const Navbar = () => {
 
             <button
               onClick={toggleTheme}
-              className="relative p-2.5 rounded-xl glass transition-all duration-300 hover:scale-110 hover:bg-primary/10 group"
+              className="relative p-2.5 rounded-xl glass transition-all duration-300 hover:scale-110 hover:bg-primary/10 group overflow-hidden"
               aria-label="Toggle theme"
             >
-              <Sun className={cn("h-5 w-5 transition-all duration-500 absolute",
-                theme === "dark" ? "rotate-0 scale-100 opacity-100" : "rotate-90 scale-0 opacity-0"
-              )} />
-              <Moon className={cn("h-5 w-5 transition-all duration-500",
-                theme === "light" ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
-              )} />
+              <Sun className="h-5 w-5 dark:hidden" />
+              <Moon className="h-5 w-5 hidden dark:block" />
             </button>
 
             {user ? (

@@ -1,12 +1,17 @@
 'use client'
 
+import { useEffect, useState, useCallback } from 'react'
 import {
   Settings, Shield, Clock, Database, Key, Globe, AlertTriangle,
-  CheckCircle2, Info,
+  CheckCircle2, Info, User, Eye, EyeOff, Save,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
+import { useToast } from '@/hooks/use-hooks'
 
 const CONFIG_ITEMS = [
   {
@@ -79,18 +84,180 @@ const ROLES = [
 ]
 
 export default function SettingsPage() {
+  const { toast } = useToast()
+  
+  // Profile Form State
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [profileSaving, setProfileSaving] = useState(false)
+  const [showPw, setShowPw] = useState({ current: false, newPw: false })
+  const [profileForm, setProfileForm] = useState({
+    name: '',
+    email: '',
+    current_password: '',
+    new_password: ''
+  })
+
+  const fetchProfile = useCallback(async () => {
+    try {
+      setProfileLoading(true)
+      const res = await fetch('/api/system-admin/profile', { credentials: 'include' })
+      const data = await res.json()
+      if (data.success) {
+        setProfileForm((prev) => ({
+          ...prev,
+          name: data.data.name,
+          email: data.data.email
+        }))
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to load profile', variant: 'destructive' })
+    } finally {
+      setProfileLoading(false)
+    }
+  }, [toast])
+
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!profileForm.name.trim()) {
+      return toast({ title: 'Error', description: 'Name is required', variant: 'destructive' })
+    }
+    
+    if (profileForm.new_password && !profileForm.current_password) {
+      return toast({ title: 'Error', description: 'Current password is required to set a new password', variant: 'destructive' })
+    }
+
+    try {
+      setProfileSaving(true)
+      const res = await fetch('/api/system-admin/profile', {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profileForm)
+      })
+      const data = await res.json()
+      
+      if (data.success) {
+        toast({ title: 'Success', description: 'Profile updated successfully', variant: 'success' })
+        // Clear password fields on success
+        setProfileForm(prev => ({ ...prev, current_password: '', new_password: '' }))
+      } else {
+        toast({ title: 'Error', description: data.message, variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to update profile', variant: 'destructive' })
+    } finally {
+      setProfileSaving(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Platform Settings</h1>
-          <p className="text-muted-foreground mt-1">System configuration reference and role permissions</p>
+          <p className="text-muted-foreground mt-1">System configuration reference and your profile</p>
         </div>
-        <div className="flex items-center gap-2 rounded-lg bg-secondary/50 px-4 py-2 text-sm">
-          <Info className="h-4 w-4 text-primary" />
-          <span className="text-muted-foreground">Read-only — config is set via environment variables</span>
-        </div>
+      </div>
+
+      {/* Admin Profile Details */}
+      <Card className="glass-strong">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-primary" /> My Profile
+          </CardTitle>
+          <CardDescription>Update your personal details and password</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-name">Full Name</Label>
+                <Input 
+                  id="admin-name" 
+                  value={profileForm.name} 
+                  onChange={(e) => setProfileForm(f => ({...f, name: e.target.value}))}
+                  disabled={profileLoading}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-email">Email Address</Label>
+                <Input 
+                  id="admin-email" 
+                  type="email" 
+                  value={profileForm.email} 
+                  onChange={(e) => setProfileForm(f => ({...f, email: e.target.value}))}
+                  disabled={profileLoading}
+                />
+              </div>
+            </div>
+
+            <Separator className="my-2" />
+            <p className="text-sm font-medium">Change Password (Optional)</p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-current-pw">Current Password</Label>
+                <div className="relative">
+                  <Input 
+                    id="admin-current-pw" 
+                    type={showPw.current ? 'text' : 'password'} 
+                    placeholder="Leave blank to keep current"
+                    value={profileForm.current_password}
+                    onChange={(e) => setProfileForm(f => ({...f, current_password: e.target.value}))}
+                    disabled={profileLoading}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPw(s => ({ ...s, current: !s.current }))}
+                  >
+                    {showPw.current ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              
+              <div className="space-y-1.5">
+                <Label htmlFor="admin-new-pw">New Password</Label>
+                <div className="relative">
+                  <Input 
+                    id="admin-new-pw" 
+                    type={showPw.newPw ? 'text' : 'password'} 
+                    placeholder="New password (min 6 chars)"
+                    value={profileForm.new_password}
+                    onChange={(e) => setProfileForm(f => ({...f, new_password: e.target.value}))}
+                    disabled={profileLoading}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPw(s => ({ ...s, newPw: !s.newPw }))}
+                  >
+                    {showPw.newPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button type="submit" disabled={profileSaving || profileLoading} className="gap-2">
+                <Save className="h-4 w-4" /> {profileSaving ? 'Saving...' : 'Save Profile'}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center gap-2 rounded-lg bg-secondary/50 px-4 py-3 text-sm mt-8 mb-4">
+        <Info className="h-4 w-4 text-primary shrink-0" />
+        <span className="text-muted-foreground">The following platform configurations are read-only and managed via environment variables.</span>
       </div>
 
       {/* Config Sections */}
@@ -98,7 +265,7 @@ export default function SettingsPage() {
         {CONFIG_ITEMS.map((section) => {
           const Icon = section.icon
           return (
-            <Card key={section.section} className="glass-strong animate-fade-in-up">
+            <Card key={section.section} className="glass-strong">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-3 text-base">
                   <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${section.bg}`}>

@@ -43,19 +43,25 @@ export default function HotelAmenitiesPage() {
   
   const [amenities, setAmenities] = useState<{ HOTEL: Amenity[], ROOM: Amenity[] }>({ HOTEL: [], ROOM: [] })
 
-  // Modal states
   const [showAddAmenity, setShowAddAmenity] = useState(false)
   const [newAmenity, setNewAmenity] = useState({ name: '', icon: 'CheckCircle2', context: 'HOTEL' as 'HOTEL'|'ROOM' })
   const [addingAmenity, setAddingAmenity] = useState(false)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [saving, setSaving] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true)
-      const amRes = await fetch('/api/hotel-admin/amenities', { credentials: 'include' })
+      const [amRes, selRes] = await Promise.all([
+        fetch('/api/hotel-admin/amenities', { credentials: 'include' }),
+        fetch('/api/hotel-admin/amenities/selection', { credentials: 'include' })
+      ])
       
       const amData = await amRes.json()
+      const selData = await selRes.json()
 
       if (amData.success) setAmenities(amData.data)
+      if (selData.success) setSelectedIds(selData.data)
     } catch {
       toast({ title: 'Error', description: 'Failed to load amenities', variant: 'destructive' })
     } finally {
@@ -119,6 +125,7 @@ export default function HotelAmenitiesPage() {
       const data = await res.json()
       if (data.success) {
         toast({ title: 'Success', description: 'Amenity deleted', variant: 'success' })
+        setSelectedIds(prev => prev.filter(p => p !== id))
         fetchData()
       } else {
         toast({ title: 'Error', description: data.message, variant: 'destructive' })
@@ -128,34 +135,79 @@ export default function HotelAmenitiesPage() {
     }
   }
 
+  const handleToggleSelection = (id: number) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+    )
+  }
+
+  const handleSaveSelection = async () => {
+    try {
+      setSaving(true)
+      const res = await fetch('/api/hotel-admin/amenities/selection', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amenityIds: selectedIds })
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast({ title: 'Success', description: 'Amenities updated', variant: 'success' })
+      } else {
+        toast({ title: 'Error', description: data.message, variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to save amenities', variant: 'destructive' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const AmenityGrid = ({ items, context }: { items: Amenity[], context: 'HOTEL'|'ROOM' }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {items.map((item) => (
-        <div 
-          key={item.id} 
-          className={`flex items-center justify-between p-4 rounded-xl border ${item.is_default ? 'bg-secondary/20 border-border/50' : 'bg-primary/5 border-primary/20'}`}
-        >
-          <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${item.is_default ? 'bg-secondary' : 'bg-primary/10 text-primary'}`}>
-              {item.context === 'HOTEL' ? <Hotel className="h-4 w-4" /> : <BedDouble className="h-4 w-4" />}
+      {items.map((item) => {
+        const isSelected = selectedIds.includes(item.id)
+        return (
+          <div 
+            key={item.id} 
+            onClick={() => context === 'HOTEL' && handleToggleSelection(item.id)}
+            className={`group relative flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${
+              isSelected 
+                ? 'bg-primary/10 border-primary ring-1 ring-primary' 
+                : 'bg-card border-border hover:border-primary/50'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              {/* Disc Selection UI */}
+              {context === 'HOTEL' && (
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30 group-hover:border-primary/50'
+                }`}>
+                  {isSelected && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
+                </div>
+              )}
+              
+              <div className={`p-2 rounded-lg ${isSelected ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>
+                {item.context === 'HOTEL' ? <Hotel className="h-4 w-4" /> : <BedDouble className="h-4 w-4" />}
+              </div>
+              <div>
+                <p className="font-medium text-sm">{item.name}</p>
+                <Badge variant="outline" className={`mt-1 text-[10px] px-1.5 py-0 border-none ${item.is_default ? 'bg-secondary text-muted-foreground' : 'bg-primary/20 text-primary'}`}>
+                  {item.is_default ? 'Global' : 'Custom'}
+                </Badge>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-sm">{item.name}</p>
-              <Badge variant="outline" className={`mt-1 text-[10px] px-1.5 py-0 border-none ${item.is_default ? 'bg-secondary text-muted-foreground' : 'bg-primary/20 text-primary'}`}>
-                {item.is_default ? 'Global Default' : 'Custom'}
-              </Badge>
-            </div>
+            {!item.is_default && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleDeleteAmenity(item.id); }}
+                className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors opacity-0 group-hover:opacity-100"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
-          {!item.is_default && (
-            <button 
-              onClick={() => handleDeleteAmenity(item.id)}
-              className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          )}
-        </div>
-      ))}
+        )
+      })}
       {items.length === 0 && (
         <div className="col-span-full p-8 text-center border border-dashed rounded-xl border-border">
           <p className="text-muted-foreground">No amenities found for this context.</p>
@@ -181,41 +233,70 @@ export default function HotelAmenitiesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Amenities & Bed Types</h1>
-          <p className="text-muted-foreground mt-1">Manage global defaults and add your own custom features</p>
+    <div className="space-y-6 pb-20">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 -mx-6 px-6 lg:-mx-8 lg:px-8 border-b">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 py-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Amenities & Features</h1>
+            <p className="text-xs text-muted-foreground mt-0.5">Select the amenities your hotel provides and manage your custom features.</p>
+          </div>
+          <Button 
+            onClick={handleSaveSelection} 
+            disabled={saving} 
+            className="w-full sm:w-auto shadow-lg"
+          >
+            {saving ? 'Saving...' : 'Save Selection'}
+          </Button>
         </div>
+
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+          <TabsList className="flex h-12 items-center justify-start rounded-none bg-transparent p-0 w-full">
+            <TabsTrigger 
+              value="hotel"
+              className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              <div className="flex items-center gap-2">
+                <Hotel className="w-4 h-4" />
+                <span>Hotel Amenities</span>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="room"
+              className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            >
+              <div className="flex items-center gap-2">
+                <BedDouble className="w-4 h-4" />
+                <span>Room Amenities</span>
+              </div>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full sm:w-[400px] grid-cols-2 mb-6 bg-secondary/50 p-1">
-          <TabsTrigger value="hotel">Hotel Amenities</TabsTrigger>
-          <TabsTrigger value="room">Room Amenities</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="hotel" className="space-y-4 mt-0 animate-fade-in-up">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Features that apply to your entire property (e.g. Pool, Gym).</p>
-            <Button size="sm" onClick={() => { setNewAmenity({ ...newAmenity, context: 'HOTEL' }); setShowAddAmenity(true); }} className="gap-2">
-              <Plus className="h-4 w-4" /> Custom Hotel Amenity
-            </Button>
+      <div className="mt-6">
+        {activeTab === 'hotel' ? (
+          <div className="space-y-4 animate-fade-in-up">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">Features that apply to your entire property (e.g. Pool, Gym).</p>
+              <Button size="sm" variant="outline" onClick={() => { setNewAmenity({ ...newAmenity, context: 'HOTEL' }); setShowAddAmenity(true); }} className="gap-2">
+                <Plus className="h-4 w-4" /> Custom Hotel Amenity
+              </Button>
+            </div>
+            <AmenityGrid items={amenities.HOTEL} context="HOTEL" />
           </div>
-          <AmenityGrid items={amenities.HOTEL} context="HOTEL" />
-        </TabsContent>
-
-        <TabsContent value="room" className="space-y-4 mt-0 animate-fade-in-up">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Features that apply to specific room types (e.g. Balcony, Sea View).</p>
-            <Button size="sm" onClick={() => { setNewAmenity({ ...newAmenity, context: 'ROOM' }); setShowAddAmenity(true); }} className="gap-2">
-              <Plus className="h-4 w-4" /> Custom Room Amenity
-            </Button>
+        ) : (
+          <div className="space-y-4 animate-fade-in-up">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">Features that apply to specific room types (e.g. Balcony, Sea View).</p>
+              <Button size="sm" variant="outline" onClick={() => { setNewAmenity({ ...newAmenity, context: 'ROOM' }); setShowAddAmenity(true); }} className="gap-2">
+                <Plus className="h-4 w-4" /> Custom Room Amenity
+              </Button>
+            </div>
+            <AmenityGrid items={amenities.ROOM} context="ROOM" />
           </div>
-          <AmenityGrid items={amenities.ROOM} context="ROOM" />
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
 
       {/* Add Amenity Dialog */}
       <Dialog open={showAddAmenity} onOpenChange={setShowAddAmenity}>

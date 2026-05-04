@@ -14,8 +14,8 @@ type NavItem = {
 
 const hotelAdminLinks: NavItem[] = [
   { name: 'Overview', href: '/dashboard/hotel', icon: Building2 },
-  { 
-    name: 'Hotel Management', 
+  {
+    name: 'Hotel Management',
     icon: Building2,
     subItems: [
       { name: 'Hotel Profile', href: '/dashboard/hotel/details' },
@@ -54,10 +54,10 @@ export default function HotelAdminLayout({
       .then((r) => r.json())
       .then((data) => {
         if (data.success && data.data.actor_type === 'HOTEL_ADMIN') {
-          setUser({ 
-            name: data.data.name, 
+          setUser({
+            name: data.data.name,
             email: data.data.email,
-            hotel_id: data.data.hotel_id 
+            hotel_id: data.data.hotel_id
           })
         } else {
           router.push('/hotel-login')
@@ -88,9 +88,8 @@ export default function HotelAdminLayout({
       <div className="flex">
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-64 h-screen bg-card border-r flex flex-col transform transition-transform lg:transform-none ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-          }`}
+          className={`fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-64 h-screen bg-card border-r flex flex-col transform transition-transform lg:transform-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+            }`}
         >
           <div className="p-6 border-b shrink-0">
             <h2 className="text-xl font-bold">Hotel Admin</h2>
@@ -107,8 +106,8 @@ export default function HotelAdminLayout({
               if (hasSubItems) {
                 const isOpen = openMenus[link.name]
                 // Check if any subitem is active
-                const isAnySubActive = link.subItems?.some(sub => 
-                  pathname === sub.href || 
+                const isAnySubActive = link.subItems?.some(sub =>
+                  pathname === sub.href ||
                   (sub.href.includes('?') && pathname === sub.href.split('?')[0])
                 )
 
@@ -133,11 +132,10 @@ export default function HotelAdminLayout({
                               key={sub.name}
                               href={sub.href}
                               onClick={() => setSidebarOpen(false)}
-                              className={`block px-4 py-2 text-sm rounded-lg transition-colors ${
-                                isSubActive
+                              className={`block px-4 py-2 text-sm rounded-lg transition-colors ${isSubActive
                                   ? 'bg-primary/10 text-primary font-medium'
                                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                              }`}
+                                }`}
                             >
                               {sub.name}
                             </Link>
@@ -155,11 +153,10 @@ export default function HotelAdminLayout({
                   key={link.name}
                   href={link.href!}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
                       ? 'bg-primary text-primary-foreground font-medium'
                       : 'hover:bg-muted'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span>{link.name}</span>

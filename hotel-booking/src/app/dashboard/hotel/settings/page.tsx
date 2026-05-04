@@ -139,9 +139,10 @@ export default function HotelSettingsPage() {
         check_in_time: form.check_in_time && form.check_in_time.trim() !== '' ? form.check_in_time : '14:00',
         check_out_time: form.check_out_time && form.check_out_time.trim() !== '' ? form.check_out_time : '12:00',
         star_rating: form.star_rating ? parseFloat(form.star_rating) : 3,
-        advance_deposit_percent: parseInt(form.advance_deposit_percent as any) || 0,
-        cancellation_hours: form.cancellation_hours ? parseInt(form.cancellation_hours as any) : 24,
-        refund_percent: form.refund_percent ? parseInt(form.refund_percent as any) : 100,
+        advance_deposit_percent: isNaN(parseInt(form.advance_deposit_percent as any)) ? 0 : parseInt(form.advance_deposit_percent as any),
+        cancellation_policy: form.cancellation_policy || 'FLEXIBLE',
+        cancellation_hours: isNaN(parseInt(form.cancellation_hours as any)) ? 24 : parseInt(form.cancellation_hours as any),
+        refund_percent: isNaN(parseInt(form.refund_percent as any)) ? 100 : parseInt(form.refund_percent as any),
         latitude: (form.latitude && !isNaN(parseFloat(form.latitude))) ? parseFloat(form.latitude) : null,
         longitude: (form.longitude && !isNaN(parseFloat(form.longitude))) ? parseFloat(form.longitude) : null,
       }

@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { Save, Loader2, X, ArrowLeft, Image as ImageIcon, Trash2, Star } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef, use } from 'react'
+import { Save, Loader2, X, ArrowLeft, Image as ImageIcon, Trash2, Star, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -48,7 +48,10 @@ const defaultForm = {
   amenity_ids: [] as number[]
 }
 
-export default function EditRoomTypePage({ params }: { params: { id: string } }) {
+export default function EditRoomTypePage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
+  const id = resolvedParams.id
+  
   const { toast } = useToast()
   const router = useRouter()
   
@@ -66,7 +69,7 @@ export default function EditRoomTypePage({ params }: { params: { id: string } })
     try {
       setLoading(true)
       const [rtRes, bedRes, amRes] = await Promise.all([
-        fetch(`/api/hotel-admin/room-types/${params.id}`, { credentials: 'include' }),
+        fetch(`/api/hotel-admin/room-types/${id}`, { credentials: 'include' }),
         fetch('/api/hotel-admin/bed-types', { credentials: 'include' }),
         fetch('/api/hotel-admin/amenities', { credentials: 'include' })
       ])
@@ -104,7 +107,7 @@ export default function EditRoomTypePage({ params }: { params: { id: string } })
     } finally {
       setLoading(false)
     }
-  }, [toast, params.id, router])
+  }, [toast, id, router])
 
   useEffect(() => {
     fetchData()
@@ -133,7 +136,7 @@ export default function EditRoomTypePage({ params }: { params: { id: string } })
         amenity_ids: form.amenity_ids
       }
 
-      const res = await fetch(`/api/hotel-admin/room-types/${params.id}`, {
+      const res = await fetch(`/api/hotel-admin/room-types/${id}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -187,7 +190,7 @@ export default function EditRoomTypePage({ params }: { params: { id: string } })
 
     try {
       setUploading(true)
-      const res = await fetch(`/api/hotel-admin/room-types/${params.id}/images`, {
+      const res = await fetch(`/api/hotel-admin/room-types/${id}/images`, {
         method: 'POST',
         credentials: 'include',
         body: formData
@@ -208,7 +211,7 @@ export default function EditRoomTypePage({ params }: { params: { id: string } })
   const handleDeleteImage = async (imageId: number) => {
     if (!confirm('Delete this image?')) return
     try {
-      const res = await fetch(`/api/hotel-admin/room-types/${params.id}/images/${imageId}`, {
+      const res = await fetch(`/api/hotel-admin/room-types/${id}/images/${imageId}`, {
         method: 'DELETE',
         credentials: 'include'
       })
@@ -222,7 +225,7 @@ export default function EditRoomTypePage({ params }: { params: { id: string } })
 
   const handleSetCover = async (imageId: number) => {
     try {
-      const res = await fetch(`/api/hotel-admin/room-types/${params.id}/images/${imageId}`, {
+      const res = await fetch(`/api/hotel-admin/room-types/${id}/images/${imageId}`, {
         method: 'PATCH',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

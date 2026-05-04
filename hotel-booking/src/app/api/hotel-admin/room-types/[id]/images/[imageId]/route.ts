@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { roomId: string, imageId: string } }
+  { params }: { params: { id: string, imageId: string } }
 ) {
   try {
     const auth = await requireAuth(req, ['HOTEL_ADMIN'])
@@ -15,7 +15,7 @@ export async function DELETE(
 
     const hotelId = auth.payload.hotel_id
     const resolvedParams = await params
-    const roomTypeId = parseInt(resolvedParams.roomId)
+    const roomTypeId = parseInt(resolvedParams.id)
     const imageId = parseInt(resolvedParams.imageId)
 
     if (isNaN(roomTypeId) || isNaN(imageId)) {
@@ -75,7 +75,7 @@ const updateSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { roomId: string, imageId: string } }
+  { params }: { params: { id: string, imageId: string } }
 ) {
   try {
     const auth = await requireAuth(req, ['HOTEL_ADMIN'])
@@ -83,7 +83,7 @@ export async function PATCH(
 
     const hotelId = auth.payload.hotel_id
     const resolvedParams = await params
-    const roomTypeId = parseInt(resolvedParams.roomId)
+    const roomTypeId = parseInt(resolvedParams.id)
     const imageId = parseInt(resolvedParams.imageId)
 
     if (isNaN(roomTypeId) || isNaN(imageId)) {

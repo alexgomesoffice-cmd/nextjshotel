@@ -16,6 +16,41 @@ async function ensureDir() {
   }
 }
 
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const auth = await requireAuth(req, ['HOTEL_ADMIN'])
+    if (auth.error) return auth.error
+
+    const hotelId = auth.payload.hotel_id
+    const resolvedParams = await params
+    const roomTypeId = parseInt(resolvedParams.id)
+
+    if (isNaN(roomTypeId)) return NextResponse.json({ success: false, message: 'Invalid ID' }, { status: 400 })
+
+    const roomType = await prisma.room_types.findUnique({ 
+      where: { id: roomTypeId },
+      select: { hotel_id: true }
+    })
+    
+    if (!roomType || roomType.hotel_id !== hotelId) {
+      return NextResponse.json({ success: false, message: 'Room type not found' }, { status: 404 })
+    }
+
+    const images = await prisma.room_images.findMany({
+      where: { room_type_id: roomTypeId },
+      orderBy: { sort_order: 'asc' }
+    })
+
+    return NextResponse.json({ success: true, data: images })
+  } catch (error) {
+    console.error('Fetch room images error:', error)
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
+  }
+}
+
 export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }

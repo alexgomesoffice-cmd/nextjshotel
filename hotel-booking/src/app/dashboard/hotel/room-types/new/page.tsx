@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Save, Loader2, X, ArrowLeft } from 'lucide-react'
+import { Save, Loader2, X, ArrowLeft, Image as ImageIcon, Trash2, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -13,6 +13,8 @@ import { useToast } from '@/hooks/use-hooks'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
+import Image from 'next/image'
+import { useRef } from 'react'
 
 interface BedType {
   id: number
@@ -52,6 +54,30 @@ export default function NewRoomTypePage() {
   
   const [form, setForm] = useState(defaultForm)
   const [saving, setSaving] = useState(false)
+
+  // Local Image State
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+
+    setSelectedFiles(prev => [...prev, ...files])
+    const newPreviews = files.map(file => URL.createObjectURL(file))
+    setPreviews(prev => [...prev, ...newPreviews])
+    
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeLocalImage = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+    setPreviews(prev => {
+      URL.revokeObjectURL(prev[index])
+      return prev.filter((_, i) => i !== index)
+    })
+  }
 
   const fetchData = useCallback(async () => {
     try {
@@ -110,8 +136,22 @@ export default function NewRoomTypePage() {
       const data = await res.json()
 
       if (data.success) {
-        toast({ title: 'Success', description: 'Room type created. You can now add images.', variant: 'success' })
-        router.push(`/dashboard/hotel/room-types/${data.data.id}`)
+        const newId = data.data.id
+
+        // Upload images if any
+        if (selectedFiles.length > 0) {
+          const formData = new FormData()
+          selectedFiles.forEach(file => formData.append('files', file))
+          
+          await fetch(`/api/hotel-admin/room-types/${newId}/images`, {
+            method: 'POST',
+            credentials: 'include',
+            body: formData
+          })
+        }
+
+        toast({ title: 'Success', description: 'Room type created successfully', variant: 'success' })
+        router.push(`/dashboard/hotel/room-types/${newId}`)
       } else {
         toast({ title: 'Error', description: data.message, variant: 'destructive' })
       }
@@ -249,6 +289,41 @@ export default function NewRoomTypePage() {
                   </label>
                 )
               })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="glass-strong">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Room Images</CardTitle>
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="gap-2">
+            <Plus className="h-4 w-4" /> Select Images
+          </Button>
+          <input type="file" ref={fileInputRef} className="hidden" multiple accept="image/*" onChange={handleFileChange} />
+        </CardHeader>
+        <CardContent>
+          {previews.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {previews.map((url, idx) => (
+                <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border-2 border-border/50">
+                  <Image src={url} alt="Preview" fill className="object-cover" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => removeLocalImage(idx)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-border rounded-xl py-12 flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/20 transition-colors"
+            >
+              <ImageIcon className="h-10 w-10 text-muted-foreground mb-3 opacity-20" />
+              <p className="text-sm text-muted-foreground">Click to select images for this room type</p>
+              <p className="text-[10px] text-muted-foreground mt-1 italic">Up to 10MB per file, WebP optimized</p>
             </div>
           )}
         </CardContent>

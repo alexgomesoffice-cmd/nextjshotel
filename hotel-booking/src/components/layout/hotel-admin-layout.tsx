@@ -3,15 +3,31 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { Building2, Bed, Calendar, Users, Image, Settings, LogOut, Menu, X } from 'lucide-react'
+import { Building2, Bed, Calendar, Users, Image, Settings, LogOut, Menu, X, ChevronDown, ChevronRight, Tags } from 'lucide-react'
 
-const hotelAdminLinks = [
+type NavItem = {
+  name: string
+  href?: string
+  icon: any
+  subItems?: { name: string; href: string }[]
+}
+
+const hotelAdminLinks: NavItem[] = [
   { name: 'Overview', href: '/dashboard/hotel', icon: Building2 },
+  { 
+    name: 'Hotel Management', 
+    icon: Building2,
+    subItems: [
+      { name: 'Hotel Profile', href: '/dashboard/hotel/details' },
+      { name: 'Images', href: '/dashboard/hotel/images' },
+    ]
+  },
+  { name: 'Amenities', href: '/dashboard/hotel/amenities', icon: Tags },
+  { name: 'Bed Types', href: '/dashboard/hotel/bed-types', icon: Bed },
   { name: 'Room Types', href: '/dashboard/hotel/room-types', icon: Bed },
   { name: 'Rooms', href: '/dashboard/hotel/rooms', icon: Bed },
   { name: 'Bookings', href: '/dashboard/hotel/bookings', icon: Calendar },
   { name: 'Staff', href: '/dashboard/hotel/staff', icon: Users },
-  { name: 'Images', href: '/dashboard/hotel/images', icon: Image },
   { name: 'Settings', href: '/dashboard/hotel/settings', icon: Settings },
 ]
 
@@ -24,6 +40,14 @@ export default function HotelAdminLayout({
   const router = useRouter()
   const [user, setUser] = useState<{ name: string; email: string; hotel_id: number } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
+    'Hotel Management': true,
+    'Amenities & Features': true,
+  })
+
+  const toggleMenu = (name: string) => {
+    setOpenMenus(prev => ({ ...prev, [name]: !prev[name] }))
+  }
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
@@ -78,15 +102,62 @@ export default function HotelAdminLayout({
           <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {hotelAdminLinks.map((link) => {
               const Icon = link.icon
+              const hasSubItems = !!link.subItems
+
+              if (hasSubItems) {
+                const isOpen = openMenus[link.name]
+                // Check if any subitem is active
+                const isAnySubActive = link.subItems?.some(sub => 
+                  pathname === sub.href || 
+                  (sub.href.includes('?') && pathname === sub.href.split('?')[0])
+                )
+
+                return (
+                  <div key={link.name} className="space-y-1">
+                    <button
+                      onClick={() => toggleMenu(link.name)}
+                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors hover:bg-muted ${isAnySubActive ? 'text-primary' : ''}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className="w-5 h-5" />
+                        <span className="font-medium">{link.name}</span>
+                      </div>
+                      {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </button>
+                    {isOpen && (
+                      <div className="ml-4 pl-4 border-l border-border space-y-1 mt-1">
+                        {link.subItems!.map((sub) => {
+                          const isSubActive = pathname === sub.href.split('?')[0] // Basic check, could be improved with search params
+                          return (
+                            <Link
+                              key={sub.name}
+                              href={sub.href}
+                              onClick={() => setSidebarOpen(false)}
+                              className={`block px-4 py-2 text-sm rounded-lg transition-colors ${
+                                isSubActive
+                                  ? 'bg-primary/10 text-primary font-medium'
+                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                              }`}
+                            >
+                              {sub.name}
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
               const isActive = pathname === link.href
               return (
                 <Link
-                  key={link.href}
-                  href={link.href}
+                  key={link.name}
+                  href={link.href!}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground font-medium'
                       : 'hover:bg-muted'
                   }`}
                 >

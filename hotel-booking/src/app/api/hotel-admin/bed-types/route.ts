@@ -3,40 +3,30 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { z } from 'zod'
 
-const createBedTypeSchema = z.object({
-  name: z.string().min(1, 'Bed type name is required').max(100),
+const addBedTypeSchema = z.object({
+  name: z.string().min(2).max(100)
 })
 
-/**
- * GET /api/hotel-admin/bed-types
- * Returns global default bed types + hotel's own custom bed types.
- * Used by:
- *   - Room type creation/edit form (bed type multi-select with count per type)
- *   - Hotel amenities management page (bed types tab)
- */
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req, ['HOTEL_ADMIN'])
     if (auth.error) return auth.error
 
-    const hotelId = auth.payload.hotel_id!
+    const hotelId = auth.payload.hotel_id
 
+    // Fetch global defaults AND custom bed types for this hotel
     const bedTypes = await prisma.bed_types.findMany({
       where: {
         is_active: true,
         OR: [
-          { is_default: true, hotel_id: null },  // global defaults
-          { hotel_id: hotelId },                  // this hotel's custom bed types
-        ],
+          { is_default: true, hotel_id: null },
+          { is_default: false, hotel_id: hotelId }
+        ]
       },
-      orderBy: [{ is_default: 'desc' }, { name: 'asc' }],
-      select: {
-        id: true,
-        name: true,
-        is_default: true,
-        is_active: true,
-        hotel_id: true,
-      },
+      orderBy: [
+        { is_default: 'desc' }, // Defaults first
+        { name: 'asc' }
+      ]
     })
 
     return NextResponse.json({ success: true, data: bedTypes })
@@ -46,19 +36,18 @@ export async function GET(req: NextRequest) {
   }
 }
 
-/**
- * POST /api/hotel-admin/bed-types
- * Creates a hotel-specific custom bed type.
- * Body: { name }
- */
 export async function POST(req: NextRequest) {
   try {
     const auth = await requireAuth(req, ['HOTEL_ADMIN'])
     if (auth.error) return auth.error
 
-    const hotelId = auth.payload.hotel_id!
+    const hotelId = auth.payload.hotel_id
+    if (!hotelId) {
+      return NextResponse.json({ success: false, message: 'Hotel association missing' }, { status: 400 })
+    }
+
     const body = await req.json()
-    const result = createBedTypeSchema.safeParse(body)
+    const result = addBedTypeSchema.safeParse(body)
 
     if (!result.success) {
       return NextResponse.json(
@@ -67,39 +56,31 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { name } = result.data
-
-    // Check for duplicate name (global or this hotel's custom)
-    const duplicate = await prisma.bed_types.findFirst({
+    // Check if name already exists for this hotel or globally
+    const existing = await prisma.bed_types.findFirst({
       where: {
-        name,
+        name: result.data.name,
         OR: [
-          { is_default: true, hotel_id: null },
           { hotel_id: hotelId },
-        ],
-      },
+          { hotel_id: null, is_default: true }
+        ]
+      }
     })
 
-    if (duplicate) {
-      return NextResponse.json(
-        { success: false, message: `A bed type named "${name}" already exists` },
-        { status: 409 }
-      )
+    if (existing) {
+      return NextResponse.json({ success: false, message: 'Bed type with this name already exists' }, { status: 400 })
     }
 
     const bedType = await prisma.bed_types.create({
       data: {
-        name,
+        name: result.data.name,
         is_default: false,
         hotel_id: hotelId,
-        is_active: true,
-      },
+        is_active: true
+      }
     })
 
-    return NextResponse.json(
-      { success: true, message: 'Custom bed type created', data: bedType },
-      { status: 201 }
-    )
+    return NextResponse.json({ success: true, data: bedType }, { status: 201 })
   } catch (error) {
     console.error('Failed to create bed type:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })

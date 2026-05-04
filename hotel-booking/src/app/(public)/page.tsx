@@ -4,7 +4,7 @@
        {/* HeroSection, DestinationsSection, FeaturedHotels, NewsletterSection go here */}
        {/* Components migrated on Day 7 */}
        <div className="min-h-screen flex items-center justify-center">
-         <p className="text-muted-foreground">Home page — Day 7</p>
+         <p className="text-muted-foreground">Home page</p>
        </div>
      </div>
    )

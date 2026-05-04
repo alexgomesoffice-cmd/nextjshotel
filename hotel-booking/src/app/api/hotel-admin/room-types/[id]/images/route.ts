@@ -6,7 +6,7 @@ import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import sharp from 'sharp'
 
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'rooms')
+const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'room-types')
 
 async function ensureDir() {
   try {
@@ -100,7 +100,7 @@ export async function POST(
         .webp({ quality: 80 })
         .toFile(filepath)
 
-      const imageUrl = `/uploads/rooms/${filename}`
+      const imageUrl = `/uploads/room-types/${filename}`
       
       const imgRecord = await prisma.room_images.create({
         data: {

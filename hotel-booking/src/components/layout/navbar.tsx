@@ -35,10 +35,16 @@ const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<AuthUser | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
   const pathname = usePathname()
   const router = useRouter()
   // const { toast } = useToast()
   const { theme, toggleTheme } = useTheme()
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
   // Scroll listener
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20)
@@ -136,18 +142,24 @@ const Navbar = () => {
               className="relative p-2.5 rounded-xl glass transition-all duration-500 hover:scale-110 hover:bg-primary/10 group overflow-hidden flex items-center justify-center"
               aria-label="Toggle theme"
             >
-              <Sun 
-                className={cn(
-                  "h-5 w-5 transition-all duration-500",
-                  theme === "dark" ? "rotate-0 scale-100 opacity-100" : "rotate-90 scale-0 opacity-0"
-                )} 
-              />
-              <Moon 
-                className={cn(
-                  "absolute h-5 w-5 transition-all duration-500",
-                  theme === "light" ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
-                )} 
-              />
+              {isMounted ? (
+                <>
+                  <Sun 
+                    className={cn(
+                      "h-5 w-5 transition-all duration-500",
+                      theme === "dark" ? "rotate-0 scale-100 opacity-100" : "rotate-90 scale-0 opacity-0"
+                    )} 
+                  />
+                  <Moon 
+                    className={cn(
+                      "absolute h-5 w-5 transition-all duration-500",
+                      theme === "light" ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
+                    )} 
+                  />
+                </>
+              ) : (
+                <div className="h-5 w-5 opacity-0" />
+              )}
               <span className="absolute inset-0 rounded-xl bg-linear-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
 

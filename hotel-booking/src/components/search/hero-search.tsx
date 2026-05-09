@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { format, addDays } from "date-fns";
 import { DateRange } from "react-day-picker";
+import { useRouter } from "next/navigation";
 
 import {
     Search,
@@ -11,6 +12,8 @@ import {
     Users,
     Minus,
     Plus,
+    Hotel,
+    Loader2
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -23,6 +26,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
+export interface SearchSuggestion {
+    id: number;
+    name: string;
+    type: 'hotel' | 'city';
+    city?: string;
+}
+
 interface SearchBarProps {
     showFilters?: boolean;
 }
@@ -30,6 +40,7 @@ interface SearchBarProps {
 const SearchBar = ({
     showFilters = true,
 }: SearchBarProps) => {
+    const router = useRouter();
     const [searchLocation, setSearchLocation] = useState("");
 
     const [date, setDate] = useState<DateRange | undefined>({
@@ -41,29 +52,161 @@ const SearchBar = ({
     const [rooms, setRooms] = useState(1);
 
     const [isGuestOpen, setIsGuestOpen] = useState(false);
+    
+    // Suggestions state
+    const [suggestions, setSuggestions] = useState<{ hotels: SearchSuggestion[]; cities: SearchSuggestion[] }>({ hotels: [], cities: [] });
+    const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+    const locationInputRef = useRef<HTMLInputElement>(null);
+    const suggestionsRef = useRef<HTMLDivElement>(null);
+
+    const handleLocationChange = async (value: string) => {
+        setSearchLocation(value);
+        if (value.length >= 1) {
+            setIsLoadingSuggestions(true);
+            try {
+                const [citiesRes, hotelsRes] = await Promise.all([
+                    fetch(`/api/public/cities?q=${encodeURIComponent(value)}`),
+                    fetch(`/api/public/hotels?location=${encodeURIComponent(value)}`)
+                ]);
+                
+                const newSuggestions: { hotels: SearchSuggestion[]; cities: SearchSuggestion[] } = {
+                    hotels: [], cities: []
+                };
+
+                if (citiesRes.ok) {
+                    const citiesData = await citiesRes.json();
+                    if (citiesData.success && Array.isArray(citiesData.data)) {
+                        newSuggestions.cities = citiesData.data.map((c: any) => ({
+                            id: c.id, name: c.name, type: 'city'
+                        }));
+                    }
+                }
+                
+                if (hotelsRes.ok) {
+                    const hotelsData = await hotelsRes.json();
+                    if (hotelsData.success && Array.isArray(hotelsData.data)) {
+                        newSuggestions.hotels = hotelsData.data.map((h: any) => ({
+                            id: h.id, name: h.name, type: 'hotel', city: h.city
+                        }));
+                    }
+                }
+                setSuggestions(newSuggestions);
+            } catch (error) {
+                console.error("Failed to fetch suggestions:", error);
+                setSuggestions({ hotels: [], cities: [] });
+            } finally {
+                setIsLoadingSuggestions(false);
+            }
+        } else {
+            setSuggestions({ hotels: [], cities: [] });
+        }
+    };
+
+    const handleSuggestionSelect = (suggestion: SearchSuggestion) => {
+        if (suggestion.type === 'hotel') {
+            setSearchLocation(`${suggestion.name}, ${suggestion.city}`);
+        } else {
+            setSearchLocation(suggestion.name);
+        }
+        setSuggestions({ hotels: [], cities: [] });
+    };
+
+    const handleSearch = () => {
+        const params = new URLSearchParams();
+        if (searchLocation) params.set("location", searchLocation);
+        if (date?.from) params.set("check_in", format(date.from, "yyyy-MM-dd"));
+        if (date?.to) params.set("check_out", format(date.to, "yyyy-MM-dd"));
+        params.set("guests", String(guests));
+        params.set("rooms", String(rooms));
+        router.push(`/search?${params.toString()}`);
+    };
 
     return (
         <div className="w-full max-w-5xl mx-auto px-4">
             <div className="rounded-2xl border border-border/40 bg-background/60 backdrop-blur-xl p-5 shadow-2xl animate-fade-in-up">
                 <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1.8fr_1.2fr_0.8fr] gap-4">
                     {/* Location */}
-                    <div className="relative">
-                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block pl-1">
+                    <div className="relative group overflow-visible">
+                        <label className="text-xs font-medium text-muted-foreground mb-1.5 block pl-1 group-focus-within:text-primary transition-colors">
                             Location
                         </label>
 
-                        <div className="relative">
-                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <div className="relative">
+                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-all duration-300 group-focus-within:scale-110" />
 
-                            <Input
-                                placeholder="Where are you going?"
-                                value={searchLocation}
-                                onChange={(e) =>
-                                    setSearchLocation(e.target.value)
-                                }
-                                className="pl-12 h-12 rounded-xl"
-                            />
-                        </div>
+                                    <Input
+                                        ref={locationInputRef}
+                                        placeholder="Where are you going?"
+                                        value={searchLocation}
+                                        onChange={(e) => handleLocationChange(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                setSuggestions({ hotels: [], cities: [] });
+                                                handleSearch();
+                                            }
+                                        }}
+                                        className="pl-12 h-12 rounded-xl border-border/40 hover:border-primary/40 focus:border-primary transition-all"
+                                    />
+                                    {isLoadingSuggestions && (
+                                        <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                                    )}
+                                </div>
+                            </PopoverTrigger>
+
+                            {(suggestions.hotels.length > 0 || suggestions.cities.length > 0) && (
+                                <PopoverContent
+                                    align="start"
+                                    side="bottom"
+                                    sideOffset={6}
+                                    className="w-(--radix-popover-trigger-width) p-0 overflow-hidden"
+                                    onOpenAutoFocus={(e) => e.preventDefault()}
+                                >
+                                    <div
+                                        ref={suggestionsRef}
+                                        className="bg-popover border border-border/40 rounded-lg shadow-2xl z-9999 max-h-80 overflow-y-auto"
+                                    >
+                                        {suggestions.cities.length > 0 && (
+                                            <div className="p-2">
+                                                <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Locations</div>
+                                                {suggestions.cities.map((city) => (
+                                                    <button
+                                                        key={`city-${city.id}`}
+                                                        onClick={() => handleSuggestionSelect(city)}
+                                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors"
+                                                    >
+                                                        <MapPin className="h-4 w-4 text-primary shrink-0" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-medium truncate">{city.name}</div>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {suggestions.hotels.length > 0 && (
+                                            <div className={`${suggestions.cities.length > 0 ? 'border-t border-border/40' : ''} p-2`}>
+                                                <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Hotels</div>
+                                                {suggestions.hotels.map((hotel) => (
+                                                    <button
+                                                        key={`hotel-${hotel.id}`}
+                                                        onClick={() => handleSuggestionSelect(hotel)}
+                                                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors"
+                                                    >
+                                                        <Hotel className="h-4 w-4 text-primary shrink-0" />
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-sm font-medium truncate">{hotel.name}</div>
+                                                            <div className="text-xs text-muted-foreground truncate">{hotel.city}</div>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </PopoverContent>
+                            )}
+                        </Popover>
                     </div>
 
                     {/* Stay Dates (Range Picker) */}
@@ -229,8 +372,8 @@ const SearchBar = ({
 
                     {/* Search Button */}
                     <div className="flex items-end">
-                        <Button className="w-full h-12 rounded-xl gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
-                            <Search className="h-5 w-5" />
+                        <Button onClick={handleSearch} className="w-full h-12 rounded-xl gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
+                            <Search className="h-5 w-5 transition-transform group-hover/btn:scale-110 group-hover/btn:rotate-12" />
                             <span className="font-semibold">Search</span>
                         </Button>
                     </div>

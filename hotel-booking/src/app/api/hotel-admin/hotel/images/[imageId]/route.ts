@@ -7,7 +7,7 @@ import { z } from 'zod'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { imageId: string } }
+  { params }: { params: Promise<{ imageId: string }> }
 ) {
   try {
     const auth = await requireAuth(req, ['HOTEL_ADMIN'])
@@ -67,7 +67,7 @@ const updateSchema = z.object({
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { imageId: string } }
+  { params }: { params: Promise<{ imageId: string }> }
 ) {
   try {
     const auth = await requireAuth(req, ['HOTEL_ADMIN'])

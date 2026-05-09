@@ -66,6 +66,14 @@
 
   --color-border: hsl(217 20% 88%);
   --color-input: hsl(217 20% 88%);
+  --color-muted: hsl(210 40% 96.1%);
+  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
+  --color-secondary: hsl(210 40% 96.1%);
+  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
+  --color-accent: hsl(199 89% 48%);
+  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(222.2 47.4% 11.2%);
 }
 
 /* =========================

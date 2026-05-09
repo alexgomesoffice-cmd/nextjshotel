@@ -8,7 +8,10 @@ import {
   Bed,
   Info,
   Wrench,
-  DollarSign
+  DollarSign,
+  Image as ImageIcon,
+  X,
+  Star
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -24,6 +27,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-hooks'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Badge } from '@/components/ui/badge'
 
 interface RoomType {
   id: number
@@ -48,21 +52,27 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
     ac: true,
     smoking_allowed: false,
     pet_allowed: false,
-    notes: ''
+    notes: '',
+    prefix: ''
   })
+  const [roomImages, setRoomImages] = useState<any[]>([])
+  const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [roomTypesRes, roomsRes] = await Promise.all([
+        const [roomTypesRes, roomsRes, imagesRes] = await Promise.all([
           fetch('/api/hotel-admin/room-types', { credentials: 'include' }),
-          fetch('/api/hotel-admin/rooms', { credentials: 'include' })
+          fetch('/api/hotel-admin/rooms', { credentials: 'include' }),
+          fetch(`/api/hotel-admin/rooms/${resolvedParams.id}/images`, { credentials: 'include' })
         ])
-
+ 
         const typesData = await roomTypesRes.json()
         const roomsData = await roomsRes.json()
-
+        const imagesData = await imagesRes.json()
+ 
         if (typesData.success) setRoomTypes(typesData.data)
+        if (imagesData.success) setRoomImages(imagesData.data)
         
         if (roomsData.success) {
           const room = roomsData.data.find((r: any) => r.id.toString() === resolvedParams.id)
@@ -76,7 +86,8 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
               ac: room.ac,
               smoking_allowed: room.smoking_allowed,
               pet_allowed: room.pet_allowed,
-              notes: room.notes || ''
+              notes: room.notes || '',
+              prefix: ''
             })
           } else {
             toast({ title: 'Error', description: 'Room not found', variant: 'destructive' })
@@ -136,6 +147,66 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
     }
   }
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploading(true)
+    const formDataToSubmit = new FormData()
+    Array.from(files).forEach(file => formDataToSubmit.append('files', file))
+
+    try {
+      const res = await fetch(`/api/hotel-admin/rooms/${resolvedParams.id}/images`, {
+        method: 'POST',
+        body: formDataToSubmit,
+        credentials: 'include'
+      })
+      const data = await res.json()
+      if (data.success) {
+        setRoomImages(prev => [...prev, ...data.data])
+        toast({ title: 'Success', description: 'Images uploaded successfully', variant: 'success' })
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to upload images', variant: 'destructive' })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleSetCover = async (imageId: number) => {
+    try {
+      const res = await fetch(`/api/hotel-admin/rooms/${resolvedParams.id}/images/${imageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_cover: true }),
+        credentials: 'include'
+      })
+      if (res.ok) {
+        setRoomImages(prev => prev.map(img => ({ ...img, is_cover: img.id === imageId })))
+        toast({ title: 'Success', description: 'Cover image updated', variant: 'success' })
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to set cover image', variant: 'destructive' })
+    }
+  }
+
+  const handleDeleteImage = async (imageId: number) => {
+    if (!confirm('Are you sure you want to delete this image?')) return
+
+    try {
+      const res = await fetch(`/api/hotel-admin/rooms/${resolvedParams.id}/images/${imageId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+      if (res.ok) {
+        setRoomImages(prev => prev.filter(img => img.id !== imageId))
+        toast({ title: 'Success', description: 'Image deleted', variant: 'success' })
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete image', variant: 'destructive' })
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
@@ -167,7 +238,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
             <CardDescription>Manage the room type, number, and nightly pricing.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label>Room Type</Label>
                 <Select value={formData.room_type_id} onValueChange={handleRoomTypeChange}>
@@ -178,6 +249,14 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Prefix (Optional)</Label>
+                <Input 
+                  placeholder="e.g. A-" 
+                  value={formData.prefix} 
+                  onChange={(e) => setFormData(p => ({ ...p, prefix: e.target.value }))} 
+                />
               </div>
               <div className="space-y-2">
                 <Label>Room Number</Label>
@@ -246,6 +325,61 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
                 value={formData.notes} 
                 onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))} 
               />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="glass-strong border-primary/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-primary" />
+              Room Images
+            </CardTitle>
+            <CardDescription>Upload and manage photos for this specific room.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex flex-wrap gap-4">
+              {roomImages.map((img) => (
+                <div key={img.id} className="relative w-32 h-32 rounded-lg overflow-hidden border group shadow-sm bg-muted/20">
+                  <img src={img.image_url} className="w-full h-full object-cover" alt="" />
+                  
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      variant="secondary" 
+                      className="h-8 w-8"
+                      onClick={() => handleSetCover(img.id)}
+                      title="Set as cover"
+                    >
+                      <Star className={`w-4 h-4 ${img.is_cover ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                    </Button>
+                    <Button 
+                      type="button" 
+                      size="icon" 
+                      variant="destructive" 
+                      className="h-8 w-8"
+                      onClick={() => handleDeleteImage(img.id)}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  {img.is_cover && (
+                    <div className="absolute top-1 left-1">
+                      <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-[10px] px-1.5 h-4">Cover</Badge>
+                    </div>
+                  )}
+                </div>
+              ))}
+              
+              <Label className={`w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className="flex flex-col items-center gap-1">
+                  <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                  <span className="text-[10px] font-medium text-muted-foreground">{isUploading ? 'Uploading...' : 'Add Photo'}</span>
+                </div>
+                <Input type="file" multiple className="hidden" onChange={handleImageUpload} disabled={isUploading} />
+              </Label>
             </div>
           </CardContent>
         </Card>

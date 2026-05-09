@@ -43,27 +43,40 @@ export async function PATCH(
       return NextResponse.json({ success: false, message: 'Room not found' }, { status: 404 })
     }
 
-    // If changing room number, check for duplicates
-    if (result.data.room_number && result.data.room_number !== room.room_number) {
-      const existing = await prisma.room_details.findFirst({
-        where: {
-          room_type_id: room.room_type_id,
-          room_number: result.data.room_number,
-          deleted_at: null,
-          id: { not: roomId }
-        }
-      })
-
-      if (existing) {
-        return NextResponse.json({ success: false, message: 'Room number already exists' }, { status: 400 })
-      }
+    // Handle room number and prefix
+    let finalRoomNumber = room.room_number
+    if (result.data.room_number !== undefined || result.data.prefix !== undefined) {
+      const prefix = result.data.prefix !== undefined ? result.data.prefix : ''
+      const number = result.data.room_number !== undefined ? result.data.room_number : room.room_number
+      finalRoomNumber = `${prefix}${number}`
     }
+
+    const floor = result.data.floor !== undefined ? result.data.floor : room.floor
+    const roomTypeId = result.data.room_type_id !== undefined ? result.data.room_type_id : room.room_type_id
+
+    // Check for duplicates
+    const existing = await prisma.room_details.findFirst({
+      where: {
+        room_type_id: roomTypeId,
+        room_number: finalRoomNumber,
+        floor: floor,
+        deleted_at: null,
+        id: { not: roomId }
+      }
+    })
+
+    if (existing) {
+      return NextResponse.json({ success: false, message: 'Room with same number and floor already exists for this type' }, { status: 400 })
+    }
+
+    const { prefix, ...updateData } = result.data
 
     const updatedRoom = await prisma.room_details.update({
       where: { id: roomId },
       data: {
-        ...result.data,
-        price: result.data.price ? result.data.price.toString() : undefined
+        ...updateData,
+        room_number: finalRoomNumber,
+        price: updateData.price ? updateData.price.toString() : undefined
       }
     })
 

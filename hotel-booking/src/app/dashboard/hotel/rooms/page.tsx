@@ -71,6 +71,7 @@ interface Room {
   room_type: {
     name: string
   }
+  room_images?: { image_url: string }[]
 }
 
 export default function HotelRoomsPage() {
@@ -268,6 +269,7 @@ export default function HotelRoomsPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="font-bold w-[80px]">Image</TableHead>
               <TableHead className="font-bold">Room No.</TableHead>
               <TableHead className="font-bold">Room Type</TableHead>
               <TableHead className="font-bold">Floor</TableHead>
@@ -281,20 +283,35 @@ export default function HotelRoomsPage() {
             {loading ? (
               Array.from({ length: 5 }).map((_, i) => (
                 <TableRow key={i}>
-                  {Array.from({ length: 7 }).map((_, j) => (
+                  {Array.from({ length: 8 }).map((_, j) => (
                     <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>
                   ))}
                 </TableRow>
               ))
             ) : filteredRooms.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground italic">
+                <TableCell colSpan={8} className="h-32 text-center text-muted-foreground italic">
                   No rooms found matching your criteria.
                 </TableCell>
               </TableRow>
             ) : (
               filteredRooms.map((room) => (
                 <TableRow key={room.id} className="group hover:bg-muted/30 transition-colors">
+                  <TableCell>
+                    <div className="w-12 h-12 rounded-lg overflow-hidden border bg-muted/20">
+                      {room.room_images?.[0] ? (
+                        <img 
+                          src={room.room_images[0].image_url} 
+                          alt={room.room_number} 
+                          className="w-full h-full object-cover transition-transform group-hover:scale-110"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                          <Bed className="w-5 h-5" />
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="font-bold text-primary">{room.room_number}</TableCell>
                   <TableCell>{room.room_type.name}</TableCell>
                   <TableCell>

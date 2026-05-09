@@ -8,7 +8,9 @@ import {
   Bed,
   Layers,
   Info,
-  Plus
+  Plus,
+  Image as ImageIcon,
+  X
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,8 +49,11 @@ export default function NewRoomPage() {
     ac: true,
     smoking_allowed: false,
     pet_allowed: false,
-    notes: ''
+    notes: '',
+    prefix: ''
   })
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
+  const [previews, setPreviews] = useState<string[]>([])
 
   const [bulkData, setBulkData] = useState({
     room_type_id: '',
@@ -62,6 +67,8 @@ export default function NewRoomPage() {
     pet_allowed: false,
     notes: ''
   })
+  const [bulkFiles, setBulkFiles] = useState<File[]>([])
+  const [bulkPreviews, setBulkPreviews] = useState<string[]>([])
 
   useEffect(() => {
     fetch('/api/hotel-admin/room-types', { credentials: 'include' })
@@ -92,31 +99,29 @@ export default function NewRoomPage() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    let payload: any
+    const formDataToSubmit = new FormData()
+    
     if (creationMode === 'BULK') {
-      payload = {
-        ...bulkData,
-        bulk: true,
-        room_type_id: parseInt(bulkData.room_type_id),
-        start_number: parseInt(bulkData.start_number.toString()),
-        end_number: parseInt(bulkData.end_number.toString()),
-        floor: parseInt(bulkData.floor.toString()),
-        price: parseFloat(bulkData.price.toString())
-      }
+      Object.entries(bulkData).forEach(([key, value]) => {
+        formDataToSubmit.append(key, value.toString())
+      })
+      formDataToSubmit.append('bulk', 'true')
+      bulkFiles.forEach(file => {
+        formDataToSubmit.append('files', file)
+      })
     } else {
-      payload = {
-        ...formData,
-        room_type_id: parseInt(formData.room_type_id),
-        floor: parseInt(formData.floor.toString()),
-        price: parseFloat(formData.price.toString())
-      }
+      Object.entries(formData).forEach(([key, value]) => {
+        formDataToSubmit.append(key, value.toString())
+      })
+      selectedFiles.forEach(file => {
+        formDataToSubmit.append('files', file)
+      })
     }
 
     try {
       const res = await fetch('/api/hotel-admin/rooms', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: formDataToSubmit,
         credentials: 'include'
       })
 
@@ -164,7 +169,7 @@ export default function NewRoomPage() {
                 <CardDescription>Enter the basic information for the new room instance.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="space-y-2">
                     <Label>Room Type</Label>
                     <Select value={formData.room_type_id} onValueChange={(v) => handleRoomTypeChange(v, false)}>
@@ -177,9 +182,17 @@ export default function NewRoomPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label>Prefix (Optional)</Label>
+                    <Input 
+                      placeholder="e.g. A-" 
+                      value={formData.prefix} 
+                      onChange={(e) => setFormData(p => ({ ...p, prefix: e.target.value }))} 
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label>Room Number</Label>
                     <Input 
-                      placeholder="e.g. 101, A-5" 
+                      placeholder="e.g. 101, 5" 
                       value={formData.room_number} 
                       onChange={(e) => setFormData(p => ({ ...p, room_number: e.target.value }))} 
                       required 
@@ -244,6 +257,42 @@ export default function NewRoomPage() {
                     value={formData.notes} 
                     onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))} 
                   />
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Room Images</Label>
+                  <div className="flex flex-wrap gap-4">
+                    {previews.map((src, i) => (
+                      <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden border">
+                        <img src={src} className="w-full h-full object-cover" alt="" />
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setPreviews(p => p.filter((_, idx) => idx !== i))
+                            setSelectedFiles(f => f.filter((_, idx) => idx !== i))
+                          }}
+                          className="absolute top-1 right-1 bg-black/50 p-1 rounded-full text-white hover:bg-black/70"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                    <Label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted transition-colors">
+                      <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                      <span className="text-[10px] mt-1 text-muted-foreground">Add Image</span>
+                      <Input 
+                        type="file" 
+                        multiple 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || [])
+                          setSelectedFiles(prev => [...prev, ...files])
+                          const newPreviews = files.map(f => URL.createObjectURL(f))
+                          setPreviews(prev => [...prev, ...newPreviews])
+                        }}
+                      />
+                    </Label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -333,6 +382,41 @@ export default function NewRoomPage() {
                     <div className="flex items-center space-x-3">
                       <Checkbox id="b-pet" checked={bulkData.pet_allowed} onCheckedChange={(v) => setBulkData(p => ({ ...p, pet_allowed: !!v }))} />
                       <label htmlFor="b-pet" className="text-sm font-medium cursor-pointer">Pets</label>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <Label>Common Room Images (Applied to all created rooms)</Label>
+                    <div className="flex flex-wrap gap-4">
+                      {bulkPreviews.map((src, i) => (
+                        <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden border">
+                          <img src={src} className="w-full h-full object-cover" alt="" />
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setBulkPreviews(p => p.filter((_, idx) => idx !== i))
+                              setBulkFiles(f => f.filter((_, idx) => idx !== i))
+                            }}
+                            className="absolute top-1 right-1 bg-black/50 p-1 rounded-full text-white hover:bg-black/70"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                      <Label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted transition-colors">
+                        <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                        <span className="text-[10px] mt-1 text-muted-foreground">Add Images</span>
+                        <Input 
+                          type="file" 
+                          multiple 
+                          className="hidden" 
+                          onChange={(e) => {
+                            const files = Array.from(e.target.files || [])
+                            setBulkFiles(prev => [...prev, ...files])
+                            const newPreviews = files.map(f => URL.createObjectURL(f))
+                            setBulkPreviews(prev => [...prev, ...newPreviews])
+                          }}
+                        />
+                      </Label>
                     </div>
                   </div>
                 </div>

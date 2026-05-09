@@ -4,6 +4,7 @@ import { z } from 'zod'
 // Physical room creation schema
 export const createRoomSchema = z.object({
   room_type_id: z.number().int().positive('Room type is required'),
+  prefix: z.string().optional(),
   room_number: z.string().min(1, 'Room number is required'),
   floor: z.number().int().min(0).default(0),
   price: z.number().positive('Price must be positive'),

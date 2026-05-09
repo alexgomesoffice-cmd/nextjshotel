@@ -2,10 +2,41 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { createRoomSchema, bulkCreateRoomSchema } from '@/lib/validations/room'
+import fs from 'fs/promises'
+import path from 'path'
+import { v4 as uuidv4 } from 'uuid'
+import sharp from 'sharp'
+
+const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'rooms')
+
+async function ensureDir() {
+  try {
+    await fs.access(UPLOAD_DIR)
+  } catch {
+    await fs.mkdir(UPLOAD_DIR, { recursive: true })
+  }
+}
+
+async function saveImages(files: File[]) {
+  if (!files || files.length === 0) return []
+  await ensureDir()
+  const urls = []
+  for (const file of files) {
+    if (!(file instanceof Blob)) continue
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const filename = `${uuidv4()}.webp`
+    const filepath = path.join(UPLOAD_DIR, filename)
+    await sharp(buffer)
+      .resize(1920, 1080, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toFile(filepath)
+    urls.push(`/uploads/rooms/${filename}`)
+  }
+  return urls
+}
 
 /**
  * GET /api/hotel-admin/rooms
- * List all rooms for the hotel.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -37,6 +68,10 @@ export async function GET(req: NextRequest) {
             name: true,
             base_price: true
           }
+        },
+        room_images: {
+          where: { is_cover: true },
+          take: 1
         }
       },
       orderBy: {
@@ -53,7 +88,6 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/hotel-admin/rooms
- * Create a new physical room (single or bulk).
  */
 export async function POST(req: NextRequest) {
   try {
@@ -61,46 +95,55 @@ export async function POST(req: NextRequest) {
     if (auth.error) return auth.error
 
     const hotelId = auth.payload.hotel_id
-    const body = await req.json()
+    const formData = await req.formData()
     
-    // Check if it's bulk
-    if (body.bulk) {
-      const result = bulkCreateRoomSchema.safeParse(body)
+    const isBulk = formData.get('bulk') === 'true'
+    const files = formData.getAll('files') as File[]
+    
+    // Convert FormData to object for validation
+    const rawData: any = {}
+    formData.forEach((value, key) => {
+      if (key !== 'files' && key !== 'bulk') {
+        // Try to parse numbers and booleans
+        if (['room_type_id', 'start_number', 'end_number', 'floor', 'price'].includes(key)) {
+          rawData[key] = parseFloat(value.toString())
+        } else if (['ac', 'smoking_allowed', 'pet_allowed'].includes(key)) {
+          rawData[key] = value.toString() === 'true'
+        } else {
+          rawData[key] = value.toString()
+        }
+      }
+    })
+
+    if (isBulk) {
+      const result = bulkCreateRoomSchema.safeParse(rawData)
       if (!result.success) {
-        return NextResponse.json(
-          { success: false, message: 'Validation error', errors: result.error.format() },
-          { status: 400 }
-        )
+        return NextResponse.json({ success: false, message: 'Validation error', errors: result.error.format() }, { status: 400 })
       }
 
       const { room_type_id, prefix, start_number, end_number, ...commonData } = result.data
 
-      // Verify room type
-      const roomType = await prisma.room_types.findUnique({
-        where: { id: room_type_id }
-      })
-
+      const roomType = await prisma.room_types.findUnique({ where: { id: room_type_id } })
       if (!roomType || roomType.hotel_id !== hotelId) {
         return NextResponse.json({ success: false, message: 'Invalid room type' }, { status: 400 })
       }
 
-      // Generate rooms
-      const roomsToCreate = []
+      const roomsToCreate: any[] = []
       for (let i = start_number; i <= end_number; i++) {
         roomsToCreate.push({
           room_type_id,
-          room_number: `${prefix}${i}`,
+          room_number: `${prefix || ''}${i}`,
           ...commonData,
           price: commonData.price.toString()
         })
       }
 
-      // Check for duplicates in the generated set
-      const generatedNumbers = roomsToCreate.map(r => r.room_number)
+      // Check for duplicates in the generated set + existing
       const existing = await prisma.room_details.findMany({
         where: {
           room_type_id,
-          room_number: { in: generatedNumbers },
+          room_number: { in: roomsToCreate.map(r => r.room_number) },
+          floor: commonData.floor,
           deleted_at: null
         }
       })
@@ -108,52 +151,72 @@ export async function POST(req: NextRequest) {
       if (existing.length > 0) {
         return NextResponse.json({ 
           success: false, 
-          message: `Some rooms already exist: ${existing.map(r => r.room_number).join(', ')}` 
+          message: `Some rooms already exist on this floor: ${existing.map(r => r.room_number).join(', ')}` 
         }, { status: 400 })
       }
 
-      await prisma.room_details.createMany({
-        data: roomsToCreate
+      const imageUrls = await saveImages(files)
+
+      await prisma.$transaction(async (tx) => {
+        for (const roomData of roomsToCreate) {
+          const room = await tx.room_details.create({ data: roomData })
+          if (imageUrls.length > 0) {
+            await tx.room_images.createMany({
+              data: imageUrls.map((url, idx) => ({
+                room_detail_id: room.id,
+                image_url: url,
+                is_cover: idx === 0,
+                sort_order: idx
+              }))
+            })
+          }
+        }
       })
 
       return NextResponse.json({ success: true, message: `${roomsToCreate.length} rooms created successfully` }, { status: 201 })
     }
 
     // Single creation
-    const result = createRoomSchema.safeParse(body)
+    const result = createRoomSchema.safeParse(rawData)
     if (!result.success) {
-      return NextResponse.json(
-        { success: false, message: 'Validation error', errors: result.error.format() },
-        { status: 400 }
-      )
+      return NextResponse.json({ success: false, message: 'Validation error', errors: result.error.format() }, { status: 400 })
     }
 
-    // Verify room type
-    const roomType = await prisma.room_types.findUnique({
-      where: { id: result.data.room_type_id }
-    })
-
+    const roomType = await prisma.room_types.findUnique({ where: { id: result.data.room_type_id } })
     if (!roomType || roomType.hotel_id !== hotelId) {
       return NextResponse.json({ success: false, message: 'Invalid room type' }, { status: 400 })
     }
 
-    // Check if room number already exists
+    const fullRoomNumber = `${result.data.prefix || ''}${result.data.room_number}`
+
     const existing = await prisma.room_details.findFirst({
       where: {
         room_type_id: result.data.room_type_id,
-        room_number: result.data.room_number,
+        room_number: fullRoomNumber,
+        floor: result.data.floor,
         deleted_at: null
       }
     })
 
     if (existing) {
-      return NextResponse.json({ success: false, message: 'Room number already exists for this type' }, { status: 400 })
+      return NextResponse.json({ success: false, message: 'Room number already exists on this floor for this type' }, { status: 400 })
     }
+
+    const { prefix, ...finalData } = result.data
+    const imageUrls = await saveImages(files)
 
     const room = await prisma.room_details.create({
       data: {
-        ...result.data,
-        price: result.data.price.toString()
+        ...finalData,
+        room_number: fullRoomNumber,
+        price: finalData.price.toString(),
+        room_images: {
+          create: imageUrls.map((url, idx) => ({
+            image_url: url,
+            is_cover: idx === 0,
+            sort_order: idx
+          }))
+        }
       }
     })
 

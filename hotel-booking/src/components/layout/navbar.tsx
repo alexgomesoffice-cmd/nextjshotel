@@ -37,7 +37,7 @@ const Navbar = () => {
   const [user, setUser] = useState<AuthUser | null>(null)
   const pathname = usePathname()
   const router = useRouter()
- // const { toast } = useToast()
+  // const { toast } = useToast()
   const { theme, toggleTheme } = useTheme()
   // Scroll listener
   useEffect(() => {
@@ -72,7 +72,7 @@ const Navbar = () => {
       // ignore — clear state regardless
     }
     setUser(null)
-   // toast({ title: 'Logged out', description: 'You have been signed out successfully.' })
+    // toast({ title: 'Logged out', description: 'You have been signed out successfully.' })
     router.push('/')
   }
 
@@ -96,7 +96,7 @@ const Navbar = () => {
       )}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -133,11 +133,22 @@ const Navbar = () => {
 
             <button
               onClick={toggleTheme}
-              className="relative p-2.5 rounded-xl glass transition-all duration-300 hover:scale-110 hover:bg-primary/10 group overflow-hidden"
+              className="relative p-2.5 rounded-xl glass transition-all duration-500 hover:scale-110 hover:bg-primary/10 group overflow-hidden flex items-center justify-center"
               aria-label="Toggle theme"
             >
-              <Sun className="h-5 w-5 dark:hidden" />
-              <Moon className="h-5 w-5 hidden dark:block" />
+              <Sun 
+                className={cn(
+                  "h-5 w-5 transition-all duration-500",
+                  theme === "dark" ? "rotate-0 scale-100 opacity-100" : "rotate-90 scale-0 opacity-0"
+                )} 
+              />
+              <Moon 
+                className={cn(
+                  "absolute h-5 w-5 transition-all duration-500",
+                  theme === "light" ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
+                )} 
+              />
+              <span className="absolute inset-0 rounded-xl bg-linear-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
 
             {user ? (

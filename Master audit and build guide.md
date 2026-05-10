@@ -624,37 +624,37 @@ RULE 14: Hotel admin layout reads hotel_id from JWT payload (payload.hotel_id).
 Build in this exact sequence. Complete each step before starting the next.
 
 ### Step 1: Fixes (30 min)
-- [ ] Delete `src/app/api/hotel-admin/room-type/` folder entirely
-- [ ] Rename `confirm/route.tsx` → `confirm/route.ts`
-- [ ] Rename `status/routes.ts` → `status/route.ts`
-- [ ] Delete `src/components/room/room-details-modal.tsx`
-- [ ] Fix `src/app/api/public/cities/route.ts` (add `q` param support)
-- [ ] Fix `src/app/api/public/hotels/route.ts` (add stars, amenities, price, pagination)
+- [x] Delete `src/app/api/hotel-admin/room-type/` folder entirely
+- [x] Rename `confirm/route.tsx` → `confirm/route.ts`
+- [x] Rename `status/routes.ts` → `status/route.ts`
+- [x] Delete `src/components/room/room-details-modal.tsx`
+- [x] Fix `src/app/api/public/cities/route.ts` (add `q` param support)
+- [x] Fix `src/app/api/public/hotels/route.ts` (add stars, amenities, price, pagination)
 
 ### Step 2: Hero Search Filter Pills (15 min)
-- [ ] Fix `src/components/search/hero-search.tsx` filter section
-- [ ] Fetch hotel types from API and render as real checkbox pills with state
+- [x] Fix `src/components/search/hero-search.tsx` filter section
+- [x] Fetch hotel types from API and render as real checkbox pills with state
 
 ### Step 3: Search Page (45 min)
-- [ ] Build `src/app/(public)/search/page.tsx` from scratch
-- [ ] Use existing: HotelFilterSidebar, HotelCard, search-bar.tsx (showFilters=false)
-- [ ] Read all URL params on mount and pass to API fetch
+- [x] Build `src/app/(public)/search/page.tsx` from scratch
+- [x] Use existing: HotelFilterSidebar, HotelCard, search-bar.tsx (showFilters=false)
+- [x] Read all URL params on mount and pass to API fetch
 
 ### Step 4: Destinations Pages (30 min)
-- [ ] Build `src/app/(public)/destinations/page.tsx` — cities grid
-- [ ] Build `src/app/(public)/destinations/[name]/page.tsx` — hotels in city
+- [x] Build `src/app/(public)/destinations/page.tsx` — cities grid
+- [x] Build `src/app/(public)/destinations/[name]/page.tsx` — hotels in city
 
 ### Step 5: Room Section Client Wrapper (30 min)
-- [ ] Create `src/components/room/rooms-section-client.tsx`
-- [ ] Wire up RoomTypeCard → RoomDetailModal → RoomDetailModal close
-- [ ] Update hotel detail page to use RoomsSectionClient
+- [x] Create `src/components/room/rooms-section-client.tsx`
+- [x] Wire up RoomTypeCard → RoomDetailModal → RoomDetailModal close
+- [x] Update hotel detail page to use RoomsSectionClient
 
 ### Step 6: Room Type Card Expand/Collapse (45 min)
-- [ ] Add expand/collapse state to `src/components/room/room-type-card.tsx`
-- [ ] Collapsed: small thumbnail + name + price + chevron
-- [ ] Expanded: full existing card content
-- [ ] Image click → onViewDetails (opens modal)
-- [ ] Name click → onViewDetails (opens modal)
+- [x] Add expand/collapse state to `src/components/room/room-type-card.tsx`
+- [x] Collapsed: small thumbnail + name + price + chevron
+- [x] Expanded: full existing card content
+- [x] Image click → onViewDetails (opens modal)
+- [x] Name click → onViewDetails (opens modal)
 
 ---
 

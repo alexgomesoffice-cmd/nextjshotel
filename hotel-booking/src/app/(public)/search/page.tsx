@@ -86,36 +86,32 @@ function SearchContent() {
     ? `Hotels in "${location}"`
     : "Search Results";
 
-  // Navbar is fixed h-20 (80px). Search bar section is fixed below it.
-  // We measure the search bar height by giving it a known wrapper height via ref if needed,
-  // but here we use --search-bar-h CSS variable set inline for a single source of truth.
-  // Navbar: 80px (top-0 → top-20)
-  // Search bar section: py-4 (32px) + card p-4 (32px) + label+input ~68px = ~132px
-  // Total offset = 212px
-
-  const OFFSET = 212; // px — distance content must clear (navbar + search bar)
+  // Navbar is fixed h-20 (80px). 
+  // Sidebar should stick right below the navbar with a small gap.
+  const SIDEBAR_OFFSET = 104; // 80px (navbar) + 24px (gap)
 
   return (
     <div className="min-h-screen bg-background">
 
-      {/* ── Fixed search bar (sits flush under the fixed navbar) ── */}
-      <div
-        className="fixed left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm py-4 px-4"
-        style={{ top: 80 }} // navbar height = h-20 = 80px
-      >
-        <SearchBar showFilters={false} />
+      {/* ── Search bar section (Scrolls naturally) ── */}
+      <div className="w-full bg-secondary/10 border-b border-border/50 shadow-sm py-8 px-4 pt-28">
+        <div className="container mx-auto max-w-7xl flex flex-col items-center">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Search <span className="text-primary">Hotels</span></h1>
+          <p className="text-muted-foreground mb-8">Find your perfect stay</p>
+          <SearchBar showFilters={false} />
+        </div>
       </div>
 
-      {/* ── Content wrapper — pushed down by navbar + search bar ── */}
-      <div style={{ paddingTop: OFFSET }}>
-        <div className="container mx-auto px-4 md:px-8 py-6 max-w-7xl">
+      {/* ── Content wrapper ── */}
+      <div>
+        <div className="container mx-auto px-4 md:px-8 py-8 max-w-7xl">
           <div className="flex flex-col lg:flex-row gap-8">
 
             {/* ── Sidebar — desktop: sticky, NO overflow on sticky container ── */}
             <aside className="hidden lg:block w-72 shrink-0">
               <div
                 className="sticky"
-                style={{ top: OFFSET }}
+                style={{ top: SIDEBAR_OFFSET }}
               >
                 <HotelFilterSidebar />
               </div>

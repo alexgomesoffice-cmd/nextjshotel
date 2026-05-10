@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { MapPin, Star, CheckCircle2 } from "lucide-react";
 
 import HotelImagesGalleryClient from "./hotel-images-client";
-import RoomTypeCard from "@/components/room/room-type-card";
+import RoomsSectionClient from "@/components/room/rooms-section-client";
 import { Button } from "@/components/ui/button";
 
 // Revalidate every 1 hour (or use dynamic depending on booking frequency)
@@ -207,25 +207,21 @@ export default async function HotelDetailPage({ params }: { params: Promise<{ sl
           <h2 className="text-3xl font-bold mb-8">Available Rooms</h2>
           
           {hotel.room_types && hotel.room_types.length > 0 ? (
-            <div className="space-y-6">
-              {hotel.room_types.map((room) => (
-                <RoomTypeCard 
-                  key={room.id}
-                  id={room.id}
-                  name={room.name}
-                  description={room.description}
-                  base_price={Number(room.base_price)}
-                  occupancy_adults={room.max_occupancy}
-                  room_size={room.room_size}
-                  type_images={room.type_images}
-                  room_bed_types={room.room_bed_types}
-                  room_properties={room.room_properties}
-                  available_rooms_count={room.room_details.length}
-                  onViewDetails={() => console.log('Open details for', room.name)}
-                  onReserve={(quantity) => console.log('Reserve', quantity, 'rooms of type', room.name)}
-                />
-              ))}
-            </div>
+            <RoomsSectionClient
+              roomTypes={hotel.room_types.map((room) => ({
+                id: room.id,
+                name: room.name,
+                description: room.description,
+                base_price: Number(room.base_price),
+                max_occupancy: room.max_occupancy,
+                room_size: room.room_size,
+                type_images: room.type_images,
+                room_bed_types: room.room_bed_types,
+                room_properties: room.room_properties,
+                available_rooms_count: room.room_details.length,
+              }))}
+              hotelSlug={hotel.slug}
+            />
           ) : (
              <div className="flex flex-col items-center justify-center p-12 bg-secondary/20 rounded-3xl border border-border/50">
                <h3 className="text-xl font-semibold mb-2">No rooms available</h3>

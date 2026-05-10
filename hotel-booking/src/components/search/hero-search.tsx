@@ -24,6 +24,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 export interface SearchSuggestion {
@@ -52,12 +53,26 @@ const SearchBar = ({
     const [rooms, setRooms] = useState(1);
 
     const [isGuestOpen, setIsGuestOpen] = useState(false);
+
+    // Hotel type filter pills
+    const [hotelTypeOptions, setHotelTypeOptions] = useState<{ id: number; name: string }[]>([]);
+    const [selectedHotelTypes, setSelectedHotelTypes] = useState<string[]>([]);
     
     // Suggestions state
     const [suggestions, setSuggestions] = useState<{ hotels: SearchSuggestion[]; cities: SearchSuggestion[] }>({ hotels: [], cities: [] });
     const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
     const locationInputRef = useRef<HTMLInputElement>(null);
     const suggestionsRef = useRef<HTMLDivElement>(null);
+
+    // Fetch hotel types for filter pills
+    useEffect(() => {
+        fetch('/api/public/hotel-types')
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) setHotelTypeOptions(data.data);
+            })
+            .catch(() => {});
+    }, []);
 
     const handleLocationChange = async (value: string) => {
         setSearchLocation(value);
@@ -118,6 +133,7 @@ const SearchBar = ({
         if (date?.to) params.set("check_out", format(date.to, "yyyy-MM-dd"));
         params.set("guests", String(guests));
         params.set("rooms", String(rooms));
+        if (selectedHotelTypes.length > 0) params.set("hotel_types", selectedHotelTypes.join(","));
         router.push(`/search?${params.toString()}`);
     };
 
@@ -379,25 +395,35 @@ const SearchBar = ({
                     </div>
                 </div>
 
-                {/* Optional Filter Area */}
-                {showFilters && (
-                    <div className="mt-2 pt-2">
+                {/* Optional Filter Area — Real API-driven hotel type pills */}
+                {showFilters && hotelTypeOptions.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-border/40">
                         <div className="flex flex-wrap gap-2">
-                            <Button variant="outline" size="sm">
-                                Hotel
-                            </Button>
-
-                            <Button variant="outline" size="sm">
-                                Apartment
-                            </Button>
-
-                            <Button variant="outline" size="sm">
-                                Villa
-                            </Button>
-
-                            <Button variant="outline" size="sm">
-                                Suite
-                            </Button>
+                            {hotelTypeOptions.map((opt) => {
+                                const checked = selectedHotelTypes.includes(opt.name);
+                                return (
+                                    <label
+                                        key={opt.id}
+                                        className={cn(
+                                            "inline-flex items-center gap-1.5 cursor-pointer select-none rounded-full border px-3 py-1 text-xs font-medium transition-colors",
+                                            checked
+                                                ? "border-primary/60 bg-primary/10 text-primary"
+                                                : "border-border/50 bg-muted/30 text-muted-foreground hover:border-primary/40"
+                                        )}
+                                    >
+                                        <Checkbox
+                                            checked={checked}
+                                            onCheckedChange={(v) => {
+                                                setSelectedHotelTypes(prev =>
+                                                    v ? [...new Set([...prev, opt.name])] : prev.filter(x => x !== opt.name)
+                                                );
+                                            }}
+                                            className="h-3 w-3"
+                                        />
+                                        {opt.name}
+                                    </label>
+                                );
+                            })}
                         </div>
                     </div>
                 )}

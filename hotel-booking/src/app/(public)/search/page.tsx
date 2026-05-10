@@ -86,133 +86,154 @@ function SearchContent() {
     ? `Hotels in "${location}"`
     : "Search Results";
 
+  // Navbar is fixed h-20 (80px). Search bar section is fixed below it.
+  // We measure the search bar height by giving it a known wrapper height via ref if needed,
+  // but here we use --search-bar-h CSS variable set inline for a single source of truth.
+  // Navbar: 80px (top-0 → top-20)
+  // Search bar section: py-4 (32px) + card p-4 (32px) + label+input ~68px = ~132px
+  // Total offset = 212px
+
+  const OFFSET = 212; // px — distance content must clear (navbar + search bar)
+
   return (
-    <div className="flex flex-col min-h-screen bg-background pt-20">
-      {/* Sticky search bar — sits flush below the fixed navbar */}
-      <div className="sticky top-20 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 py-4 px-4 shadow-sm">
+    <div className="min-h-screen bg-background">
+
+      {/* ── Fixed search bar (sits flush under the fixed navbar) ── */}
+      <div
+        className="fixed left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm py-4 px-4"
+        style={{ top: 80 }} // navbar height = h-20 = 80px
+      >
         <SearchBar showFilters={false} />
       </div>
 
-      <div className="container mx-auto px-4 md:px-8 py-8 max-w-7xl">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar — desktop */}
-          <aside className="hidden lg:block w-72 shrink-0">
-            <div className="sticky top-[calc(5rem+5rem)] max-h-[calc(100vh-10rem)] overflow-y-auto">
-              <HotelFilterSidebar />
-            </div>
-          </aside>
+      {/* ── Content wrapper — pushed down by navbar + search bar ── */}
+      <div style={{ paddingTop: OFFSET }}>
+        <div className="container mx-auto px-4 md:px-8 py-6 max-w-7xl">
+          <div className="flex flex-col lg:flex-row gap-8">
 
-          {/* Mobile sidebar toggle */}
-          <div className="lg:hidden mb-4">
-            <Button
-              variant="outline"
-              className="w-full gap-2"
-              onClick={() => setShowMobileSidebar(!showMobileSidebar)}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-              {showMobileSidebar ? "Hide Filters" : "Show Filters"}
-            </Button>
-            {showMobileSidebar && (
-              <div className="mt-4 p-4 bg-card rounded-2xl border border-border/50">
+            {/* ── Sidebar — desktop: sticky, NO overflow on sticky container ── */}
+            <aside className="hidden lg:block w-72 shrink-0">
+              <div
+                className="sticky"
+                style={{ top: OFFSET }}
+              >
                 <HotelFilterSidebar />
               </div>
-            )}
-          </div>
+            </aside>
 
-          {/* Main content */}
-          <main className="flex-1 min-w-0">
-            {/* Header row */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{pageTitle}</h1>
-                {!isLoading && (
-                  <p className="text-muted-foreground text-sm mt-1">
-                    {totalResults === 0
-                      ? "No properties found"
-                      : `${totalResults} propert${totalResults === 1 ? "y" : "ies"} found`}
-                  </p>
-                )}
-              </div>
-
-              {/* Sort dropdown */}
-              <div className="flex items-center gap-2 shrink-0">
-                <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value)}
-                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
+            {/* ── Mobile sidebar toggle ── */}
+            <div className="lg:hidden mb-4">
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => setShowMobileSidebar(!showMobileSidebar)}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                {showMobileSidebar ? "Hide Filters" : "Show Filters"}
+              </Button>
+              {showMobileSidebar && (
+                <div className="mt-4 p-4 bg-card rounded-2xl border border-border/50">
+                  <HotelFilterSidebar />
+                </div>
+              )}
             </div>
 
-            {/* Results grid */}
-            {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <HotelCardSkeleton key={i} />
-                ))}
-              </div>
-            ) : hotels.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {hotels.map((hotel) => (
-                    <div key={hotel.id} className="h-[420px]">
-                      <HotelCard {...hotel} />
-                    </div>
-                  ))}
+            {/* ── Main content ── */}
+            <main className="flex-1 min-w-0">
+              {/* Header row */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{pageTitle}</h1>
+                  {!isLoading && (
+                    <p className="text-muted-foreground text-sm mt-1">
+                      {totalResults === 0
+                        ? "No properties found"
+                        : `${totalResults} propert${totalResults === 1 ? "y" : "ies"} found`}
+                    </p>
+                  )}
                 </div>
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center items-center gap-2 mt-10">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage <= 1}
-                      onClick={() => handlePageChange(currentPage - 1)}
-                    >
-                      Previous
-                    </Button>
-                    <span className="text-sm text-muted-foreground px-3">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage >= totalPages}
-                      onClick={() => handlePageChange(currentPage + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-24 text-center bg-card rounded-3xl border border-border/50">
-                <Building2 className="h-16 w-16 text-muted-foreground/20 mb-4" />
-                <h3 className="text-xl font-semibold mb-2">No properties found</h3>
-                <p className="text-muted-foreground max-w-sm">
-                  Try adjusting your search criteria or removing some filters to see more results.
-                </p>
-                <Button
-                  variant="outline"
-                  className="mt-6"
-                  onClick={() => router.push("/search")}
-                >
-                  Clear all filters
-                </Button>
+                {/* Sort dropdown */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value)}
+                    className="h-9 rounded-lg border border-input bg-background px-3 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  >
+                    {SORT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-            )}
-          </main>
+
+              {/* Results grid */}
+              {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <HotelCardSkeleton key={i} />
+                  ))}
+                </div>
+              ) : hotels.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {hotels.map((hotel) => (
+                      <div key={hotel.id} className="h-[420px]">
+                        <HotelCard {...hotel} />
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-10">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage <= 1}
+                        onClick={() => handlePageChange(currentPage - 1)}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm text-muted-foreground px-3">
+                        Page {currentPage} of {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-24 text-center bg-card rounded-3xl border border-border/50">
+                  <Building2 className="h-16 w-16 text-muted-foreground/20 mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No properties found</h3>
+                  <p className="text-muted-foreground max-w-sm">
+                    Try adjusting your search criteria or removing some filters to see more results.
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="mt-6"
+                    onClick={() => router.push("/search")}
+                  >
+                    Clear all filters
+                  </Button>
+                </div>
+              )}
+            </main>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
 
 export default function SearchPage() {
   return (

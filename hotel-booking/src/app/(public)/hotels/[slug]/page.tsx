@@ -24,8 +24,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function HotelDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function HotelDetailPage({ 
+  params,
+  searchParams
+}: { 
+  params: Promise<{ slug: string }>,
+  searchParams: Promise<{ check_in?: string, check_out?: string, guests?: string }>
+}) {
   const { slug } = await params;
+  const search = await searchParams;
   
   const hotel = await prisma.hotels.findUnique({
     where: { 
@@ -221,6 +228,9 @@ export default async function HotelDetailPage({ params }: { params: Promise<{ sl
                 available_rooms_count: room.room_details.length,
               }))}
               hotelSlug={hotel.slug}
+              checkIn={search.check_in}
+              checkOut={search.check_out}
+              guests={search.guests ? parseInt(search.guests) : 1}
             />
           ) : (
              <div className="flex flex-col items-center justify-center p-12 bg-secondary/20 rounded-3xl border border-border/50">

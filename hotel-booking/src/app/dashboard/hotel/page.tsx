@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, ComponentType } from 'react'
 import { 
-  Building2, 
   Users, 
   Calendar, 
   DollarSign, 
@@ -13,7 +12,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Plus,
-  ArrowUpRight
+  ArrowUpRight,
+  Upload
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,11 @@ import { useToast } from '@/hooks/use-hooks'
 import Link from 'next/link'
 
 interface DashboardStats {
+  hotel: {
+    id: number
+    name: string
+    approval_status: 'DRAFT' | 'PUBLISHED' | 'SUSPENDED'
+  }
   roomTypes: number
   rooms: {
     total: number
@@ -50,7 +55,15 @@ interface DashboardStats {
   }[]
 }
 
-const StatCard = ({ title, value, icon: Icon, description, loading }: any) => (
+interface StatCardProps {
+  title: string
+  value: string | number
+  icon: ComponentType<{ className?: string }>
+  description?: string
+  loading?: boolean
+}
+
+const StatCard = ({ title, value, icon: Icon, description, loading }: StatCardProps) => (
   <Card className="glass-strong">
     <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
       <CardTitle className="text-sm font-medium">{title}</CardTitle>
@@ -74,6 +87,32 @@ export default function HotelDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState<DashboardStats | null>(null)
 
+  const handlePublishHotel = async () => {
+    if (!stats?.hotel.id) return
+
+    try {
+      const res = await fetch(`/api/hotel-admin/hotel/publish`, {
+        method: 'POST',
+        credentials: 'include'
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast({ title: 'Success', description: 'Hotel published successfully' })
+        // Refresh the stats
+        const res2 = await fetch('/api/hotel-admin/overview', { credentials: 'include' })
+        const data2 = await res2.json()
+        if (data2.success) {
+          setStats(data2.data)
+        }
+      } else {
+        toast({ title: 'Error', description: data.message || 'Failed to publish hotel', variant: 'destructive' })
+      }
+    } catch (error) {
+      console.error('Failed to publish hotel:', error)
+      toast({ title: 'Error', description: 'Failed to publish hotel', variant: 'destructive' })
+    }
+  }
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -83,6 +122,7 @@ export default function HotelDashboardPage() {
           setStats(data.data)
         }
       } catch (error) {
+        console.error('Failed to load dashboard:', error)
         toast({ title: 'Error', description: 'Failed to load dashboard', variant: 'destructive' })
       } finally {
         setLoading(false)
@@ -97,9 +137,26 @@ export default function HotelDashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard Overview</h1>
-          <p className="text-muted-foreground mt-1">Manage your hotel operations and view real-time statistics.</p>
+          <p className="text-muted-foreground mt-1">
+            Manage your hotel operations and view real-time statistics{stats?.hotel?.name ? ` for ${stats.hotel.name}` : ''}.
+          </p>
         </div>
         <div className="flex items-center gap-2">
+          {stats?.hotel?.approval_status === 'DRAFT' && (
+            <Button onClick={handlePublishHotel} className="gap-2">
+              <Upload className="w-4 h-4" /> Publish Hotel
+            </Button>
+          )}
+          {stats?.hotel?.approval_status === 'PUBLISHED' && (
+            <Button variant="outline" disabled className="gap-2">
+              <CheckCircle2 className="w-4 h-4" /> Published
+            </Button>
+          )}
+          {stats?.hotel?.approval_status === 'SUSPENDED' && (
+            <Button variant="outline" disabled className="gap-2">
+              <AlertCircle className="w-4 h-4" /> Suspended
+            </Button>
+          )}
           <Link href="/dashboard/hotel/room-types/new">
             <Button className="gap-2">
               <Plus className="w-4 h-4" /> Add Room Type

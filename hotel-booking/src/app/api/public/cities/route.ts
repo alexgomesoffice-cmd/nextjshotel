@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const cities = await prisma.cities.findMany({
       where: {
         is_active: true,
-        ...(q ? { name: { contains: q, mode: 'insensitive' } } : {}),
+        ...(q ? { name: { contains: q } } : {}),
       },
       orderBy: { name: 'asc' },
       take: q ? 8 : undefined, // limit suggestions to 8 when searching

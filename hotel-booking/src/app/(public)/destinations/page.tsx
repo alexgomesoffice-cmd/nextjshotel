@@ -45,7 +45,7 @@ function DestinationsContent() {
           </div>
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
             Explore{" "}
-            <span className="bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Destinations
             </span>
           </h1>
@@ -79,11 +79,11 @@ function DestinationsContent() {
                     className="object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                 ) : (
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/60 via-primary/40 to-primary/20" />
+                  <div className="absolute inset-0 bg-linear-to-br from-primary/60 via-primary/40 to-primary/20" />
                 )}
 
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 group-hover:from-black/90" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent transition-opacity duration-300 group-hover:from-black/90" />
 
                 {/* Content */}
                 <div className="absolute inset-0 flex flex-col justify-end p-6">

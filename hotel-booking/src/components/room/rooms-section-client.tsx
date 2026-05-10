@@ -61,9 +61,23 @@ export default function RoomsSectionClient({
     params.set("hotel", hotelSlug);
     params.set("room_type", room.id.toString());
     params.set("quantity", quantity.toString());
-    if (checkIn) params.set("check_in", checkIn);
-    if (checkOut) params.set("check_out", checkOut);
-    if (guests) params.set("guests", guests.toString());
+    
+    // Provide default dates if none were selected in the search bar
+    let finalCheckIn = checkIn;
+    let finalCheckOut = checkOut;
+    
+    if (!finalCheckIn || !finalCheckOut) {
+      const today = new Date();
+      const tomorrow = new Date();
+      tomorrow.setDate(today.getDate() + 1);
+      finalCheckIn = today.toISOString().split('T')[0];
+      finalCheckOut = tomorrow.toISOString().split('T')[0];
+    }
+
+    params.set("check_in", finalCheckIn);
+    params.set("check_out", finalCheckOut);
+    params.set("guests", (guests || 1).toString());
+    
     router.push(`/bookings/new?${params.toString()}`);
   };
 

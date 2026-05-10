@@ -30,7 +30,8 @@ export async function GET(req: NextRequest) {
       bookingsCheckedIn,
       bookingsCheckedOut,
       totalRevenueData,
-      recentBookings
+      recentBookings,
+      hotel
     ] = await Promise.all([
       // Room Types
       prisma.room_types.count({ where: { hotel_id: hotelId, is_active: true } }),
@@ -63,12 +64,19 @@ export async function GET(req: NextRequest) {
         include: {
           end_user: { select: { name: true } }
         }
+      }),
+
+      // Hotel Details
+      prisma.hotels.findUnique({
+        where: { id: hotelId },
+        select: { id: true, name: true, approval_status: true }
       })
     ])
 
     return NextResponse.json({
       success: true,
       data: {
+        hotel: hotel || { id: hotelId, name: 'Unknown Hotel', approval_status: 'DRAFT' },
         roomTypes: roomTypesCount,
         rooms: {
           total: roomsTotal,

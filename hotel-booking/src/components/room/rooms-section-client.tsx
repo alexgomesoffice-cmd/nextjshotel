@@ -1,25 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import RoomTypeCard from "@/components/room/room-type-card";
+// filepath: src/components/room/rooms-section-client.tsx
+// Manages quantities (variantId → qty) across all room type cards.
+// Derives selectedVariants list for the booking sidebar.
+// Renders: room type cards (left) + modal.
+
+import { useState, useMemo } from "react";
+import RoomTypeCard, { type RoomVariant } from "@/components/room/room-type-card";
 import RoomDetailModal from "@/components/room/room-detail-modal";
+import type { SelectedVariant } from "@/components/room/booking-sidebar";
 
-interface RoomTypeImage {
-  id: number;
-  image_url: string;
-}
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface RoomBedType {
-  bed_type: { name: string };
-  count: number;
-}
+interface RoomTypeImage { id: number; image_url: string; }
+interface RoomBedType { bed_type: { name: string }; count: number; }
+interface RoomProperty { amenity: { name: string; icon: string | null }; }
 
-interface RoomProperty {
-  amenity: { name: string; icon: string | null };
-}
-
-interface RoomType {
+export interface RoomType {
   id: number;
   name: string;
   description: string | null;
@@ -30,99 +27,76 @@ interface RoomType {
   room_bed_types: RoomBedType[];
   room_properties: RoomProperty[];
   available_rooms_count: number;
+  room_variants: RoomVariant[];
 }
 
 interface RoomsSectionClientProps {
   roomTypes: RoomType[];
-  hotelSlug: string;
-  checkIn?: string;
-  checkOut?: string;
-  guests?: number;
+  quantities: Record<number, number>;
+  onQuantityChange: (variantId: number, qty: number) => void;
 }
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function RoomsSectionClient({
   roomTypes,
-  hotelSlug,
-  checkIn,
-  checkOut,
-  guests,
+  quantities,
+  onQuantityChange,
 }: RoomsSectionClientProps) {
-  const router = useRouter();
-  const [selectedRoomType, setSelectedRoomType] = useState<RoomType | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalRoom, setModalRoom] = useState<RoomType | null>(null);
 
-  const handleViewDetails = (room: RoomType) => {
-    setSelectedRoomType(room);
-    setModalOpen(true);
-  };
-
-  const handleReserve = (room: RoomType, quantity: number) => {
-    const params = new URLSearchParams();
-    params.set("hotel", hotelSlug);
-    params.set("room_type", room.id.toString());
-    params.set("quantity", quantity.toString());
-    
-    // Provide default dates if none were selected in the search bar
-    let finalCheckIn = checkIn;
-    let finalCheckOut = checkOut;
-    
-    if (!finalCheckIn || !finalCheckOut) {
-      const today = new Date();
-      const tomorrow = new Date();
-      tomorrow.setDate(today.getDate() + 1);
-      finalCheckIn = today.toISOString().split('T')[0];
-      finalCheckOut = tomorrow.toISOString().split('T')[0];
-    }
-
-    params.set("check_in", finalCheckIn);
-    params.set("check_out", finalCheckOut);
-    params.set("guests", (guests || 1).toString());
-    
-    router.push(`/bookings/new?${params.toString()}`);
-  };
-
-  // Convert RoomType to modal's expected shape
-  const modalRoomType = selectedRoomType
+  const modalData = modalRoom
     ? {
-        id: selectedRoomType.id,
-        name: selectedRoomType.name,
-        description: selectedRoomType.description,
-        base_price: selectedRoomType.base_price,
-        occupancy_adults: selectedRoomType.max_occupancy,
-        room_size: selectedRoomType.room_size,
-        type_images: selectedRoomType.type_images,
-        room_bed_types: selectedRoomType.room_bed_types,
-        room_properties: selectedRoomType.room_properties,
-        available_rooms_count: selectedRoomType.available_rooms_count,
+        id: modalRoom.id,
+        name: modalRoom.name,
+        description: modalRoom.description,
+        base_price: modalRoom.base_price,
+        occupancy_adults: modalRoom.max_occupancy,
+        room_size: modalRoom.room_size,
+        type_images: modalRoom.type_images,
+        room_bed_types: modalRoom.room_bed_types,
+        room_properties: modalRoom.room_properties,
+        available_rooms_count: modalRoom.available_rooms_count,
       }
     : null;
 
+  // Build per-room-type quantity map (only variants belonging to this room type)
+  const getQuantitiesForRoomType = (roomType: RoomType): Record<number, number> => {
+    const result: Record<number, number> = {};
+    for (const variant of roomType.room_variants) {
+      result[variant.id] = quantities[variant.id] ?? 0;
+    }
+    return result;
+  };
+
   return (
     <>
-      <div className="space-y-4">
-        {roomTypes.map((room) => (
+      <div className="space-y-3">
+        {roomTypes.map((roomType) => (
           <RoomTypeCard
-            key={room.id}
-            id={room.id}
-            name={room.name}
-            description={room.description}
-            base_price={room.base_price}
-            occupancy_adults={room.max_occupancy}
-            room_size={room.room_size}
-            type_images={room.type_images}
-            room_bed_types={room.room_bed_types}
-            room_properties={room.room_properties}
-            available_rooms_count={room.available_rooms_count}
-            onViewDetails={() => handleViewDetails(room)}
-            onReserve={(quantity) => handleReserve(room, quantity)}
+            key={roomType.id}
+            id={roomType.id}
+            name={roomType.name}
+            description={roomType.description}
+            base_price={roomType.base_price}
+            occupancy_adults={roomType.max_occupancy}
+            room_size={roomType.room_size}
+            type_images={roomType.type_images}
+            room_bed_types={roomType.room_bed_types}
+            room_properties={roomType.room_properties}
+            available_rooms_count={roomType.available_rooms_count}
+            room_variants={roomType.room_variants}
+            onViewDetails={() => setModalRoom(roomType)}
+            selectedQuantities={getQuantitiesForRoomType(roomType)}
+            onQuantityChange={onQuantityChange}
           />
         ))}
       </div>
 
       <RoomDetailModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        roomType={modalRoomType}
+        isOpen={!!modalRoom}
+        onClose={() => setModalRoom(null)}
+        roomType={modalData}
       />
     </>
   );

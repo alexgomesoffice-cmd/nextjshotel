@@ -3,38 +3,27 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Users,
-  Bed,
-  Check,
-  Info,
-  Wind,
-  Tv,
-  Coffee,
-  Bath,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
+  Users, Bed, Wind, Tv, Coffee, Bath, Check,
+  ChevronUp, ChevronLeft, ChevronRight,
+  Maximize2, Cigarette, PawPrint, ShieldAlert,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface RoomTypeImage {
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+interface RoomTypeImage { id: number; image_url: string; }
+interface RoomBedType { bed_type: { name: string }; count: number; }
+interface RoomProperty { amenity: { name: string; icon: string | null }; }
+
+export interface RoomVariant {
   id: number;
-  image_url: string;
-}
-
-interface RoomBedType {
-  bed_type: {
-    name: string;
-  };
-  count: number;
-}
-
-interface RoomProperty {
-  amenity: {
-    name: string;
-    icon: string | null;
-  };
+  room_number: string;
+  price: number;
+  ac: boolean;
+  smoking_allowed: boolean;
+  pet_allowed: boolean;
+  notes: string | null;
+  room_images: { id: number; image_url: string }[];
 }
 
 export interface RoomTypeCardProps {
@@ -48,277 +37,322 @@ export interface RoomTypeCardProps {
   room_bed_types: RoomBedType[];
   room_properties: RoomProperty[];
   available_rooms_count: number;
+  room_variants: RoomVariant[];
   onViewDetails?: () => void;
-  onReserve?: (quantity: number) => void;
+  selectedQuantities: Record<number, number>;
+  onQuantityChange: (variantId: number, quantity: number) => void;
 }
 
-const getIconForAmenity = (name: string) => {
-  const lower = name.toLowerCase();
-  if (lower.includes("ac") || lower.includes("air")) return <Wind className="h-4 w-4" />;
-  if (lower.includes("tv") || lower.includes("television")) return <Tv className="h-4 w-4" />;
-  if (lower.includes("coffee") || lower.includes("tea")) return <Coffee className="h-4 w-4" />;
-  if (lower.includes("bath") || lower.includes("shower")) return <Bath className="h-4 w-4" />;
-  return <Check className="h-4 w-4 text-primary" />;
-};
+// ─── Variant Row ─────────────────────────────────────────────────────────────
 
-const RoomTypeCard = ({
-  name,
-  description,
-  base_price,
-  occupancy_adults,
-  room_size,
-  type_images,
-  room_bed_types,
-  room_properties,
-  available_rooms_count,
-  onViewDetails,
-  onReserve,
-}: RoomTypeCardProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [selectedQuantity, setSelectedQuantity] = useState(1);
+interface VariantRowProps {
+  variant: RoomVariant;
+  roomName: string;
+  typeImages: RoomTypeImage[];
+  bedTypes: RoomBedType[];
+  amenities: RoomProperty[];
+  quantity: number;
+  available: number;
+  onQtyChange: (qty: number) => void;
+  onViewDetails?: () => void;
+}
 
-  const coverImage = type_images?.[0]?.image_url || null;
+function VariantRow({
+  variant, roomName, typeImages, bedTypes, amenities,
+  quantity, available, onQtyChange, onViewDetails,
+}: VariantRowProps) {
+  const images = variant.room_images.length > 0 ? variant.room_images : typeImages;
+  const [imgIdx, setImgIdx] = useState(0);
+  const isSelected = quantity > 0;
 
-  const handlePrevImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev === 0 ? type_images.length - 1 : prev - 1));
-  };
-
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCurrentImageIndex((prev) => (prev === type_images.length - 1 ? 0 : prev + 1));
-  };
+  const bedLabel = bedTypes.map(b => b.bed_type.name).join(", ");
+  const title = bedLabel ? `${roomName} • ${bedLabel}` : roomName;
 
   return (
-    <div className="bg-card rounded-3xl border border-border/50 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300">
-
-      {/* ── Collapsed header row (always visible) ── */}
-      <div
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-4 p-4 cursor-pointer hover:bg-secondary/20 transition-colors"
+    <div className={cn(
+      "flex min-h-[130px] border-t border-border/20 transition-colors",
+      isSelected ? "bg-primary/5" : "bg-transparent"
+    )}>
+      {/* ── Image ── */}
+      <button
+        onClick={onViewDetails}
+        tabIndex={-1}
+        className="relative w-[130px] sm:w-[150px] shrink-0 group overflow-hidden bg-muted self-stretch"
       >
-        {/* Small thumbnail */}
-        <div
-          className="relative w-24 h-20 rounded-xl overflow-hidden shrink-0 bg-muted"
-          onClick={(e) => {
-            if (onViewDetails) {
-              e.stopPropagation();
-              onViewDetails();
-            }
-          }}
-        >
-          {coverImage ? (
+        {images.length > 0 ? (
+          <>
             <Image
-              src={coverImage}
-              alt={name}
+              src={images[imgIdx].image_url}
+              alt={roomName}
               fill
-              className="object-cover hover:scale-105 transition-transform duration-300"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <Bed className="h-8 w-8 text-muted-foreground/30" />
-            </div>
-          )}
-        </div>
+            {images.length > 1 && (
+              <>
+                <button
+                  onClick={e => { e.stopPropagation(); setImgIdx(p => p === 0 ? images.length - 1 : p - 1); }}
+                  className="absolute left-1 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-black/60 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                >
+                  <ChevronLeft className="h-3 w-3" />
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setImgIdx(p => p === images.length - 1 ? 0 : p + 1); }}
+                  className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-black/60 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                >
+                  <ChevronRight className="h-3 w-3" />
+                </button>
+                <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1">
+                  {images.map((_, i) => (
+                    <div key={i} className={cn("rounded-full transition-all", i === imgIdx ? "w-3 h-1 bg-white" : "w-1 h-1 bg-white/50")} />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <Bed className="h-10 w-10 text-muted-foreground/20" />
+          </div>
+        )}
+      </button>
 
-        {/* Name + quick info */}
-        <div className="flex-1 min-w-0">
-          <h3
-            className="font-bold text-lg hover:text-primary transition-colors cursor-pointer truncate"
-            onClick={(e) => {
-              if (onViewDetails) {
-                e.stopPropagation();
-                onViewDetails();
-              }
-            }}
-          >
-            {name}
-          </h3>
-          <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Users className="h-3.5 w-3.5 text-primary" />
-              Up to {occupancy_adults} guests
+      {/* ── Content (middle) ── */}
+      <div className="flex flex-1 min-w-0 gap-4 p-4">
+        {/* Left: info */}
+        <div className="flex-1 min-w-0 space-y-2">
+          {/* Title + available badge */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm text-foreground">{title}</span>
+            <span className="text-xs text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
+              {available} available
             </span>
-            {room_size && (
-              <span className="hidden sm:flex items-center gap-1">
-                <span className="text-border">·</span>
-                {room_size}
+          </div>
+
+          {/* Guest / smoking / pet flags */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
+            <span className="flex items-center gap-1.5">
+              <Users className="h-3.5 w-3.5" /> 2 guests
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Cigarette className="h-3.5 w-3.5" />
+              {variant.smoking_allowed ? "Smoking" : "No smoking"}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <PawPrint className="h-3.5 w-3.5" />
+              {variant.pet_allowed ? "Pet friendly" : "No pets"}
+            </span>
+          </div>
+
+          {/* Amenity checkmarks */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            {variant.ac && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Check className="h-3 w-3 text-primary/80 shrink-0" /> AC
               </span>
             )}
+            {amenities.map((prop, i) => (
+              <span key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Check className="h-3 w-3 text-primary/80 shrink-0" /> {prop.amenity.name}
+              </span>
+            ))}
           </div>
-          {available_rooms_count <= 3 && available_rooms_count > 0 && (
-            <span className="text-xs text-destructive font-medium mt-0.5 block">
-              Only {available_rooms_count} left!
-            </span>
+
+          {/* Notes / policy */}
+          {variant.notes && (
+            <p className="flex items-center gap-1 text-xs text-destructive">
+              <ShieldAlert className="h-3 w-3 shrink-0" /> {variant.notes}
+            </p>
           )}
         </div>
 
-        {/* Price + expand icon */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="text-right hidden sm:block">
-            <p className="text-xs text-muted-foreground">From</p>
-            <p className="font-bold text-lg">৳{Number(base_price).toLocaleString()}</p>
+        {/* Middle-right: price + policy badge */}
+        <div className="flex flex-col items-end justify-start gap-2 shrink-0 min-w-[100px]">
+          <div className="text-right">
+            <p className="text-primary font-bold text-xl leading-tight">
+              ৳{Number(variant.price).toLocaleString()}
+            </p>
+            <p className="text-xs text-muted-foreground">per night</p>
           </div>
-          <ChevronDown
-            className={cn(
-              "h-5 w-5 text-muted-foreground transition-transform duration-300",
-              isExpanded && "rotate-180"
-            )}
-          />
+
+          {/* Cancellation label */}
+          <p className={cn(
+            "text-xs font-medium",
+            variant.notes ? "text-destructive" : "text-muted-foreground"
+          )}>
+            {variant.notes ? "Non-refundable" : "Partially refundable"}
+          </p>
+        </div>
+
+        {/* Far-right: stepper */}
+        <div className="flex flex-col items-center justify-center gap-2 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => onQtyChange(Math.max(0, quantity - 1))}
+              disabled={quantity === 0}
+              className={cn(
+                "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
+                quantity > 0
+                  ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
+                  : "border-border/20 text-border/30 cursor-not-allowed"
+              )}
+            >
+              −
+            </button>
+            <span className="w-5 text-center text-sm font-semibold tabular-nums">{quantity}</span>
+            <button
+              onClick={() => onQtyChange(Math.min(available, quantity + 1))}
+              disabled={quantity >= available}
+              className={cn(
+                "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
+                quantity < available
+                  ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
+                  : "border-border/20 text-border/30 cursor-not-allowed"
+              )}
+            >
+              +
+            </button>
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* ── Mobile price (visible only on small screens) ── */}
-      <div className="sm:hidden px-4 pb-2 flex items-center justify-between border-t border-border/30 pt-2">
-        <span className="text-xs text-muted-foreground">From</span>
-        <span className="font-bold">৳{Number(base_price).toLocaleString()}</span>
-      </div>
+// ─── Room Type Card (Collapsed header) ───────────────────────────────────────
 
-      {/* ── Expanded content ── */}
-      {isExpanded && (
-        <div className="border-t border-border/50 animate-in slide-in-from-top-2 duration-200">
-          <div className="flex flex-col md:flex-row gap-0">
+const RoomTypeCard = ({
+  name, description, base_price, occupancy_adults, room_size,
+  type_images, room_bed_types, room_properties, available_rooms_count,
+  room_variants, onViewDetails, selectedQuantities, onQuantityChange,
+}: RoomTypeCardProps) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const coverImage = type_images?.[0]?.image_url || null;
+  const totalSelected = Object.values(selectedQuantities).reduce((a, b) => a + b, 0);
 
-            {/* Image carousel */}
-            <div className="relative w-full md:w-2/5 h-56 md:h-auto min-h-[220px] bg-muted shrink-0 group/img">
-              {type_images && type_images.length > 0 ? (
-                <>
-                  <Image
-                    src={type_images[currentImageIndex].image_url}
-                    alt={name}
-                    fill
-                    className="object-cover cursor-pointer"
-                    onClick={onViewDetails}
-                  />
+  return (
+    <div className={cn(
+      "rounded-2xl border overflow-hidden bg-card transition-all duration-200",
+      isExpanded || totalSelected > 0
+        ? "border-primary/70"
+        : "border-border/30 hover:border-border/50"
+    )}>
+      {/* ── Collapsed Header ── */}
+      <div
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="cursor-pointer hover:bg-white/5 transition-colors select-none"
+      >
+        {/* Row 1: icon + name/desc + price + chevron */}
+        <div className="flex items-start gap-3 px-4 pt-4 pb-3">
+          {/* Square icon */}
+          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            {coverImage ? (
+              <div className="relative w-11 h-11 rounded-xl overflow-hidden">
+                <Image src={coverImage} alt={name} fill className="object-cover" />
+              </div>
+            ) : (
+              <Bed className="h-5 w-5 text-primary" />
+            )}
+          </div>
 
-                  {type_images.length > 1 && (
-                    <div className="absolute inset-0 flex items-center justify-between p-2 opacity-0 group-hover/img:opacity-100 transition-opacity">
-                      <button
-                        onClick={handlePrevImage}
-                        className="h-8 w-8 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-colors"
-                      >
-                        <ChevronLeft className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={handleNextImage}
-                        className="h-8 w-8 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md flex items-center justify-center text-white transition-colors"
-                      >
-                        <ChevronRight className="h-5 w-5" />
-                      </button>
-                    </div>
-                  )}
+          {/* Name + description */}
+          <div className="flex-1 min-w-0 pt-0.5">
+            <h3
+              className="font-bold text-base text-foreground leading-tight cursor-pointer hover:text-primary transition-colors"
+              onClick={e => { if (onViewDetails) { e.stopPropagation(); onViewDetails(); } }}
+            >
+              {name}
+            </h3>
+            {description && (
+              <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{description}</p>
+            )}
+          </div>
 
-                  {type_images.length > 1 && (
-                    <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-10">
-                      {type_images.map((_, idx) => (
-                        <div
-                          key={idx}
-                          className={`h-1.5 rounded-full transition-all duration-300 ${
-                            idx === currentImageIndex
-                              ? "w-4 bg-white"
-                              : "w-1.5 bg-white/50"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <Bed className="h-12 w-12 text-muted-foreground/30" />
-                </div>
-              )}
+          {/* Price + chevron */}
+          <div className="flex items-start gap-3 shrink-0">
+            <div className="text-right pt-0.5">
+              <p className="text-xs text-muted-foreground leading-none">from</p>
+              <p className="text-2xl font-bold text-primary leading-tight mt-0.5">
+                ৳{Number(base_price).toLocaleString()}
+              </p>
+              <p className="text-xs text-muted-foreground leading-none mt-0.5">per night</p>
             </div>
-
-            {/* Details */}
-            <div className="flex flex-col flex-1 p-5 md:p-6">
-
-              {/* Description */}
-              {description && (
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                  {description}
-                </p>
-              )}
-
-              {/* Beds & top amenities */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 mb-6">
-                {room_bed_types?.map((bed, idx) => (
-                  <div key={`bed-${idx}`} className="flex items-center gap-2 text-sm">
-                    <Bed className="h-4 w-4 text-primary shrink-0" />
-                    <span>
-                      {bed.count}x {bed.bed_type.name}
-                    </span>
-                  </div>
-                ))}
-                {room_properties?.slice(0, 4).map((prop, idx) => (
-                  <div key={`amenity-${idx}`} className="flex items-center gap-2 text-sm">
-                    <span className="text-primary shrink-0">
-                      {getIconForAmenity(prop.amenity.name)}
-                    </span>
-                    <span className="truncate">{prop.amenity.name}</span>
-                  </div>
-                ))}
-                {room_properties && room_properties.length > 4 && (
-                  <button
-                    onClick={onViewDetails}
-                    className="text-sm text-primary font-medium hover:underline text-left flex items-center gap-1 mt-1"
-                  >
-                    +{room_properties.length - 4} more amenities
-                  </button>
-                )}
-              </div>
-
-              {/* Footer — price & reserve */}
-              <div className="mt-auto flex flex-col sm:flex-row items-center justify-between pt-4 border-t border-border/50 gap-4">
-                <div>
-                  <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                    Price per night
-                  </span>
-                  <p className="text-2xl font-bold">৳{Number(base_price).toLocaleString()}</p>
-                </div>
-
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  {onViewDetails && (
-                    <Button variant="outline" className="flex-1 sm:flex-none" onClick={onViewDetails}>
-                      <Info className="h-4 w-4 mr-2" />
-                      Details
-                    </Button>
-                  )}
-
-                  {available_rooms_count > 0 ? (
-                    <div className="flex items-center gap-2 flex-1 sm:flex-none">
-                      <select
-                        className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                        value={selectedQuantity}
-                        onChange={(e) => setSelectedQuantity(Number(e.target.value))}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        {[...Array(Math.min(10, available_rooms_count))].map((_, i) => (
-                          <option key={i + 1} value={i + 1}>
-                            {i + 1}
-                          </option>
-                        ))}
-                      </select>
-                      <Button
-                        className="flex-1 sm:flex-none"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onReserve && onReserve(selectedQuantity);
-                        }}
-                      >
-                        Reserve
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button disabled variant="secondary" className="flex-1 sm:flex-none w-full sm:w-[140px]">
-                      Sold Out
-                    </Button>
-                  )}
-                </div>
-              </div>
+            {/* Blue circle chevron */}
+            <div className={cn(
+              "h-9 w-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300",
+              "bg-primary text-white"
+            )}>
+              <ChevronUp className={cn("h-4 w-4 transition-transform duration-300", !isExpanded && "rotate-180")} />
             </div>
           </div>
+        </div>
+
+        {/* Row 2: stats */}
+        <div className="flex items-center gap-4 px-4 pb-2 text-sm text-muted-foreground flex-wrap">
+          {room_size && (
+            <span className="flex items-center gap-1.5">
+              <Maximize2 className="h-3.5 w-3.5" /> {room_size}
+            </span>
+          )}
+          <span className="flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5" /> Up to {occupancy_adults} guests
+          </span>
+          {room_bed_types?.map((b, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              <Bed className="h-3.5 w-3.5" /> {b.bed_type.name}
+            </span>
+          ))}
+          {available_rooms_count > 0 && (
+            <span className="text-primary font-semibold text-sm">{available_rooms_count} available</span>
+          )}
+        </div>
+
+        {/* Row 3: amenity pill chips (bordered) */}
+        {room_properties && room_properties.length > 0 && (
+          <div className="flex flex-wrap gap-2 px-4 pb-4">
+            {room_properties.slice(0, 7).map((prop, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 rounded-full px-3 py-1"
+              >
+                <Check className="h-3 w-3 text-primary shrink-0" />
+                {prop.amenity.name}
+              </span>
+            ))}
+            {room_properties.length > 7 && (
+              <button
+                onClick={e => { e.stopPropagation(); if (onViewDetails) onViewDetails(); }}
+                className="text-xs text-primary hover:underline"
+              >
+                +{room_properties.length - 7} more
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Expanded: Variant rows ── */}
+      {isExpanded && (
+        <div className="animate-in slide-in-from-top-1 duration-200">
+          {room_variants.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground border-t border-border/20">
+              No rooms currently available in this category.
+            </div>
+          ) : (
+            room_variants.map(variant => (
+              <VariantRow
+                key={variant.id}
+                variant={variant}
+                roomName={name}
+                typeImages={type_images}
+                bedTypes={room_bed_types}
+                amenities={room_properties}
+                quantity={selectedQuantities[variant.id] ?? 0}
+                available={available_rooms_count}
+                onQtyChange={qty => onQuantityChange(variant.id, qty)}
+                onViewDetails={onViewDetails}
+              />
+            ))
+          )}
         </div>
       )}
     </div>

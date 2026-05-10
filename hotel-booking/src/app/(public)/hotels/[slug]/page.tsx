@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { MapPin, Star, CheckCircle2 } from "lucide-react";
 
 import HotelImagesGalleryClient from "./hotel-images-client";
-import RoomsSectionClient from "@/components/room/rooms-section-client";
-import { Button } from "@/components/ui/button";
+import HotelDetailClient from "@/components/room/hotel-detail-client";
 
 // Revalidate every 1 hour (or use dynamic depending on booking frequency)
 export const revalidate = 3600;
@@ -62,8 +61,14 @@ export default async function HotelDetailPage({
             where: { 
               status: 'AVAILABLE',
               deleted_at: null
+            },
+            include: {
+              room_images: {
+                orderBy: { sort_order: 'asc' }
+              }
             }
           },
+
           type_images: {
             orderBy: { sort_order: 'asc' }
           },
@@ -138,83 +143,64 @@ export default async function HotelDetailPage({
           <HotelImagesGalleryClient images={hotel.images} />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          
-          {/* Main Details */}
-          <div className="lg:col-span-2 space-y-12">
-            
-            {/* Description */}
+        {/* About, Amenities, Policies — full width, no sidebar */}
+        <div className="space-y-12 mb-12">
+
+          {/* Description */}
+          <section>
+            <h2 className="text-2xl font-bold mb-4">About this property</h2>
+            <div className="prose prose-neutral dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
+              {hotel.detail?.description || hotel.detail?.short_description || "No description available."}
+            </div>
+          </section>
+
+          {/* Amenities */}
+          {allAmenities.length > 0 && (
             <section>
-              <h2 className="text-2xl font-bold mb-4">About this property</h2>
-              <div className="prose prose-neutral dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
-                {hotel.detail?.description || hotel.detail?.short_description || "No description available."}
+              <h2 className="text-2xl font-bold mb-6">Property Amenities</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6">
+                {allAmenities.map((amenity, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
+                    <span className="text-sm font-medium">{amenity}</span>
+                  </div>
+                ))}
               </div>
             </section>
+          )}
 
-            {/* Amenities */}
-            {allAmenities.length > 0 && (
-              <section>
-                <h2 className="text-2xl font-bold mb-6">Property Amenities</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6">
-                  {allAmenities.map((amenity, idx) => (
-                    <div key={idx} className="flex items-center gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                      <span className="text-sm font-medium">{amenity}</span>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Policies */}
-            {(hotel.detail?.check_in_time || hotel.detail?.check_out_time || hotel.detail?.cancellation_policy) && (
-              <section className="bg-secondary/20 p-6 rounded-3xl border border-border/50">
-                <h2 className="text-xl font-bold mb-6">Good to know</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  {hotel.detail?.check_in_time && (
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Check-in</p>
-                      <p className="font-semibold">{hotel.detail.check_in_time}</p>
-                    </div>
-                  )}
-                  {hotel.detail?.check_out_time && (
-                    <div>
-                      <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Check-out</p>
-                      <p className="font-semibold">{hotel.detail.check_out_time}</p>
-                    </div>
-                  )}
-                  {hotel.detail?.cancellation_policy && (
-                    <div className="sm:col-span-2">
-                      <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Cancellation Policy</p>
-                      <p className="text-sm">{hotel.detail.cancellation_policy}</p>
-                    </div>
-                  )}
-                </div>
-              </section>
-            )}
-
-          </div>
-
-          {/* Map or Sidebar Content */}
-          <div className="space-y-6">
-             <div className="bg-muted w-full h-[300px] rounded-3xl flex items-center justify-center border border-border/50 shadow-sm relative overflow-hidden group">
-               {/* Decorative Map Placeholder */}
-               <div className="absolute inset-0 bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=New+York,NY&zoom=13&size=600x300&maptype=roadmap')] bg-cover bg-center opacity-20 grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-60"></div>
-               <div className="relative z-10 flex flex-col items-center p-4 bg-background/80 backdrop-blur-md rounded-2xl border border-border/50 shadow-lg group-hover:-translate-y-1 transition-transform">
-                  <MapPin className="h-8 w-8 text-primary mb-2" />
-                  <p className="font-semibold text-center">{hotel.city?.name}</p>
-                  <Button variant="link" className="text-xs h-auto p-0 mt-1">View on map</Button>
-               </div>
-             </div>
-          </div>
+          {/* Policies */}
+          {(hotel.detail?.check_in_time || hotel.detail?.check_out_time || hotel.detail?.cancellation_policy) && (
+            <section className="bg-secondary/20 p-6 rounded-3xl border border-border/50">
+              <h2 className="text-xl font-bold mb-6">Good to know</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {hotel.detail?.check_in_time && (
+                  <div>
+                    <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Check-in</p>
+                    <p className="font-semibold">{hotel.detail.check_in_time}</p>
+                  </div>
+                )}
+                {hotel.detail?.check_out_time && (
+                  <div>
+                    <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Check-out</p>
+                    <p className="font-semibold">{hotel.detail.check_out_time}</p>
+                  </div>
+                )}
+                {hotel.detail?.cancellation_policy && (
+                  <div className="sm:col-span-2">
+                    <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Cancellation Policy</p>
+                    <p className="text-sm">{hotel.detail.cancellation_policy}</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
         </div>
 
-        {/* Room Types */}
-        <div className="mt-16 pt-12 border-t border-border/50">
-          <h2 className="text-3xl font-bold mb-8">Available Rooms</h2>
-          
+        {/* Available Rooms + Booking Sidebar */}
+        <div className="pt-12 border-t border-border/50">
           {hotel.room_types && hotel.room_types.length > 0 ? (
-            <RoomsSectionClient
+            <HotelDetailClient
               roomTypes={hotel.room_types.map((room) => ({
                 id: room.id,
                 name: room.name,
@@ -226,17 +212,30 @@ export default async function HotelDetailPage({
                 room_bed_types: room.room_bed_types,
                 room_properties: room.room_properties,
                 available_rooms_count: room.room_details.length,
+                room_variants: room.room_details.map((rd) => ({
+                  id: rd.id,
+                  room_number: rd.room_number,
+                  price: Number(rd.price),
+                  ac: rd.ac,
+                  smoking_allowed: rd.smoking_allowed,
+                  pet_allowed: rd.pet_allowed,
+                  notes: rd.notes,
+                  room_images: rd.room_images,
+                })),
               }))}
               hotelSlug={hotel.slug}
               checkIn={search.check_in}
               checkOut={search.check_out}
               guests={search.guests ? parseInt(search.guests) : 1}
             />
+
           ) : (
-             <div className="flex flex-col items-center justify-center p-12 bg-secondary/20 rounded-3xl border border-border/50">
-               <h3 className="text-xl font-semibold mb-2">No rooms available</h3>
-               <p className="text-muted-foreground text-center">Currently there are no rooms available to book at this property.</p>
-             </div>
+            <div className="flex flex-col items-center justify-center p-12 bg-secondary/20 rounded-3xl border border-border/50">
+              <h3 className="text-xl font-semibold mb-2">No rooms available</h3>
+              <p className="text-muted-foreground text-center">
+                Currently there are no rooms available to book at this property.
+              </p>
+            </div>
           )}
         </div>
 

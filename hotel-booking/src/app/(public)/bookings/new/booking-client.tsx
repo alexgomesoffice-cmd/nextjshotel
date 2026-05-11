@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, ShieldCheck, Info } from "lucide-react";
+import { Loader2, ShieldCheck, Info, AlertTriangle, User, Mail } from "lucide-react";
+import Link from "next/link";
 
 interface BookingClientProps {
   bookingData: {
@@ -17,13 +18,46 @@ interface BookingClientProps {
   };
 }
 
+interface UserProfile {
+  name: string;
+  email: string;
+  detail: {
+    nid_no: string | null;
+    passport: string | null;
+  } | null;
+}
+
 export default function BookingClient({ bookingData }: BookingClientProps) {
   const router = useRouter();
   const [specialRequest, setSpecialRequest] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Profile state
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const hasValidId = !!(userProfile?.detail?.nid_no || userProfile?.detail?.passport);
+
+  // Fetch user profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await fetch("/api/user/profile");
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setUserProfile(data.data);
+        }
+      } catch {
+        // Profile fetch failed — user may not be logged in
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
   const handleBooking = async () => {
+    if (!hasValidId) return;
     setIsSubmitting(true);
     setError(null);
 
@@ -48,13 +82,11 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
         throw new Error(data.message || "Something went wrong while booking.");
       }
 
-      // On success, redirect to success/confirmation page.
-      // For now, redirect to a simple success page or user bookings dashboard if it exists
-      // Let's assume there is a /profile/bookings route, otherwise redirect to home with success message
-      router.push(`/profile?booking_success=${data.data.booking_reference}`);
+      // Redirect to booking detail page — NOT /profile
+      router.push(`/bookings/${data.data.booking_reference}`);
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
       setIsSubmitting(false);
     }
@@ -62,6 +94,49 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
 
   return (
     <div className="space-y-6">
+      {/* User info card */}
+      <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm">
+        <h2 className="text-xl font-bold mb-4">Guest Details</h2>
+        {profileLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading your profile...
+          </div>
+        ) : userProfile ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <User className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm font-medium">{userProfile.name}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+              <span className="text-sm text-muted-foreground">{userProfile.email}</span>
+            </div>
+
+            {/* NID/Passport warning */}
+            {!hasValidId && (
+              <div className="mt-4 flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300 rounded-xl px-4 py-3 text-sm">
+                <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold mb-1">NID or Passport required</p>
+                  <p className="text-amber-700 dark:text-amber-400">
+                    Please add your NID or Passport number to your profile before completing this booking.
+                  </p>
+                  <Link
+                    href="/profile"
+                    className="inline-flex items-center gap-1 mt-2 text-primary font-medium hover:underline"
+                  >
+                    Go to Profile →
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Unable to load your profile. Please try refreshing.</p>
+        )}
+      </div>
+
+      {/* Good to know */}
       <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm">
         <h2 className="text-xl font-bold mb-4">Good to know:</h2>
         <ul className="space-y-3 text-sm text-muted-foreground">
@@ -80,6 +155,7 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
         </ul>
       </div>
 
+      {/* Special requests */}
       <div className="bg-card border border-border/50 rounded-2xl p-6 md:p-8 shadow-sm">
         <h2 className="text-xl font-bold mb-4">Special Requests</h2>
         <p className="text-sm text-muted-foreground mb-4">
@@ -87,7 +163,7 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
         </p>
         <Textarea
           placeholder="Please write your requests in English or Bengali. (e.g. Quiet room, high floor, airport transfer)"
-          className="min-h-[120px] resize-y"
+          className="min-h-30 resize-y"
           value={specialRequest}
           onChange={(e) => setSpecialRequest(e.target.value)}
         />
@@ -104,21 +180,23 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
           size="lg"
           className="w-full sm:w-auto text-lg h-14 px-10 rounded-xl"
           onClick={handleBooking}
-          disabled={isSubmitting}
+          disabled={isSubmitting || profileLoading || !hasValidId}
         >
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Confirming Reservation...
             </>
+          ) : !hasValidId ? (
+            "NID/Passport Required"
           ) : (
-            "Complete Booking"
+            "Confirm Reservation"
           )}
         </Button>
       </div>
       
       <p className="text-xs text-center text-muted-foreground mt-4">
-        By clicking "Complete Booking", you agree to our Terms of Service and Privacy Policy.
+        By clicking &quot;Confirm Reservation&quot;, you agree to our Terms of Service and Privacy Policy.
       </p>
     </div>
   );

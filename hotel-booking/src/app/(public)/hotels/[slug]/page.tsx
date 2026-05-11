@@ -5,8 +5,8 @@ import { MapPin, Star, CheckCircle2 } from "lucide-react";
 import HotelImagesGalleryClient from "./hotel-images-client";
 import HotelDetailClient from "@/components/room/hotel-detail-client";
 
-// Revalidate every 1 hour (or use dynamic depending on booking frequency)
-export const revalidate = 3600;
+// Force fresh DB read on every request — availability data must be live
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -21,6 +21,24 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: `${hotel.name} | StayVista`,
     description: hotel.detail?.short_description || `Book your stay at ${hotel.name} with StayVista.`,
   };
+}
+
+function buildRoomDetailWhere(checkIn?: string, checkOut?: string) {
+  const where: any = { status: 'AVAILABLE', deleted_at: null };
+  if (checkIn && checkOut) {
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    if (!isNaN(checkInDate.getTime()) && !isNaN(checkOutDate.getTime())) {
+      where.room_trackers = {
+        none: {
+          status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
+          check_in: { lt: checkOutDate },
+          check_out: { gt: checkInDate },
+        }
+      };
+    }
+  }
+  return where;
 }
 
 export default async function HotelDetailPage({ 
@@ -58,10 +76,7 @@ export default async function HotelDetailPage({
         where: { is_active: true },
         include: {
           room_details: {
-            where: { 
-              status: 'AVAILABLE',
-              deleted_at: null
-            },
+            where: buildRoomDetailWhere(search.check_in, search.check_out),
             include: {
               room_images: {
                 orderBy: { sort_order: 'asc' }

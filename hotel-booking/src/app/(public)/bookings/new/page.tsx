@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import BookingClient from "./booking-client";
@@ -115,12 +116,13 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
           <aside>
             <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm sticky top-32">
               <div className="flex gap-4 pb-6 border-b border-border/50">
-                <div className="h-24 w-24 rounded-lg overflow-hidden shrink-0 bg-muted">
+                <div className="relative h-24 w-24 rounded-lg overflow-hidden shrink-0 bg-muted">
                   {(roomType.type_images[0]?.image_url || hotel.images[0]?.image_url) && (
-                    <img
+                    <Image
                       src={roomType.type_images[0]?.image_url || hotel.images[0]?.image_url}
                       alt={roomType.name}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   )}
                 </div>

@@ -14,6 +14,9 @@ export interface HotelCardProps {
   cover_image: string | null;
   short_description?: string;
   starting_price?: number;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
 }
 
 const HotelCard = ({
@@ -26,9 +29,13 @@ const HotelCard = ({
   cover_image,
   short_description,
   starting_price,
+  checkIn,
+  checkOut,
+  guests,
 }: HotelCardProps) => {
+  const dateParams = checkIn && checkOut ? `?check_in=${checkIn}&check_out=${checkOut}&guests=${guests || 1}` : '';
   return (
-    <Link href={`/hotels/${slug}`} className="group block h-full">
+    <Link href={`/hotels/${slug}${dateParams}`} className="group block h-full">
       <div className="relative h-full flex flex-col rounded-3xl border border-border/50 bg-card overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-1">
         
         {/* Top Image Section */}

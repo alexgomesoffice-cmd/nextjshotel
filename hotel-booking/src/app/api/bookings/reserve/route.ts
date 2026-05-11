@@ -109,9 +109,9 @@ export async function POST(req: NextRequest) {
       // 3. Select the required number of rooms
       const selectedRooms = availableRooms.slice(0, qty);
 
-      // 4. Calculate total price (Simplified: Base Price * Nights * Quantity)
-      const pricePerNight = Number(roomType.base_price);
-      const totalPrice = pricePerNight * nights * qty;
+      // 4. Calculate total from actual physical room prices, not base_price
+      // base_price is display only. room.price is the real booking price.
+      const totalPrice = selectedRooms.reduce((sum, room) => sum + Number(room.price) * nights, 0);
 
       // Generate a unique 8-character booking reference (e.g. SV-A8B9C2)
       const refCode = "SV-" + crypto.randomBytes(3).toString("hex").toUpperCase();

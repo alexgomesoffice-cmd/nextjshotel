@@ -6,7 +6,7 @@ import { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { Calendar as CalendarIcon, ShieldCheck, CheckCircle2, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -25,6 +25,8 @@ interface BookingSidebarProps {
   initialCheckOut?: string;
   initialGuests?: number;
   displayPrice?: number;
+  onDatesChange?: (checkIn: string, checkOut: string) => void;
+  onGuestsChange?: (guests: number) => void;
 }
 
 const SERVICE_FEE_PERCENT = 0.1;
@@ -36,6 +38,8 @@ export default function BookingSidebar({
   initialCheckOut,
   initialGuests = 1,
   displayPrice,
+  onDatesChange,
+  onGuestsChange,
 }: BookingSidebarProps) {
   const router = useRouter();
 
@@ -49,6 +53,8 @@ export default function BookingSidebar({
     from: parseDate(initialCheckIn) ?? new Date(),
     to: parseDate(initialCheckOut) ?? addDays(new Date(), 1),
   });
+
+  const [guests, setGuests] = useState(initialGuests);
 
   const nights =
     date?.from && date?.to
@@ -65,6 +71,20 @@ export default function BookingSidebar({
       ? Math.min(...selectedVariants.map(v => v.price))
       : displayPrice;
 
+  const handleDateSelect = (newDate: DateRange | undefined) => {
+    setDate(newDate);
+    if (newDate?.from && newDate?.to && onDatesChange) {
+      onDatesChange(format(newDate.from, "yyyy-MM-dd"), format(newDate.to, "yyyy-MM-dd"));
+    }
+  };
+
+  const handleGuestsChange = (newGuests: number) => {
+    setGuests(newGuests);
+    if (onGuestsChange) {
+      onGuestsChange(newGuests);
+    }
+  };
+
   const handleReserve = () => {
     if (!hasSelections || !date?.from || !date?.to) return;
     const primary = selectedVariants[0];
@@ -74,7 +94,7 @@ export default function BookingSidebar({
     params.set("quantity", selectedVariants.reduce((s, v) => s + v.quantity, 0).toString());
     params.set("check_in", format(date.from, "yyyy-MM-dd"));
     params.set("check_out", format(date.to, "yyyy-MM-dd"));
-    params.set("guests", initialGuests.toString());
+    params.set("guests", guests.toString());
     router.push(`/bookings/new?${params.toString()}`);
   };
 
@@ -92,52 +112,101 @@ export default function BookingSidebar({
       </div>
 
       <div className="px-5 pb-5 space-y-3">
-        {/* Check-in */}
+        {/* Combined date picker — single popover, range calendar like hero search */}
         <Popover>
           <PopoverTrigger asChild>
-            <button className="w-full text-left">
-              <p className="text-xs text-muted-foreground mb-1.5">Check-in</p>
-              <div className="flex items-center gap-2.5 border border-border/50 rounded-xl px-4 py-3 hover:border-primary/50 transition-colors bg-background/50">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm font-medium text-foreground">
-                  {date?.from ? format(date.from, "EEE, MMM d, yyyy") : "Select date"}
-                </span>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full h-12 justify-start rounded-xl font-normal border-border/40 bg-muted/30 hover:border-primary/40 hover:bg-primary/5 transition-all duration-500 shadow-sm",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-3 h-5 w-5 text-primary/60 group-hover:text-primary transition-colors" />
+              <div className="flex items-center gap-3 w-full">
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Check-in</span>
+                  <span className="text-sm font-semibold">
+                    {date?.from ? format(date.from, "MMM dd, yyyy") : "Add date"}
+                  </span>
+                </div>
+                <div className="h-6 w-px bg-border/60 mx-1" />
+                <div className="flex flex-col items-start leading-none">
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Check-out</span>
+                  <span className="text-sm font-semibold">
+                    {date?.to ? format(date.to, "MMM dd, yyyy") : "Add date"}
+                  </span>
+                </div>
               </div>
-            </button>
+            </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start" sideOffset={6}>
-            <div className="p-2.5 border-b border-border/40 bg-primary/5 flex items-center justify-between">
-              <span className="text-xs font-semibold text-primary uppercase tracking-widest">Select Dates</span>
+          <PopoverContent
+            className="w-(--radix-popover-trigger-width) p-0 rounded-2xl shadow-2xl border-primary/20 bg-popover text-popover-foreground backdrop-blur-md overflow-hidden animate-scale-in"
+            align="center"
+            sideOffset={8}
+          >
+            <div className="p-4 border-b border-border/40 bg-primary/5 flex items-center justify-between">
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-primary uppercase tracking-widest">Select Dates</span>
+                <span className="text-sm text-muted-foreground italic">Minimum 1 night stay</span>
+              </div>
               {date?.from && date?.to && (
-                <Button variant="ghost" size="sm" className="text-xs h-7"
-                  onClick={() => setDate({ from: undefined, to: undefined })}>Clear</Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 hover:text-primary text-foreground"
+                  onClick={() => handleDateSelect({ from: undefined, to: undefined })}
+                >
+                  Clear
+                </Button>
               )}
             </div>
-            <Calendar initialFocus mode="range" defaultMonth={date?.from}
-              selected={date} onSelect={setDate} numberOfMonths={1}
-              disabled={{ before: new Date() }} className="p-3" />
+            <Calendar
+              initialFocus
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              onSelect={handleDateSelect}
+              numberOfMonths={1}
+              className="p-3 w-full"
+            />
           </PopoverContent>
         </Popover>
 
-        {/* Check-out */}
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="w-full text-left">
-              <p className="text-xs text-muted-foreground mb-1.5">Check-out</p>
-              <div className="flex items-center gap-2.5 border border-border/50 rounded-xl px-4 py-3 hover:border-primary/50 transition-colors bg-background/50">
-                <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm font-medium text-foreground">
-                  {date?.to ? format(date.to, "EEE, MMM d, yyyy") : "Select date"}
-                </span>
-              </div>
+        {/* Guests stepper */}
+        <div className="flex items-center justify-between border border-border/50 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 text-sm">
+            <Users className="h-4 w-4 text-primary" />
+            <span>{guests} Guest{guests !== 1 ? "s" : ""}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleGuestsChange(Math.max(1, guests - 1))}
+              disabled={guests <= 1}
+              className={cn(
+                "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-colors",
+                guests > 1
+                  ? "border-border/50 text-foreground hover:border-primary hover:text-primary"
+                  : "border-border/20 text-muted-foreground/30 cursor-not-allowed"
+              )}
+            >
+              −
             </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start" sideOffset={6}>
-            <Calendar initialFocus mode="range" defaultMonth={date?.from}
-              selected={date} onSelect={setDate} numberOfMonths={1}
-              disabled={{ before: date?.from ?? new Date() }} className="p-3" />
-          </PopoverContent>
-        </Popover>
+            <span className="w-4 text-center text-sm font-medium tabular-nums">{guests}</span>
+            <button
+              onClick={() => handleGuestsChange(Math.min(10, guests + 1))}
+              disabled={guests >= 10}
+              className={cn(
+                "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-colors",
+                guests < 10
+                  ? "border-border/50 text-foreground hover:border-primary hover:text-primary"
+                  : "border-border/20 text-muted-foreground/30 cursor-not-allowed"
+              )}
+            >
+              +
+            </button>
+          </div>
+        </div>
 
         {/* Selected rooms */}
         {hasSelections ? (
@@ -197,7 +266,7 @@ export default function BookingSidebar({
         {/* Trust badge */}
         <div className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground pt-1">
           <ShieldCheck className="h-3.5 w-3.5" />
-          You won't be charged yet
+          You won&apos;t be charged yet
         </div>
       </div>
     </div>

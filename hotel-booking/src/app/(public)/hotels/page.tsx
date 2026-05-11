@@ -65,8 +65,13 @@ const HotelsContent = () => {
             ) : hotels.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {hotels.map((hotel) => (
-                  <div key={hotel.id} className="h-[450px]">
-                    <HotelCard {...hotel} />
+                  <div key={hotel.id} className="h-112.5">
+                    <HotelCard
+                      {...hotel}
+                      checkIn={searchParams.get("check_in") || undefined}
+                      checkOut={searchParams.get("check_out") || undefined}
+                      guests={searchParams.get("guests") ? parseInt(searchParams.get("guests")!) : undefined}
+                    />
                   </div>
                 ))}
               </div>

@@ -54,6 +54,21 @@ export async function GET(
       );
     }
 
+    if (booking.status === 'RESERVED' && booking.reserved_until && new Date(booking.reserved_until) < new Date()) {
+      await prisma.$transaction([
+        prisma.user_bookings.update({
+          where: { id: booking.id },
+          data: { status: 'EXPIRED', reserved_until: null },
+        }),
+        prisma.room_trackers.updateMany({
+          where: { booking_id: booking.id, status: 'RESERVED' },
+          data: { status: 'EXPIRED' },
+        }),
+      ])
+      booking.status = 'EXPIRED'
+      booking.reserved_until = null
+    }
+
     return NextResponse.json({ success: true, data: booking });
   } catch (error: any) {
     console.error("Fetch booking error:", error);

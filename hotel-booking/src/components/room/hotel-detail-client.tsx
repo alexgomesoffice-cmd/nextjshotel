@@ -97,22 +97,15 @@ export default function HotelDetailClient({
     setQuantities(prev => ({ ...prev, [variantId]: qty }));
   };
 
-  // Filter room types (BUG 9: guest filter + AC filter)
+  // Only filter by AC — never hide rooms due to guest count.
   const filteredRoomTypes = useMemo(() => {
-    let types = roomTypes;
-    if (acFilter !== "all") {
-      types = types.filter(rt =>
-        rt.room_variants.some(v =>
-          acFilter === "ac" ? v.ac : !v.ac
-        )
-      );
-    }
-    // Filter by occupancy
-    if (sidebarGuests > 1) {
-      types = types.filter(rt => rt.max_occupancy >= sidebarGuests);
-    }
-    return types;
-  }, [roomTypes, acFilter, sidebarGuests]);
+    if (acFilter === "all") return roomTypes;
+    return roomTypes.filter(rt =>
+      rt.room_variants.some(v =>
+        acFilter === "ac" ? v.ac : !v.ac
+      )
+    );
+  }, [roomTypes, acFilter]);
 
   // Derive selected variants for the sidebar
   const selectedVariants = useMemo<SelectedVariant[]>(() => {
@@ -201,6 +194,7 @@ export default function HotelDetailClient({
             roomTypes={filteredRoomTypes}
             quantities={quantities}
             onQuantityChange={handleQuantityChange}
+            guests={sidebarGuests}
           />
           {filteredRoomTypes.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border border-border/30 rounded-2xl">

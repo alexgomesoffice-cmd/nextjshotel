@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
     await prisma.$transaction([
       prisma.user_bookings.updateMany({
         where: { id: { in: expiredIds } },
-        data: { status: 'EXPIRED' },
+        data: { status: 'EXPIRED', reserved_until: null },
       }),
       prisma.room_trackers.updateMany({
         where: {
@@ -53,10 +53,11 @@ export async function GET(req: NextRequest) {
       expired: expiredBookings.length,
       references: expiredBookings.map((b) => b.booking_reference),
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Cron] expire-bookings error:', error);
+    const message = error instanceof Error ? error.message : 'Internal error';
     return NextResponse.json(
-      { success: false, message: error.message || 'Internal error' },
+      { success: false, message },
       { status: 500 }
     );
   }

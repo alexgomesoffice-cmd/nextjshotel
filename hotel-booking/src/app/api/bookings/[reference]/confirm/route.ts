@@ -17,11 +17,28 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const booking = await prisma.user_bookings.findUnique({
       where: { booking_reference: reference },
-      select: { id: true, status: true, end_user_id: true, reserved_until: true },
+      select: {
+        id: true,
+        status: true,
+        end_user_id: true,
+        hotel_id: true,
+        reserved_until: true,
+      },
     });
 
     if (!booking) {
       return NextResponse.json({ success: false, message: 'Booking not found' }, { status: 404 });
+    }
+
+    if (payload.actor_type === 'END_USER' && booking.end_user_id !== payload.actor_id) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 403 });
+    }
+
+    if (
+      (payload.actor_type === 'HOTEL_ADMIN' || payload.actor_type === 'HOTEL_SUB_ADMIN') &&
+      payload.hotel_id !== booking.hotel_id
+    ) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 403 });
     }
 
     if (booking.status !== 'RESERVED') {
@@ -58,8 +75,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     ]);
 
     return NextResponse.json({ success: true, message: 'Booking confirmed' });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('confirm booking error:', error);
-    return NextResponse.json({ success: false, message: 'Failed to confirm booking' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal error';
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

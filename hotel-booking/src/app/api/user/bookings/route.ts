@@ -22,6 +22,30 @@ export async function GET(req: NextRequest) {
     const statusFilter = searchParams.get('status')
     const skip = (page - 1) * limit
 
+    const now = new Date()
+    const expiredBookings = await prisma.user_bookings.findMany({
+      where: {
+        end_user_id: userId,
+        status: 'RESERVED',
+        reserved_until: { lt: now },
+      },
+      select: { id: true },
+    })
+
+    if (expiredBookings.length > 0) {
+      const expiredIds = expiredBookings.map((booking) => booking.id)
+      await prisma.$transaction([
+        prisma.user_bookings.updateMany({
+          where: { id: { in: expiredIds } },
+          data: { status: 'EXPIRED', reserved_until: null },
+        }),
+        prisma.room_trackers.updateMany({
+          where: { booking_id: { in: expiredIds }, status: 'RESERVED' },
+          data: { status: 'EXPIRED' },
+        }),
+      ])
+    }
+
     const where: Prisma.user_bookingsWhereInput = { end_user_id: userId }
 
     if (statusFilter && Object.values(BookingStatus).includes(statusFilter as BookingStatus)) {

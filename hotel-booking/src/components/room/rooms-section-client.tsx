@@ -5,10 +5,9 @@
 // Derives selectedVariants list for the booking sidebar.
 // Renders: room type cards (left) + modal.
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import RoomTypeCard, { type RoomVariant } from "@/components/room/room-type-card";
 import RoomDetailModal from "@/components/room/room-detail-modal";
-import type { SelectedVariant } from "@/components/room/booking-sidebar";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,6 +33,7 @@ interface RoomsSectionClientProps {
   roomTypes: RoomType[];
   quantities: Record<number, number>;
   onQuantityChange: (variantId: number, qty: number) => void;
+  guests?: number;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -42,6 +42,7 @@ export default function RoomsSectionClient({
   roomTypes,
   quantities,
   onQuantityChange,
+  guests = 1,
 }: RoomsSectionClientProps) {
   const [modalRoom, setModalRoom] = useState<RoomType | null>(null);
 
@@ -72,25 +73,34 @@ export default function RoomsSectionClient({
   return (
     <>
       <div className="space-y-3">
-        {roomTypes.map((roomType) => (
-          <RoomTypeCard
-            key={roomType.id}
-            id={roomType.id}
-            name={roomType.name}
-            description={roomType.description}
-            base_price={roomType.base_price}
-            occupancy_adults={roomType.max_occupancy}
-            room_size={roomType.room_size}
-            type_images={roomType.type_images}
-            room_bed_types={roomType.room_bed_types}
-            room_properties={roomType.room_properties}
-            available_rooms_count={roomType.available_rooms_count}
-            room_variants={roomType.room_variants}
-            onViewDetails={() => setModalRoom(roomType)}
-            selectedQuantities={getQuantitiesForRoomType(roomType)}
-            onQuantityChange={onQuantityChange}
-          />
-        ))}
+        {roomTypes.map((roomType) => {
+          const isGuestMismatch = guests > 1 && roomType.max_occupancy < guests;
+          const guestMismatchReason = isGuestMismatch
+            ? `This room fits up to ${roomType.max_occupancy} guest${roomType.max_occupancy !== 1 ? 's' : ''}. Your search needs ${guests}.`
+            : undefined;
+
+          return (
+            <RoomTypeCard
+              key={roomType.id}
+              id={roomType.id}
+              name={roomType.name}
+              description={roomType.description}
+              base_price={roomType.base_price}
+              occupancy_adults={roomType.max_occupancy}
+              room_size={roomType.room_size}
+              type_images={roomType.type_images}
+              room_bed_types={roomType.room_bed_types}
+              room_properties={roomType.room_properties}
+              available_rooms_count={roomType.available_rooms_count}
+              room_variants={roomType.room_variants}
+              onViewDetails={() => setModalRoom(roomType)}
+              selectedQuantities={getQuantitiesForRoomType(roomType)}
+              onQuantityChange={onQuantityChange}
+              isGuestMismatch={isGuestMismatch}
+              guestMismatchReason={guestMismatchReason}
+            />
+          );
+        })}
       </div>
 
       <RoomDetailModal

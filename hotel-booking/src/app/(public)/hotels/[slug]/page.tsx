@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { MapPin, Star, CheckCircle2 } from "lucide-react";
 
 import HotelImagesGalleryClient from "./hotel-images-client";
-import HotelDetailClient from "@/components/room/hotel-detail-client";
+import RoomSelector from "@/components/booking/room-selector";
 
 // Force fresh DB read on every request — availability data must be live
 export const dynamic = 'force-dynamic';
@@ -215,7 +215,7 @@ export default async function HotelDetailPage({
         {/* Available Rooms + Booking Sidebar */}
         <div className="pt-12 border-t border-border/50">
           {hotel.room_types && hotel.room_types.length > 0 ? (
-            <HotelDetailClient
+            <RoomSelector
               roomTypes={hotel.room_types.map((room) => ({
                 id: room.id,
                 name: room.name,

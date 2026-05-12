@@ -6,6 +6,7 @@ import {
   Calendar, Hotel, ChevronRight, Clock, CheckCircle2,
   XCircle, AlertCircle, BedDouble, Search, Filter,
 } from 'lucide-react'
+import ReservationTimer from '@/components/booking/reservation-timer'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -202,6 +203,12 @@ export default function MyBookingsPage() {
                           </Badge>
                         </div>
                       </div>
+
+                      {booking.status === 'RESERVED' && booking.reserved_until && new Date(booking.reserved_until) > new Date() && (
+                        <div className="mt-3">
+                          <ReservationTimer reservedUntil={booking.reserved_until} />
+                        </div>
+                      )}
 
                       {/* Dates + rooms row */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">

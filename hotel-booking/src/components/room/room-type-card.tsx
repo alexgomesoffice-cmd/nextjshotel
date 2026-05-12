@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Users, Bed, Wind, Tv, Coffee, Bath, Check,
+  Users, Bed, Check,
   ChevronUp, ChevronLeft, ChevronRight,
   Maximize2, Cigarette, PawPrint, ShieldAlert,
 } from "lucide-react";
@@ -41,6 +41,8 @@ export interface RoomTypeCardProps {
   onViewDetails?: () => void;
   selectedQuantities: Record<number, number>;
   onQuantityChange: (variantId: number, quantity: number) => void;
+  isGuestMismatch?: boolean;
+  guestMismatchReason?: string;
 }
 
 // ─── Variant Row ─────────────────────────────────────────────────────────────
@@ -55,11 +57,14 @@ interface VariantRowProps {
   available: number;
   onQtyChange: (qty: number) => void;
   onViewDetails?: () => void;
+  isGuestMismatch?: boolean;
+  guestMismatchReason?: string;
 }
 
 function VariantRow({
   variant, roomName, typeImages, bedTypes, amenities,
   quantity, available, onQtyChange, onViewDetails,
+  isGuestMismatch, guestMismatchReason,
 }: VariantRowProps) {
   const images = variant.room_images.length > 0 ? variant.room_images : typeImages;
   const [imgIdx, setImgIdx] = useState(0);
@@ -70,14 +75,14 @@ function VariantRow({
 
   return (
     <div className={cn(
-      "flex min-h-[130px] border-t border-border/20 transition-colors",
+      "flex min-h-32.5 border-t border-border/20 transition-colors",
       isSelected ? "bg-primary/5" : "bg-transparent"
     )}>
       {/* ── Image ── */}
       <button
         onClick={onViewDetails}
         tabIndex={-1}
-        className="relative w-[130px] sm:w-[150px] shrink-0 group overflow-hidden bg-muted self-stretch"
+        className="relative w-32.5 sm:w-37.5 shrink-0 group overflow-hidden bg-muted self-stretch"
       >
         {images.length > 0 ? (
           <>
@@ -166,7 +171,7 @@ function VariantRow({
         </div>
 
         {/* Middle-right: price + policy badge */}
-        <div className="flex flex-col items-end justify-start gap-2 shrink-0 min-w-[100px]">
+        <div className="flex flex-col items-end justify-start gap-2 shrink-0 min-w-25">
           <div className="text-right">
             <p className="text-primary font-bold text-xl leading-tight">
               ৳{Number(variant.price).toLocaleString()}
@@ -183,35 +188,41 @@ function VariantRow({
           </p>
         </div>
 
-        {/* Far-right: stepper */}
+        {/* Far-right: stepper or mismatch reason */}
         <div className="flex flex-col items-center justify-center gap-2 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => onQtyChange(Math.max(0, quantity - 1))}
-              disabled={quantity === 0}
-              className={cn(
-                "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                quantity > 0
-                  ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
-                  : "border-border/20 text-border/30 cursor-not-allowed"
-              )}
-            >
-              −
-            </button>
-            <span className="w-5 text-center text-sm font-semibold tabular-nums">{quantity}</span>
-            <button
-              onClick={() => onQtyChange(Math.min(available, quantity + 1))}
-              disabled={quantity >= available}
-              className={cn(
-                "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                quantity < available
-                  ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
-                  : "border-border/20 text-border/30 cursor-not-allowed"
-              )}
-            >
-              +
-            </button>
-          </div>
+          {isGuestMismatch ? (
+            <div className="text-xs text-muted-foreground bg-secondary/50 border border-border/40 rounded-lg px-3 py-2 max-w-45 text-right">
+              {guestMismatchReason}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => onQtyChange(Math.max(0, quantity - 1))}
+                disabled={quantity === 0}
+                className={cn(
+                  "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
+                  quantity > 0
+                    ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
+                    : "border-border/20 text-border/30 cursor-not-allowed"
+                )}
+              >
+                −
+              </button>
+              <span className="w-5 text-center text-sm font-semibold tabular-nums">{quantity}</span>
+              <button
+                onClick={() => onQtyChange(Math.min(available, quantity + 1))}
+                disabled={quantity >= available}
+                className={cn(
+                  "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
+                  quantity < available
+                    ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
+                    : "border-border/20 text-border/30 cursor-not-allowed"
+                )}
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -224,6 +235,7 @@ const RoomTypeCard = ({
   name, description, base_price, occupancy_adults, room_size,
   type_images, room_bed_types, room_properties, available_rooms_count,
   room_variants, onViewDetails, selectedQuantities, onQuantityChange,
+  isGuestMismatch, guestMismatchReason,
 }: RoomTypeCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const coverImage = type_images?.[0]?.image_url || null;
@@ -232,14 +244,21 @@ const RoomTypeCard = ({
   return (
     <div className={cn(
       "rounded-2xl border overflow-hidden bg-card transition-all duration-200",
-      isExpanded || totalSelected > 0
-        ? "border-primary/70"
-        : "border-border/30 hover:border-border/50"
+      isGuestMismatch
+        ? "opacity-60 border-border/30"
+        : isExpanded || totalSelected > 0
+          ? "border-primary/70"
+          : "border-border/30 hover:border-border/50"
     )}>
       {/* ── Collapsed Header ── */}
       <div
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="cursor-pointer hover:bg-white/5 transition-colors select-none"
+        onClick={() => {
+          if (!isGuestMismatch) setIsExpanded(!isExpanded);
+        }}
+        className={cn(
+          "cursor-pointer hover:bg-white/5 transition-colors select-none",
+          isGuestMismatch && "cursor-not-allowed"
+        )}
       >
         {/* Row 1: icon + name/desc + price + chevron */}
         <div className="flex items-start gap-3 px-4 pt-4 pb-3">
@@ -350,6 +369,8 @@ const RoomTypeCard = ({
                 available={available_rooms_count}
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}
                 onViewDetails={onViewDetails}
+                isGuestMismatch={isGuestMismatch}
+                guestMismatchReason={guestMismatchReason}
               />
             ))
           )}

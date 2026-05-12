@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
       const refCode = "SV-" + crypto.randomBytes(3).toString("hex").toUpperCase();
 
       const reservedUntil = new Date();
-      reservedUntil.setMinutes(reservedUntil.getMinutes() + 10); // Hold for 10 minutes
+      reservedUntil.setMinutes(reservedUntil.getMinutes() + 5); // Hold for 5 minutes
 
       // 5. Create user_bookings
       const booking = await tx.user_bookings.create({

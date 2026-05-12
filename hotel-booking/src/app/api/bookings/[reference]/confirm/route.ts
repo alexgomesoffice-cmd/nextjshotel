@@ -1,0 +1,65 @@
+// filepath: src/app/api/bookings/[reference]/confirm/route.ts
+// PATCH: Upgrade booking from RESERVED → BOOKED.
+// Called when payment is confirmed or hotel manually confirms.
+
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/auth-middleware';
+
+type Params = { params: Promise<{ reference: string }> };
+
+export async function PATCH(req: NextRequest, { params }: Params) {
+  const { payload, error } = await requireAuth(req, ['END_USER', 'HOTEL_ADMIN', 'HOTEL_SUB_ADMIN']);
+  if (error) return error;
+
+  try {
+    const { reference } = await params;
+
+    const booking = await prisma.user_bookings.findUnique({
+      where: { booking_reference: reference },
+      select: { id: true, status: true, end_user_id: true, reserved_until: true },
+    });
+
+    if (!booking) {
+      return NextResponse.json({ success: false, message: 'Booking not found' }, { status: 404 });
+    }
+
+    if (booking.status !== 'RESERVED') {
+      return NextResponse.json(
+        { success: false, message: `Booking is already ${booking.status}` },
+        { status: 400 }
+      );
+    }
+
+    if (booking.reserved_until && new Date(booking.reserved_until) < new Date()) {
+      await prisma.$transaction([
+        prisma.user_bookings.update({ where: { id: booking.id }, data: { status: 'EXPIRED' } }),
+        prisma.room_trackers.updateMany({
+          where: { booking_id: booking.id, status: 'RESERVED' },
+          data: { status: 'EXPIRED' },
+        }),
+      ]);
+
+      return NextResponse.json(
+        { success: false, message: 'Reservation has expired. Please book again.' },
+        { status: 409 }
+      );
+    }
+
+    await prisma.$transaction([
+      prisma.user_bookings.update({
+        where: { id: booking.id },
+        data: { status: 'BOOKED', reserved_until: null },
+      }),
+      prisma.room_trackers.updateMany({
+        where: { booking_id: booking.id, status: 'RESERVED' },
+        data: { status: 'BOOKED' },
+      }),
+    ]);
+
+    return NextResponse.json({ success: true, message: 'Booking confirmed' });
+  } catch (error: any) {
+    console.error('confirm booking error:', error);
+    return NextResponse.json({ success: false, message: 'Failed to confirm booking' }, { status: 500 });
+  }
+}

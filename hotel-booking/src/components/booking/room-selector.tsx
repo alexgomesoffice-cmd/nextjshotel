@@ -90,11 +90,14 @@ export default function RoomSelector({
 
   const filteredRoomTypes = useMemo(() => {
     if (acFilter === "all") return roomTypes;
-    return roomTypes.filter(rt =>
-      rt.room_variants.some(v =>
+    return roomTypes.map(rt => {
+      if (rt.room_variants.length === 0) return rt;
+      const matching = rt.room_variants.filter(v =>
         acFilter === "ac" ? v.ac : !v.ac
-      )
-    );
+      );
+      if (matching.length === 0) return rt;
+      return { ...rt, room_variants: matching };
+    });
   }, [roomTypes, acFilter]);
 
   const selectedVariants = useMemo<SelectedVariant[]>(() => {

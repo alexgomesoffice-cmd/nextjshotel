@@ -240,11 +240,13 @@ const RoomTypeCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const coverImage = type_images?.[0]?.image_url || null;
   const totalSelected = Object.values(selectedQuantities).reduce((a, b) => a + b, 0);
+  const isUnavailable = available_rooms_count === 0 && room_variants.length === 0;
+  const isDisabled = isGuestMismatch || isUnavailable;
 
   return (
     <div className={cn(
       "rounded-2xl border overflow-hidden bg-card transition-all duration-200",
-      isGuestMismatch
+      isDisabled
         ? "opacity-60 border-border/30"
         : isExpanded || totalSelected > 0
           ? "border-primary/70"
@@ -253,11 +255,11 @@ const RoomTypeCard = ({
       {/* ── Collapsed Header ── */}
       <div
         onClick={() => {
-          if (!isGuestMismatch) setIsExpanded(!isExpanded);
+          if (!isDisabled) setIsExpanded(!isExpanded);
         }}
         className={cn(
           "cursor-pointer hover:bg-white/5 transition-colors select-none",
-          isGuestMismatch && "cursor-not-allowed"
+          isDisabled && "cursor-not-allowed"
         )}
       >
         {/* Row 1: icon + name/desc + price + chevron */}
@@ -266,7 +268,7 @@ const RoomTypeCard = ({
           <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
             {coverImage ? (
               <div className="relative w-11 h-11 rounded-xl overflow-hidden">
-                <Image src={coverImage} alt={name} fill className="object-cover" />
+                <Image src={coverImage} alt={name} fill sizes="44px" className="object-cover" />
               </div>
             ) : (
               <Bed className="h-5 w-5 text-primary" />

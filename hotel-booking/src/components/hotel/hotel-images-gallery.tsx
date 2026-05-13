@@ -50,6 +50,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
               src={img.image_url}
               alt={`Hotel property ${i + 1}`}
               fill
+              sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
           </div>
@@ -71,6 +72,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
             src={displayImages[0].image_url}
             alt="Hotel main view"
             fill
+            sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover transition-transform duration-700 hover:scale-105 cursor-pointer"
             onClick={onShowAllPhotos}
           />
@@ -86,6 +88,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
                   src={img.image_url}
                   alt={`Hotel detail ${idx + 1}`}
                   fill
+                  sizes="(max-width: 768px) 0vw, 25vw"
                   className={`object-cover transition-transform duration-700 hover:scale-105 cursor-pointer ${
                     isLast && remainingCount > 0 ? "opacity-80" : ""
                   }`}

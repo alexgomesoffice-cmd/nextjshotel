@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { updateRoomSchema } from '@/lib/validations/room'
@@ -44,45 +45,65 @@ export async function PATCH(
     }
 
     // Handle room number and prefix
-    let finalRoomNumber = room.room_number
-    if (result.data.room_number !== undefined || result.data.prefix !== undefined) {
-      const prefix = result.data.prefix !== undefined ? result.data.prefix : ''
-      const number = result.data.room_number !== undefined ? result.data.room_number : room.room_number
-      finalRoomNumber = `${prefix}${number}`
+    const stripOldPrefix = (roomNumber: string) => {
+      const match = roomNumber.match(/^(.*?)(\d.*)$/)
+      return match ? match[2] : roomNumber
     }
 
-    const floor = result.data.floor !== undefined ? result.data.floor : room.floor
+    let finalRoomNumber = room.room_number
+    if (result.data.room_number !== undefined) {
+      finalRoomNumber = result.data.prefix !== undefined
+        ? (result.data.room_number.startsWith(result.data.prefix)
+          ? result.data.room_number
+          : `${result.data.prefix}${result.data.room_number}`)
+        : result.data.room_number
+    } else if (result.data.prefix !== undefined) {
+      if (!room.room_number.startsWith(result.data.prefix)) {
+        finalRoomNumber = `${result.data.prefix}${stripOldPrefix(room.room_number)}`
+      }
+    }
+
     const roomTypeId = result.data.room_type_id !== undefined ? result.data.room_type_id : room.room_type_id
 
-    // Check for duplicates
+    if (result.data.room_type_id !== undefined && result.data.room_type_id !== room.room_type_id) {
+      const newRoomType = await prisma.room_types.findUnique({ where: { id: result.data.room_type_id } })
+      if (!newRoomType || newRoomType.hotel_id !== hotelId) {
+        return NextResponse.json({ success: false, message: 'Invalid room type' }, { status: 400 })
+      }
+    }
+
+    // Note: unique constraint is on room_type_id + room_number
     const existing = await prisma.room_details.findFirst({
       where: {
         room_type_id: roomTypeId,
         room_number: finalRoomNumber,
-        floor: floor,
         deleted_at: null,
         id: { not: roomId }
       }
     })
 
     if (existing) {
-      return NextResponse.json({ success: false, message: 'Room with same number and floor already exists for this type' }, { status: 400 })
+      return NextResponse.json({ success: false, message: 'Room with same number already exists for this type' }, { status: 400 })
     }
 
     const { prefix, ...updateData } = result.data
+    void prefix
 
     const updatedRoom = await prisma.room_details.update({
       where: { id: roomId },
       data: {
         ...updateData,
         room_number: finalRoomNumber,
-        price: updateData.price ? updateData.price.toString() : undefined
+        price: updateData.price !== undefined ? updateData.price.toString() : undefined
       }
     })
 
     return NextResponse.json({ success: true, data: updatedRoom })
   } catch (error) {
     console.error('Failed to update room:', error)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return NextResponse.json({ success: false, message: 'Room number already exists for this room type' }, { status: 400 })
+    }
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }

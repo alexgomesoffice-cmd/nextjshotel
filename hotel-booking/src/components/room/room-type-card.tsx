@@ -24,6 +24,7 @@ export interface RoomVariant {
   pet_allowed: boolean;
   notes: string | null;
   room_images: { id: number; image_url: string }[];
+  available_count: number;
 }
 
 export interface RoomTypeCardProps {
@@ -79,10 +80,10 @@ function VariantRow({
       isSelected ? "bg-primary/5" : "bg-transparent"
     )}>
       {/* ── Image ── */}
-      <button
+      <div
         onClick={onViewDetails}
         tabIndex={-1}
-        className="relative w-32.5 sm:w-37.5 shrink-0 group overflow-hidden bg-muted self-stretch"
+        className="relative w-32.5 sm:w-37.5 shrink-0 group overflow-hidden bg-muted self-stretch cursor-pointer"
       >
         {images.length > 0 ? (
           <>
@@ -119,7 +120,7 @@ function VariantRow({
             <Bed className="h-10 w-10 text-muted-foreground/20" />
           </div>
         )}
-      </button>
+      </div>
 
       {/* ── Content (middle) ── */}
       <div className="flex flex-1 min-w-0 gap-4 p-4">
@@ -368,7 +369,7 @@ const RoomTypeCard = ({
                 bedTypes={room_bed_types}
                 amenities={room_properties}
                 quantity={selectedQuantities[variant.id] ?? 0}
-                available={available_rooms_count}
+                available={variant.available_count}
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}
                 onViewDetails={onViewDetails}
                 isGuestMismatch={isGuestMismatch}

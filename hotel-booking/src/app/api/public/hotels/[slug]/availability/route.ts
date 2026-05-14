@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { groupRoomVariants } from '@/lib/room-grouping';
 
 export async function GET(
   req: NextRequest,
@@ -20,7 +21,7 @@ export async function GET(
 
     // Build room detail where clause for availability filtering
     const buildRoomDetailWhere = (checkIn?: string | null, checkOut?: string | null) => {
-      const where: any = { status: 'AVAILABLE', deleted_at: null };
+      const where: Record<string, unknown> = { status: 'AVAILABLE', deleted_at: null };
       if (checkIn && checkOut) {
         const checkInDate = new Date(checkIn);
         const checkOutDate = new Date(checkOut);
@@ -81,28 +82,22 @@ export async function GET(
     }
 
     // Transform the data to match the expected format
-    const roomTypes = hotel.room_types.map((room) => ({
-      id: room.id,
-      name: room.name,
-      description: room.description,
-      base_price: Number(room.base_price),
-      max_occupancy: room.max_occupancy,
-      room_size: room.room_size,
-      type_images: room.type_images,
-      room_bed_types: room.room_bed_types,
-      room_properties: room.room_properties,
-      available_rooms_count: room.room_details.length,
-      room_variants: room.room_details.map((rd) => ({
-        id: rd.id,
-        room_number: rd.room_number,
-        price: Number(rd.price),
-        ac: rd.ac,
-        smoking_allowed: rd.smoking_allowed,
-        pet_allowed: rd.pet_allowed,
-        notes: rd.notes,
-        room_images: rd.room_images,
-      })),
-    }));
+    const roomTypes = hotel.room_types.map((room) => {
+      const room_variants = groupRoomVariants(room.room_details)
+      return {
+        id: room.id,
+        name: room.name,
+        description: room.description,
+        base_price: Number(room.base_price),
+        max_occupancy: room.max_occupancy,
+        room_size: room.room_size,
+        type_images: room.type_images,
+        room_bed_types: room.room_bed_types,
+        room_properties: room.room_properties,
+        available_rooms_count: room.room_details.length,
+        room_variants,
+      }
+    });
 
     return NextResponse.json({
       success: true,

@@ -618,7 +618,7 @@ model room_details {
   room_trackers room_trackers[]
   room_bookings room_bookings[]
 
-  @@unique([room_type_id, room_number])
+  @@unique([room_type_id, room_number, deleted_at])
   @@index([room_type_id])
   @@index([status])
   @@index([ac])

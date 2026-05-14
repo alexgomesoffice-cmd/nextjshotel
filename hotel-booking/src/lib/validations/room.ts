@@ -19,9 +19,9 @@ export const createRoomSchema = z.object({
 // Bulk room creation schema
 export const bulkCreateRoomSchema = z.object({
   room_type_id: z.number().int().positive(),
-  prefix: z.string().min(1),
-  start_number: z.number().int().min(1).max(99),
-  end_number: z.number().int().min(1).max(99),
+  prefix: z.string().optional(),
+  start_number: z.number().int().min(1),
+  end_number: z.number().int().min(1),
   floor: z.number().int().min(0).default(0),
   price: z.number().positive(),
   status: z.enum(['AVAILABLE', 'UNAVAILABLE', 'MAINTENANCE']).default('AVAILABLE'),
@@ -30,6 +30,9 @@ export const bulkCreateRoomSchema = z.object({
   smoking_allowed: z.boolean().default(false),
   pet_allowed: z.boolean().default(false),
   notes: z.string().optional(),
+}).refine((data) => data.end_number > data.start_number, {
+  message: "End number must be greater than start number",
+  path: ["end_number"],
 })
 
 // Room update schema

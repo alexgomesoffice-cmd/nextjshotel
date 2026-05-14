@@ -53,26 +53,86 @@ async function main() {
   // 3. Seed cities (major BD cities)
   console.log('📦 Seeding cities...')
   const cities = [
-    { name: 'Dhaka', image_url: 'https://images.unsplash.com/photo-1568731015204-753b32d5c1eb?w=800' },
-    { name: 'Chittagong', image_url: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800' },
-    { name: 'Sylhet', image_url: 'https://images.unsplash.com/photo-1588865704093-0b5d0c4210c3?w=800' },
-    { name: 'Cox\'s Bazar', image_url: 'https://images.unsplash.com/photo-1573052905904-34ad8c27e0e0?w=800' },
-    { name: 'Khulna', image_url: 'https://images.unsplash.com/photo-1568711146297-b8e5c3a4a07e?w=800' },
-    { name: 'Barisal', image_url: 'https://images.unsplash.com/photo-1573052905904-34ad8c27e0e0?w=800' },
-    { name: 'Rangpur', image_url: 'https://images.unsplash.com/photo-1588865704093-0b5d0c4210c3?w=800' },
-    { name: 'Mymensingh', image_url: 'https://images.unsplash.com/photo-1568731015204-753b32d5c1eb?w=800' },
-    { name: 'Tangail', image_url: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800' },
-    { name: 'Bogura', image_url: 'https://images.unsplash.com/photo-1588865704093-0b5d0c4210c3?w=800' },
-    { name: 'Jessore', image_url: 'https://images.unsplash.com/photo-1568711146297-b8e5c3a4a07e?w=800' },
-    { name: 'Comilla', image_url: 'https://images.unsplash.com/photo-1573052905904-34ad8c27e0e0?w=800' },
-    { name: 'Narayanganj', image_url: 'https://images.unsplash.com/photo-1568731015204-753b32d5c1eb?w=800' },
-    { name: 'Savar', image_url: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800' },
-    { name: 'Mirpur', image_url: 'https://images.unsplash.com/photo-1588865704093-0b5d0c4210c3?w=800' },
+    {
+      name: "Dhaka",
+      image_url:
+        "https://images.unsplash.com/photo-1590579491624-f98f36d4c763?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Chittagong",
+      image_url:
+        "https://images.unsplash.com/photo-1578894381163-e72c17f2d45f?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Sylhet",
+      image_url:
+        "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Cox's Bazar",
+      image_url:
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Khulna",
+      image_url:
+        "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Barisal",
+      image_url:
+        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Rangpur",
+      image_url:
+        "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Mymensingh",
+      image_url:
+        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Tangail",
+      image_url:
+        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Bogura",
+      image_url:
+        "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Jessore",
+      image_url:
+        "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Comilla",
+      image_url:
+        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Narayanganj",
+      image_url:
+        "https://images.unsplash.com/photo-1482192505345-5655af888cc4?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Savar",
+      image_url:
+        "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80",
+    },
+    {
+      name: "Mirpur",
+      image_url:
+        "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=800&q=80",
+    },
   ]
   for (const city of cities) {
     await prisma.cities.upsert({
       where: { name: city.name },
-      update: {},
+      update: { image_url: city.image_url },
       create: city,
     })
   }

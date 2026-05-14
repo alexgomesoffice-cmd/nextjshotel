@@ -43,7 +43,7 @@ export async function PATCH(
     const result = updateSchema.safeParse(body)
     if (!result.success) return NextResponse.json({ success: false, message: 'Validation error' }, { status: 400 })
 
-    const updates: any = {}
+    const updates: { is_cover?: boolean; sort_order?: number } = {}
     if (result.data.is_cover === true) {
       await prisma.room_images.updateMany({
         where: { room_detail_id: roomId },

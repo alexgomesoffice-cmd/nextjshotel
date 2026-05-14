@@ -4,6 +4,7 @@ import { MapPin, Star, CheckCircle2 } from "lucide-react";
 
 import HotelImagesGalleryClient from "./hotel-images-client";
 import RoomSelector from "@/components/booking/room-selector";
+import { groupRoomVariants } from "@/lib/room-grouping";
 
 // Force fresh DB read on every request — availability data must be live
 export const dynamic = 'force-dynamic';
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 function buildRoomDetailWhere(checkIn?: string, checkOut?: string) {
-  const where: any = { status: 'AVAILABLE', deleted_at: null };
+  const where: Record<string, unknown> = { status: 'AVAILABLE', deleted_at: null };
   if (checkIn && checkOut) {
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
@@ -216,28 +217,22 @@ export default async function HotelDetailPage({
         <div className="pt-12 border-t border-border/50">
           {hotel.room_types && hotel.room_types.length > 0 ? (
             <RoomSelector
-              roomTypes={hotel.room_types.map((room) => ({
-                id: room.id,
-                name: room.name,
-                description: room.description,
-                base_price: Number(room.base_price),
-                max_occupancy: room.max_occupancy,
-                room_size: room.room_size,
-                type_images: room.type_images,
-                room_bed_types: room.room_bed_types,
-                room_properties: room.room_properties,
-                available_rooms_count: room.room_details.length,
-                room_variants: room.room_details.map((rd) => ({
-                  id: rd.id,
-                  room_number: rd.room_number,
-                  price: Number(rd.price),
-                  ac: rd.ac,
-                  smoking_allowed: rd.smoking_allowed,
-                  pet_allowed: rd.pet_allowed,
-                  notes: rd.notes,
-                  room_images: rd.room_images,
-                })),
-              }))}
+              roomTypes={hotel.room_types.map((room) => {
+                const room_variants = groupRoomVariants(room.room_details)
+                return {
+                  id: room.id,
+                  name: room.name,
+                  description: room.description,
+                  base_price: Number(room.base_price),
+                  max_occupancy: room.max_occupancy,
+                  room_size: room.room_size,
+                  type_images: room.type_images,
+                  room_bed_types: room.room_bed_types,
+                  room_properties: room.room_properties,
+                  available_rooms_count: room.room_details.length,
+                  room_variants,
+                }
+              })}
               hotelSlug={hotel.slug}
               checkIn={search.check_in}
               checkOut={search.check_out}

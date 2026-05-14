@@ -5,14 +5,12 @@ import { useRouter } from 'next/navigation'
 import { 
   ArrowLeft, 
   Save, 
-  Bed,
   Info,
-  Wrench,
-  DollarSign,
   Image as ImageIcon,
   X,
   Star
 } from 'lucide-react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,6 +33,25 @@ interface RoomType {
   base_price: string
 }
 
+interface RoomImage {
+  id: number
+  image_url: string
+  is_cover: boolean
+}
+
+interface RoomData {
+  id: number
+  room_type_id: number
+  room_number: string
+  floor: number
+  price: string
+  status: string
+  ac: boolean
+  smoking_allowed: boolean
+  pet_allowed: boolean
+  notes: string | null
+}
+
 export default function EditRoomPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const router = useRouter()
@@ -55,7 +72,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
     notes: '',
     prefix: ''
   })
-  const [roomImages, setRoomImages] = useState<any[]>([])
+  const [roomImages, setRoomImages] = useState<RoomImage[]>([])
   const [isUploading, setIsUploading] = useState(false)
 
   useEffect(() => {
@@ -75,7 +92,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
         if (imagesData.success) setRoomImages(imagesData.data)
         
         if (roomsData.success) {
-          const room = roomsData.data.find((r: any) => r.id.toString() === resolvedParams.id)
+          const room = roomsData.data.find((r: RoomData) => r.id.toString() === resolvedParams.id)
           if (room) {
             setFormData({
               room_type_id: room.room_type_id.toString(),
@@ -94,7 +111,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
             router.push('/dashboard/hotel/rooms')
           }
         }
-      } catch (error) {
+      } catch {
         toast({ title: 'Error', description: 'Failed to fetch data', variant: 'destructive' })
       } finally {
         setLoading(false)
@@ -140,7 +157,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
       } else {
         toast({ title: 'Error', description: data.message, variant: 'destructive' })
       }
-    } catch (error) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to update room', variant: 'destructive' })
     } finally {
       setIsSubmitting(false)
@@ -166,7 +183,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
         setRoomImages(prev => [...prev, ...data.data])
         toast({ title: 'Success', description: 'Images uploaded successfully', variant: 'success' })
       }
-    } catch (error) {
+    } catch {
       toast({ title: 'Error', description: 'Failed to upload images', variant: 'destructive' })
     } finally {
       setIsUploading(false)
@@ -210,8 +227,8 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto space-y-6">
-        <Skeleton className="h-12 w-[300px]" />
-        <Skeleton className="h-[400px] w-full" />
+        <Skeleton className="h-12 w-300px" />
+        <Skeleton className="h-400px w-full" />
       </div>
     )
   }
@@ -289,7 +306,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
-                <Select value={formData.status} onValueChange={(v: any) => setFormData(p => ({ ...p, status: v }))}>
+                <Select value={formData.status} onValueChange={(v: string) => setFormData(p => ({ ...p, status: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="AVAILABLE">Available</SelectItem>

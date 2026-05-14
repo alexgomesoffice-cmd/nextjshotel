@@ -90,7 +90,7 @@ const RoomDetailModal = ({ isOpen, onClose, roomType }: RoomDetailModalProps) =>
           {/* Image Gallery */}
           {roomType.type_images && roomType.type_images.length > 0 && (
             <div className="p-6 pb-2">
-              <div className="relative w-full h-[300px] md:h-[400px] rounded-2xl overflow-hidden mb-4 bg-muted">
+              <div className="relative w-full h-300px md:h-400px rounded-2xl overflow-hidden mb-4 bg-muted">
                 <Image
                   src={roomType.type_images[activeImage].image_url}
                   alt={roomType.name}

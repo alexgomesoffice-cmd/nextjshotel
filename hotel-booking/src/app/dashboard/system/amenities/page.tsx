@@ -72,7 +72,9 @@ export default function SystemAmenitiesPage() {
     }
   }, [pagination.page, pagination.limit, search, contextFilter, toast])
 
-  useEffect(() => { fetchAmenities() }, [fetchAmenities])
+  useEffect(() => {
+    void (async () => { await fetchAmenities() })()
+  }, [fetchAmenities])
 
   const handleSearch = (value: string) => {
     setSearch(value)

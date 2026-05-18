@@ -23,7 +23,7 @@ const createSchema = z.object({
 
 export async function GET(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['HOTEL_ADMIN'])
+    const auth = await requireAuth(req, ['HOTEL_ADMIN', 'HOTEL_SUB_ADMIN'])
     if (auth.error) return auth.error
 
     const hotelId = auth.payload.hotel_id

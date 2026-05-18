@@ -88,10 +88,10 @@ export default function HotelAdminLayout({
       <div className="flex">
         {/* Sidebar */}
         <aside
-          className={`fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-64 h-screen bg-card border-r flex flex-col transform transition-transform lg:transform-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          className={`fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-64 h-screen bg-card border-r border-accent-foreground flex flex-col transform transition-transform lg:transform-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             }`}
         >
-          <div className="p-6 border-b shrink-0">
+          <div className="p-6 border-b border-accent-foreground shrink-0">
             <h2 className="text-xl font-bold">Hotel Admin</h2>
             {user && (
               <p className="text-sm text-muted-foreground mt-1">{user.name}</p>
@@ -165,7 +165,7 @@ export default function HotelAdminLayout({
             })}
           </nav>
 
-          <div className="p-4 border-t shrink-0">
+          <div className="p-4 border-t border-accent-foreground shrink-0">
             <button
               onClick={handleLogout}
               className="flex items-center gap-3 px-4 py-3 w-full rounded-lg hover:bg-muted text-destructive"

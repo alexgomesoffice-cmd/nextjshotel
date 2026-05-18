@@ -1,4 +1,4 @@
-﻿// filepath: src/app/dashboard/hotel/bookings/page.tsx
+// filepath: src/app/dashboard/hotel/bookings/page.tsx
 // Hotel Admin — Bookings List
 // Search, filter by status/date, sort, paginate
 // Inline: check-in, check-out, cancel actions
@@ -105,7 +105,9 @@ export default function HotelAdminBookingsPage() {
     }
   }, [pagination.page, pagination.limit, search, status, dateFrom, dateTo, sortBy, order, toast])
 
-  useEffect(() => { fetchBookings() }, [fetchBookings])
+  useEffect(() => {
+    void (async () => { await fetchBookings() })()
+  }, [fetchBookings])
   const resetPage = () => setPagination(p => ({ ...p, page: 1 }))
 
   async function performAction(reference: string, action: string) {

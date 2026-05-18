@@ -72,7 +72,9 @@ export default function UsersPage() {
     }
   }, [pagination.page, pagination.limit, search, blockedFilter, toast])
 
-  useEffect(() => { fetchUsers() }, [fetchUsers])
+  useEffect(() => {
+    void (async () => { await fetchUsers() })()
+  }, [fetchUsers])
 
   const handleSearch = (value: string) => {
     setSearch(value)

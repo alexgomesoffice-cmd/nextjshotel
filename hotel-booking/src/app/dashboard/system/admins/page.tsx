@@ -53,7 +53,9 @@ export default function AdminsPage() {
     }
   }, [toast])
 
-  useEffect(() => { fetchAdmins() }, [fetchAdmins])
+  useEffect(() => {
+    void (async () => { await fetchAdmins() })()
+  }, [fetchAdmins])
 
   const filtered = admins.filter(
     (a) =>

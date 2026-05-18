@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { cancelBookingSchema } from '@/lib/validations/booking'
@@ -59,10 +59,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     if (booking.status === 'RESERVED' && booking.reserved_until && new Date(booking.reserved_until) < new Date()) {
       await prisma.$transaction([
         prisma.user_bookings.update({ where: { id: booking.id }, data: { status: 'EXPIRED', reserved_until: null } }),
-        prisma.room_trackers.updateMany({
-          where: { booking_id: booking.id, status: 'RESERVED' },
-          data: { status: 'EXPIRED' },
-        }),
+        // DELETE trackers so the room dates are freed for future reservations
+        prisma.room_trackers.deleteMany({ where: { booking_id: booking.id } }),
       ])
 
       return NextResponse.json(
@@ -76,13 +74,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         where: { id: booking.id },
         data: { status: 'CANCELLED', reserved_until: null },
       }),
-      prisma.room_trackers.updateMany({
-        where: {
-          booking_id: booking.id,
-          status: { in: ['RESERVED', 'BOOKED'] },
-        },
-        data: { status: 'CANCELLED' },
-      }),
+      // DELETE trackers to free the room dates for future reservations
+      prisma.room_trackers.deleteMany({ where: { booking_id: booking.id } }),
     ])
 
     return NextResponse.json({ success: true, message: 'Booking cancelled' })

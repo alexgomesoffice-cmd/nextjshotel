@@ -41,10 +41,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         where: { id: booking.id },
         data: { status: 'EXPIRED' },
       }),
-      prisma.room_trackers.updateMany({
-        where: { booking_id: booking.id, status: 'RESERVED' },
-        data: { status: 'EXPIRED' },
-      }),
+      // DELETE trackers to free the room dates for future reservations
+      prisma.room_trackers.deleteMany({ where: { booking_id: booking.id } }),
     ]);
 
     return NextResponse.json({ success: true, message: 'Booking expired' });

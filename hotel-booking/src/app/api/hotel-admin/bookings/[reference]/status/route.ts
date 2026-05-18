@@ -55,7 +55,7 @@ export async function PATCH(
     }
 
     // Validate status transition
-    if (!ALLOWED_FROM[action].includes(booking.status as any)) {
+    if (!(ALLOWED_FROM[action] as readonly string[]).includes(booking.status)) {
       return NextResponse.json({
         success: false,
         message: `Cannot ${action.replace('_', ' ')} from ${booking.status.toLowerCase().replace('_', ' ')} status`
@@ -64,16 +64,22 @@ export async function PATCH(
 
     const newStatus = ACTION_TO_STATUS[action]
 
-    // Update booking and room trackers in transaction
+    // For terminal actions, DELETE tracker rows so the room dates are freed
+    // and can be re-reserved. History is preserved in user_bookings/room_bookings.
+    // For check_in, update the tracker status only.
+    const isTerminal = action === 'cancel' || action === 'no_show' || action === 'check_out'
+
     await prisma.$transaction([
       prisma.user_bookings.update({
         where: { id: booking.id },
         data: { status: newStatus as any },
       }),
-      prisma.room_trackers.updateMany({
-        where: { booking_id: booking.id },
-        data: { status: newStatus as any },
-      }),
+      isTerminal
+        ? prisma.room_trackers.deleteMany({ where: { booking_id: booking.id } })
+        : prisma.room_trackers.updateMany({
+            where: { booking_id: booking.id },
+            data: { status: newStatus as any },
+          }),
     ])
 
     return NextResponse.json({

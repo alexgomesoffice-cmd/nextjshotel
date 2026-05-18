@@ -154,7 +154,7 @@ export default function NewRoomPage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Tabs value={creationMode} onValueChange={(v: any) => setCreationMode(v)} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-8">
+          <TabsList className="grid w-full grid-cols-2 max-w-400px mb-8">
             <TabsTrigger value="SINGLE">Single Room</TabsTrigger>
             <TabsTrigger value="BULK">Bulk Generate</TabsTrigger>
           </TabsList>

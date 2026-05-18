@@ -52,32 +52,61 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const roomTypeId = searchParams.get('roomTypeId')
     const status = searchParams.get('status')
+    const search = searchParams.get('search')?.trim() ?? ''
+    const page = parseInt(searchParams.get('page') ?? '0')
+    const limit = parseInt(searchParams.get('limit') ?? '0')
+    const where = {
+      room_type: { hotel_id: hotelId },
+      deleted_at: null,
+      ...(roomTypeId ? { room_type_id: parseInt(roomTypeId) } : {}),
+      ...(status ? { status: status as RoomStatus } : {}),
+      ...(search ? { room_number: { contains: search, mode: 'insensitive' } } : {}),
+    }
+
+    const include = {
+      room_type: {
+        select: {
+          id: true,
+          name: true,
+          base_price: true,
+        },
+      },
+      room_images: {
+        where: { is_cover: true },
+        take: 1,
+      },
+    }
+
+    if (page > 0 && limit > 0) {
+      const [rooms, total] = await Promise.all([
+        prisma.room_details.findMany({
+          where,
+          include,
+          orderBy: { room_number: 'asc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        prisma.room_details.count({ where }),
+      ])
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          rooms,
+          pagination: {
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
+          },
+        },
+      })
+    }
 
     const rooms = await prisma.room_details.findMany({
-      where: {
-        room_type: {
-          hotel_id: hotelId
-        },
-        deleted_at: null,
-        ...(roomTypeId ? { room_type_id: parseInt(roomTypeId) } : {}),
-        ...(status ? { status: status as RoomStatus } : {})
-      },
-      include: {
-        room_type: {
-          select: {
-            id: true,
-            name: true,
-            base_price: true
-          }
-        },
-        room_images: {
-          where: { is_cover: true },
-          take: 1
-        }
-      },
-      orderBy: {
-        room_number: 'asc'
-      }
+      where,
+      include,
+      orderBy: { room_number: 'asc' },
     })
 
     return NextResponse.json({ success: true, data: rooms })

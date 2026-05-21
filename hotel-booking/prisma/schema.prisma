@@ -753,7 +753,7 @@ model room_trackers {
   booking     user_bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
   room_detail room_details  @relation(fields: [room_detail_id], references: [id])
 
-  @@unique([room_detail_id, check_in, check_out])
+  @@unique([room_detail_id, check_in, check_out, status])
   @@index([room_detail_id, check_in, check_out])
   @@index([booking_id])
   @@index([status])

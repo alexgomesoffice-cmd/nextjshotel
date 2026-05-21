@@ -12,6 +12,7 @@ export async function POST(req: NextRequest) {
     const {
       hotel_id,
       room_type_id,
+      room_selections,
       check_in,
       check_out,
       guests,
@@ -19,8 +20,24 @@ export async function POST(req: NextRequest) {
       special_request,
     } = body;
 
+    const selections = Array.isArray(room_selections)
+      ? room_selections.map((selection: any) => ({
+          room_type_id: Number(selection?.room_type_id ?? selection?.roomTypeId),
+          quantity: Number(selection?.quantity),
+        }))
+      : room_type_id !== undefined && quantity !== undefined
+      ? [{ room_type_id: Number(room_type_id), quantity: Number(quantity) }]
+      : [];
+
     // Basic Validation
-    if (!hotel_id || !room_type_id || !check_in || !check_out || !guests || !quantity) {
+    if (
+      !hotel_id ||
+      !check_in ||
+      !check_out ||
+      !guests ||
+      selections.length === 0 ||
+      selections.some(sel => !sel.room_type_id || sel.quantity < 1)
+    ) {
       return NextResponse.json(
         { success: false, message: "Missing required booking parameters" },
         { status: 400 }
@@ -57,69 +74,88 @@ export async function POST(req: NextRequest) {
       (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    // Verify room type and hotel
-    const roomType = await prisma.room_types.findUnique({
-      where: { id: Number(room_type_id) },
+    const groupedSelections = selections.reduce<Record<number, { room_type_id: number; quantity: number }>>((acc, selection) => {
+      if (!acc[selection.room_type_id]) {
+        acc[selection.room_type_id] = { ...selection };
+      } else {
+        acc[selection.room_type_id].quantity += selection.quantity;
+      }
+      return acc;
+    }, {});
+
+    const normalizedSelections = Object.values(groupedSelections);
+    const roomTypeIds = normalizedSelections.map((selection) => selection.room_type_id);
+
+    const roomTypes = await prisma.room_types.findMany({
+      where: { id: { in: roomTypeIds } },
     });
 
-    if (!roomType || roomType.hotel_id !== Number(hotel_id)) {
+    if (roomTypes.length !== roomTypeIds.length) {
       return NextResponse.json(
         { success: false, message: "Invalid room type or hotel" },
         { status: 400 }
       );
     }
 
-    const qty = Number(quantity);
+    const roomTypeMap = new Map(roomTypes.map((rt) => [rt.id, rt]));
+    if (roomTypes.some((rt) => rt.hotel_id !== Number(hotel_id))) {
+      return NextResponse.json(
+        { success: false, message: "Invalid room type or hotel" },
+        { status: 400 }
+      );
+    }
+
+    const totalQuantity = normalizedSelections.reduce((sum, selection) => sum + selection.quantity, 0);
 
     // Concurrency control via interactive transaction to prevent double booking
     const bookingResult = await prisma.$transaction(async (tx) => {
-      // 1. Find physical rooms (room_details) of this type
-      const physicalRooms = await tx.room_details.findMany({
-        where: {
-          room_type_id: roomType.id,
-          status: "AVAILABLE",
-          deleted_at: null,
-        },
-      });
+      let totalPrice = 0;
+      const selectedRoomsByType: Array<{ roomTypeId: number; rooms: any[] }> = [];
 
-      if (physicalRooms.length < qty) {
-        throw new Error("Not enough physical rooms configured for this type");
+      for (const selection of normalizedSelections) {
+        const roomType = roomTypeMap.get(selection.room_type_id);
+        if (!roomType) {
+          throw new Error("Invalid room type or hotel");
+        }
+
+        const physicalRooms = await tx.room_details.findMany({
+          where: {
+            room_type_id: roomType.id,
+            status: "AVAILABLE",
+            deleted_at: null,
+          },
+        });
+
+        if (physicalRooms.length < selection.quantity) {
+          throw new Error("Not enough physical rooms configured for one of the selected room types");
+        }
+
+        const bookedRooms = await tx.room_trackers.findMany({
+          where: {
+            room_detail_id: { in: physicalRooms.map((r) => r.id) },
+            status: { in: ["RESERVED", "BOOKED", "CHECKED_IN"] },
+            check_in: { lt: checkOutDate },
+            check_out: { gt: checkInDate },
+          },
+          select: { room_detail_id: true },
+        });
+
+        const bookedRoomIds = new Set(bookedRooms.map((r) => r.room_detail_id));
+        const availableRooms = physicalRooms.filter((r) => !bookedRoomIds.has(r.id));
+
+        if (availableRooms.length < selection.quantity) {
+          throw new Error("Rooms are sold out for the selected dates");
+        }
+
+        const selectedRooms = availableRooms.slice(0, selection.quantity);
+        totalPrice += selectedRooms.reduce((sum, room) => sum + Number(room.price) * nights, 0);
+        selectedRoomsByType.push({ roomTypeId: roomType.id, rooms: selectedRooms });
       }
 
-      // 2. Check room_trackers to see which physical rooms are already booked/reserved for these dates
-      const bookedRooms = await tx.room_trackers.findMany({
-        where: {
-          room_detail_id: { in: physicalRooms.map((r) => r.id) },
-          status: { in: ["RESERVED", "BOOKED", "CHECKED_IN"] },
-          // A room is busy if its stay overlaps with the requested dates.
-          // Overlap condition: existing_check_in < requested_check_out AND existing_check_out > requested_check_in
-          check_in: { lt: checkOutDate },
-          check_out: { gt: checkInDate },
-        },
-        select: { room_detail_id: true },
-      });
-
-      const bookedRoomIds = new Set(bookedRooms.map((r) => r.room_detail_id));
-      const availableRooms = physicalRooms.filter((r) => !bookedRoomIds.has(r.id));
-
-      if (availableRooms.length < qty) {
-        throw new Error("Rooms are sold out for the selected dates");
-      }
-
-      // 3. Select the required number of rooms
-      const selectedRooms = availableRooms.slice(0, qty);
-
-      // 4. Calculate total from actual physical room prices, not base_price
-      // base_price is display only. room.price is the real booking price.
-      const totalPrice = selectedRooms.reduce((sum, room) => sum + Number(room.price) * nights, 0);
-
-      // Generate a unique 8-character booking reference (e.g. SV-A8B9C2)
       const refCode = "SV-" + crypto.randomBytes(3).toString("hex").toUpperCase();
-
       const reservedUntil = new Date();
-      reservedUntil.setMinutes(reservedUntil.getMinutes() + 5); // Hold for 5 minutes
+      reservedUntil.setMinutes(reservedUntil.getMinutes() + 5);
 
-      // 5. Create user_bookings
       const booking = await tx.user_bookings.create({
         data: {
           booking_reference: refCode,
@@ -128,7 +164,7 @@ export async function POST(req: NextRequest) {
           check_in: checkInDate,
           check_out: checkOutDate,
           guests: Number(guests),
-          rooms_count: qty,
+          rooms_count: totalQuantity,
           special_request: special_request || null,
           status: "RESERVED",
           reserved_until: reservedUntil,
@@ -137,30 +173,31 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // 6. Create room_bookings and room_trackers
-      for (const room of selectedRooms) {
-        const subtotal = Number(room.price) * nights; // using individual room price if configured, else base_price
+      for (const selection of selectedRoomsByType) {
+        for (const room of selection.rooms) {
+          const subtotal = Number(room.price) * nights;
 
-        await tx.room_bookings.create({
-          data: {
-            booking_id: booking.id,
-            room_type_id: roomType.id,
-            room_detail_id: room.id,
-            price_per_night: room.price,
-            nights: nights,
-            subtotal: subtotal,
-          },
-        });
+          await tx.room_bookings.create({
+            data: {
+              booking_id: booking.id,
+              room_type_id: selection.roomTypeId,
+              room_detail_id: room.id,
+              price_per_night: room.price,
+              nights: nights,
+              subtotal: subtotal,
+            },
+          });
 
-        await tx.room_trackers.create({
-          data: {
-            booking_id: booking.id,
-            room_detail_id: room.id,
-            check_in: checkInDate,
-            check_out: checkOutDate,
-            status: "RESERVED",
-          },
-        });
+          await tx.room_trackers.create({
+            data: {
+              booking_id: booking.id,
+              room_detail_id: room.id,
+              check_in: checkInDate,
+              check_out: checkOutDate,
+              status: "RESERVED",
+            },
+          });
+        }
       }
 
       return booking;

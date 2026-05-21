@@ -31,6 +31,7 @@ interface BookingSidebarProps {
   displayPrice?: number;
   onDatesChange?: (checkIn: string, checkOut: string) => void;
   onGuestsChange?: (guests: number) => void;
+  guestWarning?: string | null;
 }
 
 const SERVICE_FEE_PERCENT = 0.1;
@@ -44,6 +45,7 @@ export default function BookingSidebar({
   displayPrice,
   onDatesChange,
   onGuestsChange,
+  guestWarning,
 }: BookingSidebarProps) {
   const router = useRouter();
 
@@ -67,8 +69,7 @@ export default function BookingSidebar({
 
   const hasSelections = selectedVariants.length > 0;
   const roomsTotal = selectedVariants.reduce((s, v) => s + v.price * nights * v.quantity, 0);
-  const serviceFee = Math.round(roomsTotal * SERVICE_FEE_PERCENT);
-  const grandTotal = roomsTotal + serviceFee;
+  const grandTotal = roomsTotal ;
 
   const headerPrice =
     selectedVariants.length > 0
@@ -91,14 +92,26 @@ export default function BookingSidebar({
 
   const handleReserve = () => {
     if (!hasSelections || !date?.from || !date?.to) return;
-    const primary = selectedVariants[0];
+
+    const selectionsByRoomType = selectedVariants.reduce<Record<number, number>>(
+      (acc, variant) => {
+        acc[variant.roomTypeId] = (acc[variant.roomTypeId] || 0) + variant.quantity;
+        return acc;
+      },
+      {}
+    );
+
     const params = new URLSearchParams();
     params.set("hotel", hotelSlug);
-    params.set("room_type", primary.roomTypeId.toString());
-    params.set("quantity", selectedVariants.reduce((s, v) => s + v.quantity, 0).toString());
     params.set("check_in", format(date.from, "yyyy-MM-dd"));
     params.set("check_out", format(date.to, "yyyy-MM-dd"));
     params.set("guests", guests.toString());
+
+    Object.entries(selectionsByRoomType).forEach(([roomTypeId, qty]) => {
+      params.append("room_type_ids[]", roomTypeId);
+      params.append("quantities[]", qty.toString());
+    });
+
     router.push(`/bookings/new?${params.toString()}`);
   };
 
@@ -209,6 +222,9 @@ export default function BookingSidebar({
             </button>
           </div>
         </div>
+        {guestWarning && (
+          <div className="text-sm text-destructive mt-2 px-2">{guestWarning}</div>
+        )}
 
         {hasSelections ? (
           <div className="border border-border/40 rounded-xl overflow-hidden">
@@ -242,12 +258,10 @@ export default function BookingSidebar({
               </div>
             ))}
             <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Service fee</span>
-              <span className="text-foreground">৳{serviceFee.toLocaleString()}</span>
             </div>
             <div className="flex items-center justify-between font-bold text-base pt-2 border-t border-border/30">
               <span className="text-foreground">Total</span>
-              <span className="text-primary">৳{grandTotal.toLocaleString()}</span>
+              <span className="text-primary">TK{grandTotal.toLocaleString()}</span>
             </div>
           </div>
         )}

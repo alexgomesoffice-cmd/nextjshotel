@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
 import RoomsSectionClient, { type RoomType } from "@/components/room/rooms-section-client";
@@ -31,6 +31,7 @@ export default function RoomSelector({
   const [sidebarCheckIn, setSidebarCheckIn] = useState(checkIn);
   const [sidebarCheckOut, setSidebarCheckOut] = useState(checkOut);
   const [sidebarGuests, setSidebarGuests] = useState(guests);
+  const [guestWarning, setGuestWarning] = useState<string | null>(null);
   const datesChanged = sidebarCheckIn !== checkIn || sidebarCheckOut !== checkOut;
   const hasAnySelection = Object.values(quantities).some(q => q > 0);
 
@@ -67,26 +68,36 @@ export default function RoomSelector({
   };
 
   const handleQuantityChange = (variantId: number, qty: number) => {
-    const targetRoomType = roomTypes.find(rt =>
-      rt.room_variants.some(v => v.id === variantId)
-    );
-    if (!targetRoomType) return;
+    setQuantities(prev => ({ ...prev, [variantId]: qty }));
+  };
 
-    const currentSelections = Object.entries(quantities).filter(([, q]) => q > 0);
-    if (currentSelections.length > 0 && qty > 0) {
-      const existingVariantId = parseInt(currentSelections[0][0]);
-      const existingRoomType = roomTypes.find(rt =>
-        rt.room_variants.some(v => v.id === existingVariantId)
-      );
-
-      if (existingRoomType && existingRoomType.id !== targetRoomType.id) {
-        setQuantities({ [variantId]: qty });
-        return;
+  // When sidebarGuests changes, drop any selected variants whose room type
+  // max_occupancy is less than the requested guests, and notify the user.
+  useEffect(() => {
+    if (!sidebarGuests) return;
+    const dropped: { variantId: number; roomTypeName: string; max: number }[] = [];
+    const newQuantities = { ...quantities };
+    for (const [vidStr, qty] of Object.entries(quantities)) {
+      const vid = parseInt(vidStr);
+      if (!qty || qty <= 0) continue;
+      const parent = roomTypes.find(rt => rt.room_variants.some(v => v.id === vid));
+      if (!parent) continue;
+      if (parent.max_occupancy < sidebarGuests) {
+        // remove selection
+        delete newQuantities[vid];
+        dropped.push({ variantId: vid, roomTypeName: parent.name, max: parent.max_occupancy });
       }
     }
 
-    setQuantities(prev => ({ ...prev, [variantId]: qty }));
-  };
+    if (dropped.length > 0) {
+      setQuantities(newQuantities);
+      const first = dropped[0];
+      setGuestWarning(`${first.roomTypeName} fits up to ${first.max} guest${first.max !== 1 ? 's' : ''}. Your search needs ${sidebarGuests}.`);
+      // clear notice after a short timeout
+      const t = setTimeout(() => setGuestWarning(null), 6000);
+      return () => clearTimeout(t);
+    }
+  }, [sidebarGuests, quantities, roomTypes]);
 
   const filteredRoomTypes = useMemo(() => {
     if (acFilter === "all") return roomTypes;
@@ -200,6 +211,7 @@ export default function RoomSelector({
             displayPrice={lowestPrice}
             onDatesChange={handleDatesChange}
             onGuestsChange={setSidebarGuests}
+            guestWarning={guestWarning}
           />
         </div>
       </div>

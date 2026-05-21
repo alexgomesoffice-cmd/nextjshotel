@@ -10,11 +10,13 @@ import Link from "next/link";
 interface BookingClientProps {
   bookingData: {
     hotelId: number;
-    roomTypeId: number;
+    roomSelections: {
+      roomTypeId: number;
+      quantity: number;
+    }[];
     checkIn: string;
     checkOut: string;
     guests: number;
-    quantity: number;
   };
 }
 
@@ -67,11 +69,13 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           hotel_id: bookingData.hotelId,
-          room_type_id: bookingData.roomTypeId,
+          room_selections: bookingData.roomSelections.map(selection => ({
+            room_type_id: selection.roomTypeId,
+            quantity: selection.quantity,
+          })),
           check_in: bookingData.checkIn,
           check_out: bookingData.checkOut,
           guests: bookingData.guests,
-          quantity: bookingData.quantity,
           special_request: specialRequest,
         }),
       });

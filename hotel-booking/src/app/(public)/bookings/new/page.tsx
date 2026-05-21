@@ -11,32 +11,38 @@ export const metadata: Metadata = {
 };
 
 interface BookingPageProps {
-  searchParams: Promise<{
-    hotel?: string;
-    room_type?: string;
-    quantity?: string;
-    check_in?: string;
-    check_out?: string;
-    guests?: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
+
+function parseArrayParam(param?: string | string[]): string[] {
+  if (!param) return [];
+  return Array.isArray(param) ? param : [param];
 }
 
 export default async function BookingNewPage({ searchParams }: BookingPageProps) {
   const params = await searchParams;
 
+  const roomTypeIds = parseArrayParam(params["room_type_ids[]"]).length
+    ? parseArrayParam(params["room_type_ids[]"])
+    : parseArrayParam(params.room_type);
+  const quantities = parseArrayParam(params["quantities[]"]).length
+    ? parseArrayParam(params["quantities[]"])
+    : parseArrayParam(params.quantity);
+
   if (
     !params.hotel ||
-    !params.room_type ||
+    roomTypeIds.length === 0 ||
+    quantities.length === 0 ||
+    roomTypeIds.length !== quantities.length ||
     !params.check_in ||
     !params.check_out ||
-    !params.quantity ||
     !params.guests
   ) {
     redirect("/"); // Missing required params, back to home
   }
 
-  const checkIn = new Date(params.check_in);
-  const checkOut = new Date(params.check_out);
+  const checkIn = new Date(params.check_in as string);
+  const checkOut = new Date(params.check_out as string);
 
   if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime()) || checkOut <= checkIn) {
     redirect("/"); // Invalid dates
@@ -46,9 +52,23 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
     (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)
   );
 
+  const roomTypeIdsNum = roomTypeIds.map(id => Number(id));
+  const quantitiesNum = quantities.map(qty => Number(qty));
+  const guests = Number(params.guests);
+
+  if (
+    roomTypeIdsNum.some(isNaN) ||
+    quantitiesNum.some(isNaN) ||
+    quantitiesNum.some(qty => qty < 1) ||
+    isNaN(guests) ||
+    guests < 1
+  ) {
+    redirect("/");
+  }
+
   // Fetch Hotel & Room Type Data
   const hotel = await prisma.hotels.findUnique({
-    where: { slug: params.hotel },
+    where: { slug: params.hotel as string },
     include: {
       detail: true,
       images: {
@@ -60,8 +80,11 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
 
   if (!hotel) redirect("/");
 
-  const roomType = await prisma.room_types.findUnique({
-    where: { id: Number(params.room_type) },
+  const roomTypes = await prisma.room_types.findMany({
+    where: {
+      id: { in: roomTypeIdsNum },
+      hotel_id: hotel.id,
+    },
     include: {
       type_images: {
         take: 1,
@@ -73,23 +96,32 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
         include: { amenity: true },
       },
       room_details: {
-        where: { status: "AVAILABLE", deleted_at: null }, // count physical rooms
+        where: { status: "AVAILABLE", deleted_at: null },
       },
     },
   });
 
-  if (!roomType || roomType.hotel_id !== hotel.id) redirect("/");
+  if (roomTypes.length !== roomTypeIdsNum.length) redirect("/");
 
-  const quantity = Number(params.quantity);
-  const guests = Number(params.guests);
-  
-  if (roomType.room_details.length < quantity) {
-    // Not enough physical rooms available conceptually (ignoring dates for a moment here, the API does exact checks)
-    // For a robust system, we would check date overlaps here too.
-  }
+  const roomTypeMap = new Map(roomTypes.map(rt => [rt.id, rt]));
+  const roomSelections = roomTypeIdsNum.map((roomTypeId, index) => {
+    const roomType = roomTypeMap.get(roomTypeId);
+    if (!roomType) redirect("/");
+    return {
+      roomType,
+      quantity: quantitiesNum[index],
+    };
+  });
 
-  const pricePerNight = Number(roomType.base_price);
-  const totalPrice = pricePerNight * nights * quantity;
+  const totalPrice = roomSelections.reduce(
+    (sum, selection) => sum + Number(selection.roomType.base_price) * nights * selection.quantity,
+    0
+  );
+
+  const selectedRoomImages = roomSelections
+    .map(selection => selection.roomType.type_images[0]?.image_url)
+    .filter(Boolean) as string[];
+  const coverImage = selectedRoomImages[0] || hotel.images[0]?.image_url;
 
   // Since middleware protects this route, we know user is logged in.
   // We can fetch the user profile if needed, but for now we just pass data to the client component.
@@ -104,11 +136,13 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
           <BookingClient
             bookingData={{
               hotelId: hotel.id,
-              roomTypeId: roomType.id,
-              checkIn: params.check_in,
-              checkOut: params.check_out,
-              guests: guests,
-              quantity: quantity,
+              roomSelections: roomSelections.map(selection => ({
+                roomTypeId: selection.roomType.id,
+                quantity: selection.quantity,
+              })),
+              checkIn: params.check_in as string,
+              checkOut: params.check_out as string,
+              guests,
             }}
           />
 
@@ -117,10 +151,10 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
             <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm sticky top-32">
               <div className="flex gap-4 pb-6 border-b border-border/50">
                 <div className="relative h-24 w-24 rounded-lg overflow-hidden shrink-0 bg-muted">
-                  {(roomType.type_images[0]?.image_url || hotel.images[0]?.image_url) && (
+                  {coverImage && (
                     <Image
-                      src={roomType.type_images[0]?.image_url || hotel.images[0]?.image_url}
-                      alt={roomType.name}
+                      src={coverImage}
+                      alt={hotel.name}
                       fill
                       className="object-cover"
                     />
@@ -128,7 +162,9 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                 </div>
                 <div>
                   <h3 className="font-semibold text-lg leading-tight mb-1">{hotel.name}</h3>
-                  <p className="text-sm text-muted-foreground">{roomType.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {roomSelections.map(selection => selection.roomType.name).join(", ")}
+                  </p>
                 </div>
               </div>
 
@@ -153,13 +189,15 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
 
               <div className="py-6 border-b border-border/50">
                 <h3 className="font-semibold mb-4">Price details</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>
-                      ৳{pricePerNight.toLocaleString()} × {nights} night{nights !== 1 ? "s" : ""} × {quantity} room{quantity !== 1 ? "s" : ""}
-                    </span>
-                    <span>৳{totalPrice.toLocaleString()}</span>
-                  </div>
+                <div className="space-y-3 text-sm">
+                  {roomSelections.map(selection => (
+                    <div key={selection.roomType.id} className="flex justify-between">
+                      <span>
+                        {selection.roomType.name} · ৳{Number(selection.roomType.base_price).toLocaleString()} × {nights} night{nights !== 1 ? "s" : ""} × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
+                      </span>
+                      <span>৳{(Number(selection.roomType.base_price) * nights * selection.quantity).toLocaleString()}</span>
+                    </div>
+                  ))}
                   <div className="flex justify-between text-muted-foreground">
                     <span>Taxes & fees</span>
                     <span>Included</span>

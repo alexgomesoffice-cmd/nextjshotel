@@ -13,7 +13,6 @@ import { useToast } from '@/hooks/use-hooks'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
-import Image from 'next/image'
 import { useRef } from 'react'
 
 interface BedType {
@@ -307,7 +306,7 @@ export default function NewRoomTypePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {previews.map((url, idx) => (
                 <div key={idx} className="group relative aspect-square rounded-xl overflow-hidden border-2 border-border/50">
-                  <Image src={url} alt="Preview" fill className="object-cover" />
+                  <img src={url} alt="Preview" className="object-cover w-full h-full" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Button variant="destructive" size="icon" className="h-8 w-8" onClick={() => removeLocalImage(idx)}>
                       <Trash2 className="h-4 w-4" />

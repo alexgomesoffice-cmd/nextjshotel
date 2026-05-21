@@ -23,7 +23,7 @@ export async function GET(
         },
         end_user: {
           include: {
-            end_user_details: true,
+            detail: true,
           },
         },
         room_bookings: {

@@ -1,5 +1,4 @@
 'use client'
-
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
@@ -333,6 +332,7 @@ export default function NewRoomPage() {
                   {bulkPreviews.map((src, i) => (
                     <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden border">
                       <img src={src} className="w-full h-full object-cover" alt="" />
+
                       <button type="button" onClick={() => { setBulkPreviews(p => p.filter((_, idx) => idx !== i)); setBulkFiles(f => f.filter((_, idx) => idx !== i)) }} className="absolute top-1 right-1 bg-black/50 p-1 rounded-full text-white hover:bg-black/70">
                         <X className="w-3 h-3" />
                       </button>

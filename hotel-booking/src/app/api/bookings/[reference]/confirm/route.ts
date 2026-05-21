@@ -51,10 +51,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (booking.reserved_until && new Date(booking.reserved_until) < new Date()) {
       await prisma.$transaction([
         prisma.user_bookings.update({ where: { id: booking.id }, data: { status: 'EXPIRED' } }),
-        prisma.room_trackers.updateMany({
-          where: { booking_id: booking.id, status: 'RESERVED' },
-          data: { status: 'EXPIRED' },
-        }),
+        prisma.room_trackers.deleteMany({ where: { booking_id: booking.id, status: 'RESERVED' } }),
       ]);
 
       return NextResponse.json(

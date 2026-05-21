@@ -39,9 +39,8 @@ export async function GET(req: NextRequest) {
           where: { id: { in: expiredIds } },
           data: { status: 'EXPIRED', reserved_until: null },
         }),
-        prisma.room_trackers.updateMany({
+        prisma.room_trackers.deleteMany({
           where: { booking_id: { in: expiredIds }, status: 'RESERVED' },
-          data: { status: 'EXPIRED' },
         }),
       ])
     }

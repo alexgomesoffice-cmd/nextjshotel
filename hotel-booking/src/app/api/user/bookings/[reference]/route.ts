@@ -60,9 +60,8 @@ export async function GET(
           where: { id: booking.id },
           data: { status: 'EXPIRED', reserved_until: null },
         }),
-        prisma.room_trackers.updateMany({
+        prisma.room_trackers.deleteMany({
           where: { booking_id: booking.id, status: 'RESERVED' },
-          data: { status: 'EXPIRED' },
         }),
       ])
       booking.status = 'EXPIRED'

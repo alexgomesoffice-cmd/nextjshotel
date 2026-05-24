@@ -72,9 +72,11 @@ const DestinationsSection = () => {
               Discover handpicked locations offering the best stays, stunning views, and unforgettable experiences.
             </p>
           </div>
-          <Button variant="ghost" className="group hidden md:flex items-center gap-2 hover:bg-primary/5">
-            View All Destinations
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 text-primary" />
+          <Button asChild variant="ghost" className="group hidden md:flex items-center gap-2 hover:bg-primary/5">
+            <Link href="/destinations" className="flex items-center gap-2">
+              View All Destinations
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 text-primary" />
+            </Link>
           </Button>
         </div>
 
@@ -124,9 +126,11 @@ const DestinationsSection = () => {
           ))}
         </div>
 
-        <Button variant="outline" className="w-full mt-8 md:hidden group">
-          View All Destinations
-          <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+        <Button asChild variant="outline" className="w-full mt-8 md:hidden group">
+          <Link href="/destinations" className="flex w-full items-center justify-center gap-2">
+            View All Destinations
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </Link>
         </Button>
       </div>
     </section>

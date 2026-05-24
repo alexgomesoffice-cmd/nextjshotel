@@ -1668,3 +1668,31 @@ export const BOOKING_REF_PREFIX       = 'HBD'
 | 11 | Reservation flow: 10-min hold, countdown timer, expire/cancel |
 | 12 | Payment gateway (SSL Commerz / bKash) |
 | 13+ | Google OAuth, notifications, reviews, analytics, SMS |
+
+
+# Environment variables declared in this file are NOT automatically loaded by Prisma.
+# Please add `import "dotenv/config";` to your `prisma.config.ts` file, or use the Prisma CLI with Bun
+# to load environment variables from .env files: https://pris.ly/prisma-config-env-vars.
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+# The following `prisma+postgres` URL is similar to the URL produced by running a local Prisma Postgres
+# server with the `prisma dev` CLI command, when not choosing any non-default ports or settings. The API key, unlike the
+# one found in a remote Prisma Postgres URL, does not contain any sensitive information.
+
+DATABASE_URL="mysql://root:123456@localhost:3306/hotel_booking"
+DATABASE_HOST="localhost"
+DATABASE_PORT=3306
+DATABASE_USER="root"
+DATABASE_PASSWORD="123456"
+DATABASE_NAME="hotel_booking"
+
+JWT_SECRET="FUjAnyoU1rZgZ1vgQvmt3XEw+aTolSOQuK97PO3YtVeqC2xC1u4xe9D5flQ6k9sv5WmvELrkvkZgZeuF0uLIRA=="
+JWT_EXPIRES_IN="7d"
+NEXT_PUBLIC_BASE_URL="http://localhost:3000"
+UPLOAD_DIR="./public/uploads"
+SEED_ADMIN_EMAIL="admin@system.com"
+SEED_ADMIN_PASSWORD="admin123"
+SEED_ADMIN_NAME="Super Admin"
+CRON_SECRET="Xui7mAEVVLgpoOwXlZvlAVY9Ok/2JkFSi3AW5OpARI8="

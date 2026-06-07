@@ -21,10 +21,11 @@ const DestinationsSection = () => {
     const fetchCities = async () => {
       try {
         const res = await fetch("/api/public/cities");
+
         if (res.ok) {
           const data = await res.json();
+
           if (data.success && Array.isArray(data.data)) {
-            // For demo, we just take the first 6 cities to fit nicely in a grid
             setCities(data.data.slice(0, 6));
           }
         }
@@ -34,6 +35,7 @@ const DestinationsSection = () => {
         setIsLoading(false);
       }
     };
+
     fetchCities();
   }, []);
 
@@ -42,11 +44,15 @@ const DestinationsSection = () => {
       <section className="py-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="animate-pulse space-y-8">
-            <div className="h-10 bg-muted rounded-md w-1/3"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-72 bg-muted rounded-3xl"></div>
-              ))}
+            <div className="h-10 w-1/3 rounded-md bg-muted" />
+
+            <div className="grid auto-rows-[200px] grid-cols-1 gap-4 sm:grid-cols-2 md:auto-rows-[260px] md:gap-5 lg:grid-cols-4">
+              <div className="rounded-3xl bg-muted lg:row-span-2" />
+              <div className="rounded-3xl bg-muted" />
+              <div className="rounded-3xl bg-muted" />
+              <div className="rounded-3xl bg-muted" />
+              <div className="rounded-3xl bg-muted" />
+              <div className="rounded-3xl bg-muted lg:row-span-2" />
             </div>
           </div>
         </div>
@@ -56,80 +62,115 @@ const DestinationsSection = () => {
 
   if (cities.length === 0) return null;
 
-  return (
-    <section className="py-24 bg-background relative overflow-hidden">
-      {/* Decorative background blurs */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
+  const orderedCities =
+  cities.length >= 6
+    ? [
+        cities[0], // Tall Left
+        cities[1], // Top Middle
+        cities[2], // Top Middle
+        cities[5], // Tall Right
+        cities[3], // Bottom Middle
+        cities[4], // Bottom Middle
+      ]
+    : cities.slice(0, 6);
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+  return (
+    <section className="relative overflow-hidden bg-background py-24">
+      {/* Decorative Blurs */}
+      <div className="pointer-events-none absolute top-0 right-0 h-96 w-96 translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-0 h-96 w-96 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent/5 blur-3xl" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-8">
+        {/* Header */}
+        <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
-              Explore Popular <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-accent">Destinations</span>
+            <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-5xl">
+              Explore Popular{" "}
+              <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
+                Destinations
+              </span>
             </h2>
-            <p className="text-muted-foreground text-lg">
-              Discover handpicked locations offering the best stays, stunning views, and unforgettable experiences.
+
+            <p className="text-lg text-muted-foreground">
+              Discover handpicked locations offering the best stays,
+              stunning views, and unforgettable experiences.
             </p>
           </div>
-          <Button asChild variant="ghost" className="group hidden md:flex items-center gap-2 hover:bg-primary/5">
-            <Link href="/destinations" className="flex items-center gap-2">
+
+          <Button
+            asChild
+            variant="ghost"
+            className="group hidden items-center gap-2 hover:bg-primary/5 md:flex"
+          >
+            <Link href="/destinations">
               View All Destinations
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1 text-primary" />
+              <ArrowRight className="h-4 w-4 text-primary transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {cities.map((city, index) => (
-            <Link 
-              key={city.id} 
-              href={`/search?location=${encodeURIComponent(city.name)}`}
-              className="group relative h-72 sm:h-80 rounded-3xl overflow-hidden block shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
-              style={{ animationDelay: `${index * 100}ms` }}
-            >
-              <div className="absolute inset-0 bg-muted">
-                {city.image_url ? (
-                  <Image
-                    src={city.image_url}
-                    alt={city.name}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-110"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-secondary/50">
-                    <MapPin className="h-12 w-12 text-muted-foreground/50" />
-                  </div>
-                )}
-              </div>
-              
-              {/* Gradient overlay for text readability */}
-              <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-500 group-hover:from-black/90" />
-              
-              {/* Content */}
-              <div className="absolute bottom-0 left-0 w-full p-6 transform transition-transform duration-500">
-                <div className="flex items-center gap-2 mb-2 opacity-0 -translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500">
-                  <span className="text-primary-foreground/90 text-xs font-medium uppercase tracking-wider bg-primary/80 backdrop-blur-md px-3 py-1 rounded-full">
-                    Top Rated
-                  </span>
+        {/* Destination Grid */}
+        <div className="grid auto-rows-[200px] grid-cols-1 gap-4 sm:grid-cols-2 md:auto-rows-[260px] md:gap-5 lg:grid-cols-4">
+          {orderedCities.map((city, index) => {
+            const isTall = index === 0 || index === 3;
+
+            return (
+              <Link
+                key={city.id}
+                href={`/search?location=${encodeURIComponent(city.name)}`}
+                className={`group relative overflow-hidden rounded-3xl shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl ${
+                  isTall ? "lg:row-span-2" : ""
+                }`}
+              >
+                {/* Image */}
+                <div className="absolute inset-0">
+                  {city.image_url ? (
+                    <Image
+                      src={city.image_url}
+                      alt={city.name}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      sizes="(max-width:768px) 100vw,
+                             (max-width:1024px) 50vw,
+                             25vw"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-secondary">
+                      <MapPin className="h-12 w-12 text-muted-foreground/50" />
+                    </div>
+                  )}
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-1 group-hover:text-primary-foreground transition-colors">
-                  {city.name}
-                </h3>
-                <p className="text-white/70 text-sm flex items-center gap-1.5 group-hover:text-white/90 transition-colors">
-                  <MapPin className="h-3.5 w-3.5" />
-                  Explore hotels in {city.name}
-                </p>
-              </div>
-            </Link>
-          ))}
+
+                {/* Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+
+                {/* Content */}
+                <div className="absolute inset-x-0 bottom-0 p-6">
+                  <h3 className="mb-1 text-2xl font-bold text-white">
+                    {city.name}
+                  </h3>
+
+                  <p className="flex items-center gap-1.5 text-sm text-white/80">
+                    <MapPin className="h-3.5 w-3.5" />
+                    Explore hotels in {city.name}
+                  </p>
+                </div>
+
+                {/* Floating Arrow */}
+                
+              </Link>
+            );
+          })}
         </div>
 
-        <Button asChild variant="outline" className="w-full mt-8 md:hidden group">
-          <Link href="/destinations" className="flex w-full items-center justify-center gap-2">
+        {/* Mobile CTA */}
+        <Button asChild variant="outline" className="group mt-8 w-full md:hidden">
+          <Link
+            href="/destinations"
+            className="flex w-full items-center justify-center gap-2"
+          >
             View All Destinations
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
           </Link>
         </Button>
       </div>

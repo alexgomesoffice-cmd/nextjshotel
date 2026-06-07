@@ -158,7 +158,41 @@ export default async function HotelDetailPage({
         <div className="mb-12">
           <HotelImagesGalleryClient images={hotel.images} />
         </div>
+            {/* Available Rooms + Booking Sidebar */}
+        <div className="pt-12 border-t border-border/50">
+          {hotel.room_types && hotel.room_types.length > 0 ? (
+            <RoomSelector
+              roomTypes={hotel.room_types.map((room) => {
+                const room_variants = groupRoomVariants(room.room_details)
+                return {
+                  id: room.id,
+                  name: room.name,
+                  description: room.description,
+                  base_price: Number(room.base_price),
+                  max_occupancy: room.max_occupancy,
+                  room_size: room.room_size,
+                  type_images: room.type_images,
+                  room_bed_types: room.room_bed_types,
+                  room_properties: room.room_properties,
+                  available_rooms_count: room.room_details.length,
+                  room_variants,
+                }
+              })}
+              hotelSlug={hotel.slug}
+              checkIn={search.check_in}
+              checkOut={search.check_out}
+              guests={search.guests ? parseInt(search.guests) : 1}
+            />
 
+          ) : (
+            <div className="flex flex-col items-center justify-center p-12 bg-secondary/20 rounded-3xl border border-border/50">
+              <h3 className="text-xl font-semibold mb-2">No rooms available</h3>
+              <p className="text-muted-foreground text-center">
+                Currently there are no rooms available to book at this property.
+              </p>
+            </div>
+          )}
+        </div>
         {/* About, Amenities, Policies — full width, no sidebar */}
         <div className="space-y-12 mb-12">
 
@@ -213,41 +247,7 @@ export default async function HotelDetailPage({
           )}
         </div>
 
-        {/* Available Rooms + Booking Sidebar */}
-        <div className="pt-12 border-t border-border/50">
-          {hotel.room_types && hotel.room_types.length > 0 ? (
-            <RoomSelector
-              roomTypes={hotel.room_types.map((room) => {
-                const room_variants = groupRoomVariants(room.room_details)
-                return {
-                  id: room.id,
-                  name: room.name,
-                  description: room.description,
-                  base_price: Number(room.base_price),
-                  max_occupancy: room.max_occupancy,
-                  room_size: room.room_size,
-                  type_images: room.type_images,
-                  room_bed_types: room.room_bed_types,
-                  room_properties: room.room_properties,
-                  available_rooms_count: room.room_details.length,
-                  room_variants,
-                }
-              })}
-              hotelSlug={hotel.slug}
-              checkIn={search.check_in}
-              checkOut={search.check_out}
-              guests={search.guests ? parseInt(search.guests) : 1}
-            />
-
-          ) : (
-            <div className="flex flex-col items-center justify-center p-12 bg-secondary/20 rounded-3xl border border-border/50">
-              <h3 className="text-xl font-semibold mb-2">No rooms available</h3>
-              <p className="text-muted-foreground text-center">
-                Currently there are no rooms available to book at this property.
-              </p>
-            </div>
-          )}
-        </div>
+        
 
       </div>
     </div>

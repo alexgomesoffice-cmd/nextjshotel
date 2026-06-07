@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
       where.AND.push({
         OR: [
           { hotel_amenities: { some: { amenity_id: { in: amenityIds } } } },
-          { room_types: { some: { room_type_amenities: { some: { amenity_id: { in: amenityIds } } } } } }
+          { room_types: { some: { room_properties: { some: { amenity_id: { in: amenityIds } } } } } }
         ]
       });
     }

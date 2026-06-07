@@ -66,9 +66,13 @@ export async function GET(req: NextRequest) {
     // Amenities filter (by amenity id)
     if (amenitiesStr) {
       const amenityIds = amenitiesStr.split(',').map(Number).filter(Boolean);
-      where.hotel_amenities = {
-        some: { amenity_id: { in: amenityIds } },
-      };
+      where.AND = where.AND || [];
+      where.AND.push({
+        OR: [
+          { hotel_amenities: { some: { amenity_id: { in: amenityIds } } } },
+          { room_types: { some: { room_type_amenities: { some: { amenity_id: { in: amenityIds } } } } } }
+        ]
+      });
     }
 
     // Price range filter — on room_types base_price

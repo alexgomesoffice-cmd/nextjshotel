@@ -1,5 +1,6 @@
 import { Toaster } from 'sonner'
 import "@/app/globals.css"
+import SmoothScroll from '@/components/ui/SmoothScroll'
 export default function RootLayout({
   children,
 }: {
@@ -29,7 +30,9 @@ export default function RootLayout({
         />
       </head>
       <body>
+        <SmoothScroll>
         {children}
+        </SmoothScroll>
         <Toaster
           position="bottom-right"
           theme="dark"

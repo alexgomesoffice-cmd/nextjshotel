@@ -10,6 +10,7 @@ const collageImages = [
     '/uploads/hotels/75edbccb-579a-4b86-9745-ee59a9a2a487.webp',
     '/uploads/hotels/c33b9749-1f6c-4f97-8b01-cdfbfbedd804.webp',
     '/uploads/hotels/d148dc9f-cbd4-4c56-87a9-94d6540976a1.webp',
+    '/uploads/hotels/7cb7b155-7fc3-4328-819b-ce0759fc76c6.webp',
 ]
 
 export function HeroSection() {

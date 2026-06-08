@@ -34,6 +34,7 @@ interface RoomsSectionClientProps {
   quantities: Record<number, number>;
   onQuantityChange: (variantId: number, qty: number) => void;
   guests?: number;
+  highlightedRoomTypeId?: number;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ export default function RoomsSectionClient({
   quantities,
   onQuantityChange,
   guests = 1,
+  highlightedRoomTypeId,
 }: RoomsSectionClientProps) {
   const [modalRoom, setModalRoom] = useState<RoomType | null>(null);
 
@@ -98,6 +100,8 @@ export default function RoomsSectionClient({
               onQuantityChange={onQuantityChange}
               isGuestMismatch={isGuestMismatch}
               guestMismatchReason={guestMismatchReason}
+              forceExpanded={roomType.id === highlightedRoomTypeId}
+              isHighlighted={roomType.id === highlightedRoomTypeId}
             />
           );
         })}

@@ -69,7 +69,7 @@ const HotelCard = ({
     if (checkOut) p.set('check_out', checkOut);
     if (guests)   p.set('guests',    String(guests));
     p.set('room_type', String(roomTypeId));
-    return `/hotels/${slug}?${p.toString()}#rooms`;
+    return `/hotels/${slug}?${p.toString()}`;
   };
 
   return (

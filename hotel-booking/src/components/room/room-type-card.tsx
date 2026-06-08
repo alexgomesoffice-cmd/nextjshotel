@@ -44,6 +44,8 @@ export interface RoomTypeCardProps {
   onQuantityChange: (variantId: number, quantity: number) => void;
   isGuestMismatch?: boolean;
   guestMismatchReason?: string;
+  forceExpanded?: boolean;
+  isHighlighted?: boolean;
 }
 
 // ─── Variant Row ─────────────────────────────────────────────────────────────
@@ -233,26 +235,31 @@ function VariantRow({
 // ─── Room Type Card (Collapsed header) ───────────────────────────────────────
 
 const RoomTypeCard = ({
-  name, description, base_price, occupancy_adults, room_size,
+  id, name, description, base_price, occupancy_adults, room_size,
   type_images, room_bed_types, room_properties, available_rooms_count,
   room_variants, onViewDetails, selectedQuantities, onQuantityChange,
-  isGuestMismatch, guestMismatchReason,
+  isGuestMismatch, guestMismatchReason, forceExpanded = false, isHighlighted = false,
 }: RoomTypeCardProps) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(forceExpanded);
   const coverImage = type_images?.[0]?.image_url || null;
   const totalSelected = Object.values(selectedQuantities).reduce((a, b) => a + b, 0);
   const isUnavailable = available_rooms_count === 0 && room_variants.length === 0;
   const isDisabled = isGuestMismatch || isUnavailable;
+  const shouldExpand = forceExpanded || isExpanded;
 
   return (
-    <div className={cn(
-      "rounded-2xl border overflow-hidden bg-card transition-all duration-200",
-      isDisabled
-        ? "opacity-60 border-border/30"
-        : isExpanded || totalSelected > 0
-          ? "border-primary/70"
-          : "border-border/30 hover:border-border/50"
-    )}>
+    <div
+      id={id ? `room-type-${id}` : undefined}
+      className={cn(
+        "rounded-2xl border overflow-hidden bg-card transition-all duration-200",
+        isHighlighted && "ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]",
+        isDisabled
+          ? "opacity-60 border-border/30"
+          : shouldExpand || totalSelected > 0
+            ? "border-primary/70"
+            : "border-border/30 hover:border-border/50"
+      )}
+    >
       {/* ── Collapsed Header ── */}
       <div
         onClick={() => {
@@ -303,7 +310,7 @@ const RoomTypeCard = ({
               "h-9 w-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300",
               "bg-primary text-white"
             )}>
-              <ChevronUp className={cn("h-4 w-4 transition-transform duration-300", !isExpanded && "rotate-180")} />
+              <ChevronUp className={cn("h-4 w-4 transition-transform duration-300", !shouldExpand && "rotate-180")} />
             </div>
           </div>
         </div>
@@ -353,7 +360,7 @@ const RoomTypeCard = ({
       </div>
 
       {/* ── Expanded: Variant rows ── */}
-      {isExpanded && (
+      {shouldExpand && (
         <div className="animate-in slide-in-from-top-1 duration-200">
           {room_variants.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground border-t border-border/20">

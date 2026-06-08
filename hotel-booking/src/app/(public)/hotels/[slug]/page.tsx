@@ -47,7 +47,7 @@ export default async function HotelDetailPage({
   searchParams
 }: { 
   params: Promise<{ slug: string }>,
-  searchParams: Promise<{ check_in?: string, check_out?: string, guests?: string }>
+  searchParams: Promise<{ check_in?: string; check_out?: string; guests?: string; room_type?: string }>
 }) {
   const { slug } = await params;
   const search = await searchParams;
@@ -158,8 +158,8 @@ export default async function HotelDetailPage({
         <div className="mb-12">
           <HotelImagesGalleryClient images={hotel.images} />
         </div>
-            {/* Available Rooms + Booking Sidebar */}
-        <div className="pt-12 border-t border-border/50">
+        {/* Available Rooms + Booking Sidebar */}
+        <div id="rooms" className="pt-12 border-t border-border/50 scroll-mt-28">
           {hotel.room_types && hotel.room_types.length > 0 ? (
             <RoomSelector
               roomTypes={hotel.room_types.map((room) => {
@@ -182,6 +182,7 @@ export default async function HotelDetailPage({
               checkIn={search.check_in}
               checkOut={search.check_out}
               guests={search.guests ? parseInt(search.guests) : 1}
+              focusRoomTypeId={search.room_type ? parseInt(search.room_type) : undefined}
             />
 
           ) : (

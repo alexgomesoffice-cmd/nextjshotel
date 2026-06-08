@@ -14,6 +14,7 @@ interface RoomSelectorProps {
   checkIn?: string;
   checkOut?: string;
   guests?: number;
+  focusRoomTypeId?: number;
 }
 
 export default function RoomSelector({
@@ -22,16 +23,39 @@ export default function RoomSelector({
   checkIn,
   checkOut,
   guests = 1,
+  focusRoomTypeId,
 }: RoomSelectorProps) {
   const [roomTypes, setRoomTypes] = useState(initialRoomTypes);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [acFilter, setAcFilter] = useState<AcFilter>("all");
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
+  const [highlightedRoomTypeId, setHighlightedRoomTypeId] = useState<number | null>(null);
 
   const [sidebarCheckIn, setSidebarCheckIn] = useState(checkIn);
   const [sidebarCheckOut, setSidebarCheckOut] = useState(checkOut);
   const [sidebarGuests, setSidebarGuests] = useState(guests);
   const [guestWarning, setGuestWarning] = useState<string | null>(null);
+
+  // ── Scroll to #rooms then to the specific card and animate it ──
+  useEffect(() => {
+    if (!focusRoomTypeId) return;
+    // Step 1: scroll the whole rooms section into view
+    const step1 = setTimeout(() => {
+      document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Step 2: after the first scroll settles, scroll to and highlight the card
+      const step2 = setTimeout(() => {
+        const card = document.getElementById(`room-type-${focusRoomTypeId}`);
+        if (card) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHighlightedRoomTypeId(focusRoomTypeId);
+          // Clear highlight after animation finishes
+          setTimeout(() => setHighlightedRoomTypeId(null), 3000);
+        }
+      }, 900);
+      return () => clearTimeout(step2);
+    }, 350);
+    return () => clearTimeout(step1);
+  }, [focusRoomTypeId]);
   const datesChanged = sidebarCheckIn !== checkIn || sidebarCheckOut !== checkOut;
   const hasAnySelection = Object.values(quantities).some(q => q > 0);
 
@@ -192,6 +216,7 @@ export default function RoomSelector({
             quantities={quantities}
             onQuantityChange={handleQuantityChange}
             guests={sidebarGuests}
+            highlightedRoomTypeId={highlightedRoomTypeId}
           />
           {filteredRoomTypes.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border border-border/30 rounded-2xl">

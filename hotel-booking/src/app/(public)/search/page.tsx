@@ -52,6 +52,7 @@ function SearchContent() {
         const params = new URLSearchParams(searchParams.toString());
         params.set("sort", sort);
         params.set("limit", "12");
+        params.set("include_rooms", "true");
 
         const res = await fetch(`/api/public/hotels?${params.toString()}`);
         if (res.ok) {
@@ -173,9 +174,9 @@ function SearchContent() {
                 </div>
               ) : hotels.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
                     {hotels.map((hotel) => (
-                      <div key={hotel.id} className="h-105">
+                      <div key={hotel.id}>
                         <HotelCard
                           {...hotel}
                           checkIn={searchParams.get("check_in") || undefined}

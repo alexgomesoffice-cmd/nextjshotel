@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -131,7 +131,7 @@ export default function RoomTypesPage() {
                     <Badge variant="outline">{rt.room_count} physical rooms</Badge>
                     {rt.room_size && <Badge variant="outline">{rt.room_size}</Badge>}
                   </div>
-                  
+
                   <div className="text-sm text-muted-foreground mb-4 line-clamp-2">
                     {rt.description || 'No description provided.'}
                   </div>

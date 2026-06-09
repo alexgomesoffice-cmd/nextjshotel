@@ -5,7 +5,7 @@ import { UploadCloud, Star, Trash2, X, Image as ImageIcon, Loader2 } from 'lucid
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import Image from 'next/image'
 
 interface HotelImage {
@@ -130,16 +130,16 @@ export default function HotelImagesPage() {
           <p className="text-muted-foreground mt-1">Upload and manage high-quality photos of your property.</p>
         </div>
         <div className="flex items-center gap-3">
-          <input 
-            type="file" 
+          <input
+            type="file"
             ref={fileInputRef}
-            className="hidden" 
-            multiple 
+            className="hidden"
+            multiple
             accept="image/jpeg,image/png,image/webp,image/gif"
             onChange={handleUpload}
           />
-          <Button 
-            onClick={() => fileInputRef.current?.click()} 
+          <Button
+            onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="gap-2"
           >
@@ -173,35 +173,34 @@ export default function HotelImagesPage() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {images.map((img) => (
-            <div 
-              key={img.id} 
-              className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 ${
-                img.is_cover ? 'border-primary shadow-glow shadow-primary/20 scale-[1.02]' : 'border-transparent hover:border-primary/50'
-              }`}
+            <div
+              key={img.id}
+              className={`group relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 ${img.is_cover ? 'border-primary shadow-glow shadow-primary/20 scale-[1.02]' : 'border-transparent hover:border-primary/50'
+                }`}
             >
-              <Image 
-                src={img.image_url} 
-                alt="Hotel Photo" 
-                fill 
+              <Image
+                src={img.image_url}
+                alt="Hotel Photo"
+                fill
                 className="object-cover"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
               />
-              
+
               {/* Overlay */}
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3">
                 <div className="flex justify-end">
-                  <button 
+                  <button
                     onClick={() => handleDelete(img.id)}
                     className="p-1.5 bg-destructive/90 text-white rounded-md hover:bg-destructive transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-                
+
                 {!img.is_cover && (
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     className="w-full gap-2 bg-background/90 hover:bg-background"
                     onClick={() => handleSetCover(img.id)}
                   >

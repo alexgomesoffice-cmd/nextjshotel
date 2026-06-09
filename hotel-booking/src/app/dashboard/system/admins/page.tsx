@@ -14,7 +14,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Label } from '@/components/ui/label'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 
 interface SystemAdmin {
   id: number
@@ -226,8 +226,8 @@ export default function AdminsPage() {
                           admin.is_blocked
                             ? 'bg-red-500/20 text-red-700 border-red-500/30'
                             : admin.is_active
-                            ? 'bg-green-500/20 text-green-700 border-green-500/30'
-                            : 'bg-gray-500/20 text-gray-600 border-gray-500/30'
+                              ? 'bg-green-500/20 text-green-700 border-green-500/30'
+                              : 'bg-gray-500/20 text-gray-600 border-gray-500/30'
                         }
                       >
                         {admin.is_blocked ? 'Blocked' : admin.is_active ? 'Active' : 'Inactive'}

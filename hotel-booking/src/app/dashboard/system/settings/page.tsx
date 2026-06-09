@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 
 const CONFIG_ITEMS = [
   {
@@ -85,7 +85,7 @@ const ROLES = [
 
 export default function SettingsPage() {
   const { toast } = useToast()
-  
+
   // Profile Form State
   const [profileLoading, setProfileLoading] = useState(true)
   const [profileSaving, setProfileSaving] = useState(false)
@@ -122,11 +122,11 @@ export default function SettingsPage() {
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!profileForm.name.trim()) {
       return toast({ title: 'Error', description: 'Name is required', variant: 'destructive' })
     }
-    
+
     if (profileForm.new_password && !profileForm.current_password) {
       return toast({ title: 'Error', description: 'Current password is required to set a new password', variant: 'destructive' })
     }
@@ -140,7 +140,7 @@ export default function SettingsPage() {
         body: JSON.stringify(profileForm)
       })
       const data = await res.json()
-      
+
       if (data.success) {
         toast({ title: 'Success', description: 'Profile updated successfully', variant: 'success' })
         // Clear password fields on success
@@ -178,20 +178,20 @@ export default function SettingsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="admin-name">Full Name</Label>
-                <Input 
-                  id="admin-name" 
-                  value={profileForm.name} 
-                  onChange={(e) => setProfileForm(f => ({...f, name: e.target.value}))}
+                <Input
+                  id="admin-name"
+                  value={profileForm.name}
+                  onChange={(e) => setProfileForm(f => ({ ...f, name: e.target.value }))}
                   disabled={profileLoading}
                 />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="admin-email">Email Address</Label>
-                <Input 
-                  id="admin-email" 
-                  type="email" 
-                  value={profileForm.email} 
-                  onChange={(e) => setProfileForm(f => ({...f, email: e.target.value}))}
+                <Input
+                  id="admin-email"
+                  type="email"
+                  value={profileForm.email}
+                  onChange={(e) => setProfileForm(f => ({ ...f, email: e.target.value }))}
                   disabled={profileLoading}
                 />
               </div>
@@ -199,17 +199,17 @@ export default function SettingsPage() {
 
             <Separator className="my-2" />
             <p className="text-sm font-medium">Change Password (Optional)</p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label htmlFor="admin-current-pw">Current Password</Label>
                 <div className="relative">
-                  <Input 
-                    id="admin-current-pw" 
-                    type={showPw.current ? 'text' : 'password'} 
+                  <Input
+                    id="admin-current-pw"
+                    type={showPw.current ? 'text' : 'password'}
                     placeholder="Leave blank to keep current"
                     value={profileForm.current_password}
-                    onChange={(e) => setProfileForm(f => ({...f, current_password: e.target.value}))}
+                    onChange={(e) => setProfileForm(f => ({ ...f, current_password: e.target.value }))}
                     disabled={profileLoading}
                     className="pr-10"
                   />
@@ -222,16 +222,16 @@ export default function SettingsPage() {
                   </button>
                 </div>
               </div>
-              
+
               <div className="space-y-1.5">
                 <Label htmlFor="admin-new-pw">New Password</Label>
                 <div className="relative">
-                  <Input 
-                    id="admin-new-pw" 
-                    type={showPw.newPw ? 'text' : 'password'} 
+                  <Input
+                    id="admin-new-pw"
+                    type={showPw.newPw ? 'text' : 'password'}
                     placeholder="New password (min 6 chars)"
                     value={profileForm.new_password}
-                    onChange={(e) => setProfileForm(f => ({...f, new_password: e.target.value}))}
+                    onChange={(e) => setProfileForm(f => ({ ...f, new_password: e.target.value }))}
                     disabled={profileLoading}
                     className="pr-10"
                   />

@@ -3,7 +3,7 @@
 // Shows: Total hotels, active hotels, total users, total bookings, revenue stats
 
 'use client'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'

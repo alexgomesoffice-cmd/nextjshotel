@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
   DialogContent,
@@ -134,8 +134,8 @@ export default function BedTypesPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {bedTypes.map((item) => (
-          <div 
-            key={item.id} 
+          <div
+            key={item.id}
             className={`flex items-center justify-between p-4 rounded-xl border ${item.is_default ? 'bg-secondary/20 border-border/50' : 'bg-primary/5 border-primary/20'}`}
           >
             <div className="flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function BedTypesPage() {
               </div>
             </div>
             {!item.is_default && (
-              <button 
+              <button
                 onClick={() => handleDeleteBed(item.id)}
                 className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
               >
@@ -178,8 +178,8 @@ export default function BedTypesPage() {
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="bed-name">Bed Type Name</Label>
-                <Input 
-                  id="bed-name" 
+                <Input
+                  id="bed-name"
                   placeholder="e.g. Round King Bed"
                   value={newBedName}
                   onChange={(e) => setNewBedName(e.target.value)}

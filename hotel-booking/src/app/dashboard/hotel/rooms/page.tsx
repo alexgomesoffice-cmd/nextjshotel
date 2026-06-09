@@ -2,15 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreHorizontal, 
-  Edit, 
-  Trash2, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  Plus,
+  Search,
+  Filter,
+  MoreHorizontal,
+  Edit,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
   Wrench,
   Bed,
   Layers,
@@ -22,33 +22,33 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 
 interface RoomType {
@@ -80,7 +80,7 @@ export default function HotelRoomsPage() {
   const [loading, setLoading] = useState(true)
   const [rooms, setRooms] = useState<Room[]>([])
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([])
-  
+
   // Filters
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('ALL')
@@ -230,8 +230,8 @@ export default function HotelRoomsPage() {
         <CardContent className="p-4 flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search by room number..." 
+            <Input
+              placeholder="Search by room number..."
               className="pl-10"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -300,9 +300,9 @@ export default function HotelRoomsPage() {
                   <TableCell>
                     <div className="w-12 h-12 rounded-lg overflow-hidden border bg-muted/20">
                       {room.room_images?.[0] ? (
-                        <img 
-                          src={room.room_images[0].image_url} 
-                          alt={room.room_number} 
+                        <img
+                          src={room.room_images[0].image_url}
+                          alt={room.room_number}
                           className="w-full h-full object-cover transition-transform group-hover:scale-110"
                         />
                       ) : (

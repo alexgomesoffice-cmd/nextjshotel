@@ -46,6 +46,7 @@ export interface RoomTypeCardProps {
   guestMismatchReason?: string;
   forceExpanded?: boolean;
   isHighlighted?: boolean;
+  onClearHighlight?: () => void;
 }
 
 // ─── Variant Row ─────────────────────────────────────────────────────────────
@@ -238,7 +239,7 @@ const RoomTypeCard = ({
   id, name, description, base_price, occupancy_adults, room_size,
   type_images, room_bed_types, room_properties, available_rooms_count,
   room_variants, onViewDetails, selectedQuantities, onQuantityChange,
-  isGuestMismatch, guestMismatchReason, forceExpanded = false, isHighlighted = false,
+  isGuestMismatch, guestMismatchReason, forceExpanded = false, isHighlighted = false, onClearHighlight,
 }: RoomTypeCardProps) => {
   const [isExpanded, setIsExpanded] = useState(forceExpanded);
   const coverImage = type_images?.[0]?.image_url || null;
@@ -247,11 +248,24 @@ const RoomTypeCard = ({
   const isDisabled = isGuestMismatch || isUnavailable;
   const shouldExpand = forceExpanded || isExpanded;
 
+  const handleHeaderClick = () => {
+    if (!isDisabled) {
+      if (isHighlighted) {
+        // User is closing the highlighted room - clear highlight AND collapse immediately
+        onClearHighlight?.();
+        setIsExpanded(false);
+      } else {
+        // Normal toggle
+        setIsExpanded(!isExpanded);
+      }
+    }
+  };
+
   return (
     <div
       id={id ? `room-type-${id}` : undefined}
       className={cn(
-        "rounded-2xl border overflow-hidden bg-card transition-all duration-200",
+        "rounded-2xl border overflow-hidden bg-card transition-all duration-50",
         isHighlighted && "ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]",
         isDisabled
           ? "opacity-60 border-border/30"
@@ -262,9 +276,7 @@ const RoomTypeCard = ({
     >
       {/* ── Collapsed Header ── */}
       <div
-        onClick={() => {
-          if (!isDisabled) setIsExpanded(!isExpanded);
-        }}
+        onClick={handleHeaderClick}
         className={cn(
           "cursor-pointer hover:bg-white/5 transition-colors select-none",
           isDisabled && "cursor-not-allowed"
@@ -307,10 +319,10 @@ const RoomTypeCard = ({
             </div>
             {/* Blue circle chevron */}
             <div className={cn(
-              "h-9 w-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all duration-300",
+              "h-9 w-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all duration-75",
               "bg-primary text-white"
             )}>
-              <ChevronUp className={cn("h-4 w-4 transition-transform duration-300", !shouldExpand && "rotate-180")} />
+              <ChevronUp className={cn("h-4 w-4 transition-transform duration-75", !shouldExpand && "rotate-180")} />
             </div>
           </div>
         </div>
@@ -361,7 +373,7 @@ const RoomTypeCard = ({
 
       {/* ── Expanded: Variant rows ── */}
       {shouldExpand && (
-        <div className="animate-in slide-in-from-top-1 duration-200">
+        <div className="animate-in slide-in-from-top-1 duration-50">
           {room_variants.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground border-t border-border/20">
               No rooms currently available in this category.

@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect, ComponentType } from 'react'
-import { 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  TrendingUp, 
-  Bed, 
-  Clock, 
-  ShieldCheck, 
+import {
+  Users,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  Bed,
+  Clock,
+  ShieldCheck,
   CheckCircle2,
   AlertCircle,
   Plus,
@@ -18,7 +18,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
 
 interface DashboardStats {
@@ -172,30 +172,30 @@ export default function HotelDashboardPage() {
 
       {/* Main Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
-          title="Monthly Revenue" 
-          value={`৳${stats?.revenue.total.toLocaleString() ?? 0}`} 
+        <StatCard
+          title="Monthly Revenue"
+          value={`৳${stats?.revenue.total.toLocaleString() ?? 0}`}
           icon={DollarSign}
           description="Total from confirmed bookings"
           loading={loading}
         />
-        <StatCard 
-          title="Active Bookings" 
-          value={stats?.bookings.booked ?? 0} 
+        <StatCard
+          title="Active Bookings"
+          value={stats?.bookings.booked ?? 0}
           icon={CheckCircle2}
           description="Confirmed but not checked-in"
           loading={loading}
         />
-        <StatCard 
-          title="Current Guests" 
-          value={stats?.bookings.checkedIn ?? 0} 
+        <StatCard
+          title="Current Guests"
+          value={stats?.bookings.checkedIn ?? 0}
           icon={Users}
           description="Guests currently in-house"
           loading={loading}
         />
-        <StatCard 
-          title="Available Rooms" 
-          value={stats?.rooms.available ?? 0} 
+        <StatCard
+          title="Available Rooms"
+          value={stats?.rooms.available ?? 0}
           icon={Bed}
           description={`Total ${stats?.rooms.total ?? 0} rooms in inventory`}
           loading={loading}
@@ -239,12 +239,11 @@ export default function HotelDashboardPage() {
                     </div>
                     <div className="text-right">
                       <div className="font-bold">৳{booking.amount.toLocaleString()}</div>
-                      <div className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
-                        booking.status === 'BOOKED' ? 'bg-green-500/10 text-green-500' :
-                        booking.status === 'CHECKED_IN' ? 'bg-blue-500/10 text-blue-500' :
-                        booking.status === 'CANCELLED' ? 'bg-red-500/10 text-red-500' :
-                        'bg-yellow-500/10 text-yellow-500'
-                      }`}>
+                      <div className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${booking.status === 'BOOKED' ? 'bg-green-500/10 text-green-500' :
+                          booking.status === 'CHECKED_IN' ? 'bg-blue-500/10 text-blue-500' :
+                            booking.status === 'CANCELLED' ? 'bg-red-500/10 text-red-500' :
+                              'bg-yellow-500/10 text-yellow-500'
+                        }`}>
                         {booking.status}
                       </div>
                     </div>
@@ -269,8 +268,8 @@ export default function HotelDashboardPage() {
                   <span className="font-bold">{stats?.rooms.available ?? 0}</span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-green-500 transition-all duration-500" 
+                  <div
+                    className="h-full bg-green-500 transition-all duration-500"
                     style={{ width: `${stats ? (stats.rooms.available / stats.rooms.total) * 100 : 0}%` }}
                   />
                 </div>
@@ -281,8 +280,8 @@ export default function HotelDashboardPage() {
                   <span className="font-bold">{stats?.rooms.occupied ?? 0}</span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-blue-500 transition-all duration-500" 
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-500"
                     style={{ width: `${stats ? (stats.rooms.occupied / stats.rooms.total) * 100 : 0}%` }}
                   />
                 </div>
@@ -293,8 +292,8 @@ export default function HotelDashboardPage() {
                   <span className="font-bold">{stats?.rooms.maintenance ?? 0}</span>
                 </div>
                 <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-yellow-500 transition-all duration-500" 
+                  <div
+                    className="h-full bg-yellow-500 transition-all duration-500"
                     style={{ width: `${stats ? (stats.rooms.maintenance / stats.rooms.total) * 100 : 0}%` }}
                   />
                 </div>

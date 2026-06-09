@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 type BookingStatus = 'RESERVED' | 'BOOKED' | 'EXPIRED' | 'CANCELLED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW'
@@ -42,25 +42,25 @@ interface BookingDetail {
 }
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; badge: string; icon: React.ElementType }> = {
-  RESERVED:    { label: 'Reserved',    badge: 'bg-amber-500/20  text-amber-700  border-amber-500/30',  icon: Clock        },
-  BOOKED:      { label: 'Confirmed',   badge: 'bg-blue-500/20   text-blue-700   border-blue-500/30',   icon: CheckCircle2 },
-  CHECKED_IN:  { label: 'Checked In',  badge: 'bg-green-500/20  text-green-700  border-green-500/30',  icon: LogIn        },
-  CHECKED_OUT: { label: 'Checked Out', badge: 'bg-purple-500/20 text-purple-700 border-purple-500/30', icon: LogOut       },
-  CANCELLED:   { label: 'Cancelled',   badge: 'bg-red-500/20    text-red-700    border-red-500/30',    icon: XCircle      },
-  EXPIRED:     { label: 'Expired',     badge: 'bg-gray-500/20   text-gray-600   border-gray-500/30',   icon: AlertCircle  },
-  NO_SHOW:     { label: 'No Show',     badge: 'bg-orange-500/20 text-orange-700 border-orange-500/30', icon: UserX        },
+  RESERVED: { label: 'Reserved', badge: 'bg-amber-500/20  text-amber-700  border-amber-500/30', icon: Clock },
+  BOOKED: { label: 'Confirmed', badge: 'bg-blue-500/20   text-blue-700   border-blue-500/30', icon: CheckCircle2 },
+  CHECKED_IN: { label: 'Checked In', badge: 'bg-green-500/20  text-green-700  border-green-500/30', icon: LogIn },
+  CHECKED_OUT: { label: 'Checked Out', badge: 'bg-purple-500/20 text-purple-700 border-purple-500/30', icon: LogOut },
+  CANCELLED: { label: 'Cancelled', badge: 'bg-red-500/20    text-red-700    border-red-500/30', icon: XCircle },
+  EXPIRED: { label: 'Expired', badge: 'bg-gray-500/20   text-gray-600   border-gray-500/30', icon: AlertCircle },
+  NO_SHOW: { label: 'No Show', badge: 'bg-orange-500/20 text-orange-700 border-orange-500/30', icon: UserX },
 }
 
 export default function HotelAdminBookingDetailPage() {
   const { reference } = useParams<{ reference: string }>()
-  const router  = useRouter()
+  const router = useRouter()
   const { toast } = useToast()
-  const [booking, setBooking]   = useState<BookingDetail | null>(null)
-  const [loading, setLoading]   = useState(true)
-  const [acting, setActing]     = useState(false)
+  const [booking, setBooking] = useState<BookingDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [acting, setActing] = useState(false)
 
   const reload = async () => {
-    const res  = await fetch(`/api/hotel-admin/bookings/${reference}`, { credentials: 'include' })
+    const res = await fetch(`/api/hotel-admin/bookings/${reference}`, { credentials: 'include' })
     const data = await res.json()
     if (data.success) setBooking(data.data)
   }
@@ -73,7 +73,7 @@ export default function HotelAdminBookingDetailPage() {
     if ((action === 'cancel' || action === 'no_show') && !confirm(`${label} this booking?`)) return
     try {
       setActing(true)
-      const res  = await fetch(`/api/hotel-admin/bookings/${reference}/status`, {
+      const res = await fetch(`/api/hotel-admin/bookings/${reference}/status`, {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
@@ -96,7 +96,7 @@ export default function HotelAdminBookingDetailPage() {
     <div className="space-y-6 max-w-4xl">
       <Skeleton className="h-9 w-48" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-4">{[1,2,3].map(i => <Skeleton key={i} className="h-40 w-full rounded-2xl" />)}</div>
+        <div className="lg:col-span-2 space-y-4">{[1, 2, 3].map(i => <Skeleton key={i} className="h-40 w-full rounded-2xl" />)}</div>
         <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     </div>
@@ -109,9 +109,9 @@ export default function HotelAdminBookingDetailPage() {
     </div>
   )
 
-  const cfg    = STATUS_CONFIG[booking.status]
-  const Icon   = cfg.icon
-  const n      = Math.round((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / 86400000)
+  const cfg = STATUS_CONFIG[booking.status]
+  const Icon = cfg.icon
+  const n = Math.round((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / 86400000)
   const svcFee = Math.round(booking.total_price * 0.1)
 
   return (

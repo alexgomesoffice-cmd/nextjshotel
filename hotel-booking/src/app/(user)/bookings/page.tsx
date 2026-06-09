@@ -15,7 +15,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { formatBDT } from '@/lib/utils'
 
 interface RoomBooking {
@@ -53,13 +53,13 @@ interface Pagination {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; badge: string; icon: React.ElementType }> = {
-  RESERVED:    { label: 'Reserved',    badge: 'bg-amber-500/20 text-amber-700 border-amber-500/30',  icon: Clock },
-  BOOKED:      { label: 'Confirmed',   badge: 'bg-green-500/20 text-green-700 border-green-500/30',  icon: CheckCircle2 },
-  EXPIRED:     { label: 'Expired',     badge: 'bg-gray-500/20 text-gray-600 border-gray-500/30',     icon: AlertCircle },
-  CANCELLED:   { label: 'Cancelled',   badge: 'bg-red-500/20 text-red-700 border-red-500/30',        icon: XCircle },
-  CHECKED_IN:  { label: 'Checked In',  badge: 'bg-blue-500/20 text-blue-700 border-blue-500/30',    icon: CheckCircle2 },
+  RESERVED: { label: 'Reserved', badge: 'bg-amber-500/20 text-amber-700 border-amber-500/30', icon: Clock },
+  BOOKED: { label: 'Confirmed', badge: 'bg-green-500/20 text-green-700 border-green-500/30', icon: CheckCircle2 },
+  EXPIRED: { label: 'Expired', badge: 'bg-gray-500/20 text-gray-600 border-gray-500/30', icon: AlertCircle },
+  CANCELLED: { label: 'Cancelled', badge: 'bg-red-500/20 text-red-700 border-red-500/30', icon: XCircle },
+  CHECKED_IN: { label: 'Checked In', badge: 'bg-blue-500/20 text-blue-700 border-blue-500/30', icon: CheckCircle2 },
   CHECKED_OUT: { label: 'Checked Out', badge: 'bg-purple-500/20 text-purple-700 border-purple-500/30', icon: CheckCircle2 },
-  NO_SHOW:     { label: 'No Show',     badge: 'bg-red-500/20 text-red-700 border-red-500/30',        icon: XCircle },
+  NO_SHOW: { label: 'No Show', badge: 'bg-red-500/20 text-red-700 border-red-500/30', icon: XCircle },
 }
 
 export default function MyBookingsPage() {
@@ -100,10 +100,10 @@ export default function MyBookingsPage() {
 
   const filtered = search
     ? bookings.filter(
-        (b) =>
-          b.booking_reference.toLowerCase().includes(search.toLowerCase()) ||
-          b.hotel.name.toLowerCase().includes(search.toLowerCase())
-      )
+      (b) =>
+        b.booking_reference.toLowerCase().includes(search.toLowerCase()) ||
+        b.hotel.name.toLowerCase().includes(search.toLowerCase())
+    )
     : bookings
 
   return (
@@ -177,12 +177,11 @@ export default function MyBookingsPage() {
                 <CardContent className="p-0">
                   <div className="flex flex-col sm:flex-row">
                     {/* Left accent bar */}
-                    <div className={`w-full sm:w-1.5 h-1.5 sm:h-auto rounded-t-lg sm:rounded-l-lg sm:rounded-t-none ${
-                      booking.status === 'BOOKED' ? 'bg-green-500' :
-                      booking.status === 'RESERVED' ? 'bg-amber-500' :
-                      booking.status === 'CHECKED_IN' ? 'bg-blue-500' :
-                      'bg-gray-400'
-                    }`} />
+                    <div className={`w-full sm:w-1.5 h-1.5 sm:h-auto rounded-t-lg sm:rounded-l-lg sm:rounded-t-none ${booking.status === 'BOOKED' ? 'bg-green-500' :
+                        booking.status === 'RESERVED' ? 'bg-amber-500' :
+                          booking.status === 'CHECKED_IN' ? 'bg-blue-500' :
+                            'bg-gray-400'
+                      }`} />
 
                     <div className="flex-1 p-5 space-y-4">
                       {/* Top row */}

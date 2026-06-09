@@ -2,9 +2,9 @@
 
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  ArrowLeft, 
-  Save, 
+import {
+  ArrowLeft,
+  Save,
   Info,
   Image as ImageIcon,
   X,
@@ -13,16 +13,16 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 
@@ -58,7 +58,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([])
-  
+
   const [formData, setFormData] = useState({
     room_type_id: '',
     room_number: '',
@@ -82,14 +82,14 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
           fetch('/api/hotel-admin/rooms', { credentials: 'include' }),
           fetch(`/api/hotel-admin/rooms/${resolvedParams.id}/images`, { credentials: 'include' })
         ])
- 
+
         const typesData = await roomTypesRes.json()
         const roomsData = await roomsRes.json()
         const imagesData = await imagesRes.json()
- 
+
         if (typesData.success) setRoomTypes(typesData.data)
         if (imagesData.success) setRoomImages(imagesData.data)
-        
+
         if (roomsData.success) {
           const room = roomsData.data.find((r: RoomData) => r.id.toString() === resolvedParams.id)
           if (room) {
@@ -268,18 +268,18 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
               </div>
               <div className="space-y-2">
                 <Label>Prefix (Optional)</Label>
-                <Input 
-                  placeholder="e.g. A-" 
-                  value={formData.prefix} 
-                  onChange={(e) => setFormData(p => ({ ...p, prefix: e.target.value }))} 
+                <Input
+                  placeholder="e.g. A-"
+                  value={formData.prefix}
+                  onChange={(e) => setFormData(p => ({ ...p, prefix: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Room Number</Label>
-                <Input 
-                  value={formData.room_number} 
-                  onChange={(e) => setFormData(p => ({ ...p, room_number: e.target.value }))} 
-                  required 
+                <Input
+                  value={formData.room_number}
+                  onChange={(e) => setFormData(p => ({ ...p, room_number: e.target.value }))}
+                  required
                 />
               </div>
             </div>
@@ -287,20 +287,20 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
                 <Label>Floor</Label>
-                <Input 
-                  type="number" 
-                  value={formData.floor} 
-                  onChange={(e) => setFormData(p => ({ ...p, floor: parseInt(e.target.value) || 0 }))} 
+                <Input
+                  type="number"
+                  value={formData.floor}
+                  onChange={(e) => setFormData(p => ({ ...p, floor: parseInt(e.target.value) || 0 }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Nightly Price (৳)</Label>
-                <Input 
-                  type="number" 
-                  step="0.01" 
-                  value={formData.price} 
-                  onChange={(e) => setFormData(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} 
-                  required 
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -336,10 +336,10 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
 
             <div className="space-y-2">
               <Label>Internal Notes</Label>
-              <Input 
-                placeholder="e.g. Mountain view, near stairs" 
-                value={formData.notes} 
-                onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))} 
+              <Input
+                placeholder="e.g. Mountain view, near stairs"
+                value={formData.notes}
+                onChange={(e) => setFormData(p => ({ ...p, notes: e.target.value }))}
               />
             </div>
           </CardContent>
@@ -358,29 +358,29 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
               {roomImages.map((img) => (
                 <div key={img.id} className="relative w-32 h-32 rounded-lg overflow-hidden border group shadow-sm bg-muted/20">
                   <img src={img.image_url} className="w-full h-full object-cover" alt="" />
-                  
+
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Button 
-                      type="button" 
-                      size="icon" 
-                      variant="secondary" 
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="secondary"
                       className="h-8 w-8"
                       onClick={() => handleSetCover(img.id)}
                       title="Set as cover"
                     >
                       <Star className={`w-4 h-4 ${img.is_cover ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                     </Button>
-                    <Button 
-                      type="button" 
-                      size="icon" 
-                      variant="destructive" 
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="destructive"
                       className="h-8 w-8"
                       onClick={() => handleDeleteImage(img.id)}
                     >
                       <X className="w-4 h-4" />
                     </Button>
                   </div>
-                  
+
                   {img.is_cover && (
                     <div className="absolute top-1 left-1">
                       <Badge variant="default" className="bg-yellow-500 hover:bg-yellow-600 text-[10px] px-1.5 h-4">Cover</Badge>
@@ -388,7 +388,7 @@ export default function EditRoomPage({ params }: { params: Promise<{ id: string 
                   )}
                 </div>
               ))}
-              
+
               <Label className={`w-32 h-32 flex flex-col items-center justify-center border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted transition-all ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div className="flex flex-col items-center gap-1">
                   <ImageIcon className="w-6 h-6 text-muted-foreground" />

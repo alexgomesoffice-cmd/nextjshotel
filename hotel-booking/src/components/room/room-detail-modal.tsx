@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { X, Users, Bed, CheckCircle2, Wind, Tv, Coffee, Bath, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getLenis } from "@/components/ui/SmoothScroll";
 
 interface RoomTypeImage {
   id: number;
@@ -54,27 +55,35 @@ const RoomDetailModal = ({ isOpen, onClose, roomType }: RoomDetailModalProps) =>
   const [activeImage, setActiveImage] = useState(0);
 
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-      setActiveImage(0);
-    } else {
-      document.body.style.overflow = "auto";
-    }
+    if (!isOpen) return;
+
+    const lenis = getLenis();
+    if (lenis) lenis.stop();
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    setActiveImage(0);
+
     return () => {
-      document.body.style.overflow = "auto";
+      document.body.style.overflow = previousOverflow || "unset";
+      const activeLenis = getLenis();
+      if (activeLenis) activeLenis.start();
     };
   }, [isOpen]);
 
   if (!isOpen || !roomType) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+    <div 
+      className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300"
+      onClick={onClose}
+    >
       <div 
         className="bg-background w-full max-w-4xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border/50 bg-background/95 backdrop-blur-sm z-10 sticky top-0">
+        {/* Header - Fixed, not inside scroll container */}
+        <div className="flex items-center justify-between p-6 border-b border-border/50 bg-background/95 backdrop-blur-sm z-10 shrink-0">
           <h2 className="text-2xl font-bold tracking-tight">{roomType.name}</h2>
           <button 
             onClick={onClose}
@@ -85,12 +94,17 @@ const RoomDetailModal = ({ isOpen, onClose, roomType }: RoomDetailModalProps) =>
         </div>
 
         {/* Scrollable Content */}
-        <div className="overflow-y-auto flex-1 custom-scrollbar">
+        <div
+          className="overflow-y-auto overscroll-contain flex-1 min-h-0 custom-scrollbar"
+          data-lenis-prevent
+          data-lenis-prevent-wheel
+          data-lenis-prevent-touch
+        >
           
           {/* Image Gallery */}
           {roomType.type_images && roomType.type_images.length > 0 && (
             <div className="p-6 pb-2">
-              <div className="relative w-full h-300px md:h-400px rounded-2xl overflow-hidden mb-4 bg-muted">
+              <div className="relative w-full h-75 md:h-100 rounded-2xl overflow-hidden mb-4 bg-muted">
                 <Image
                   src={roomType.type_images[activeImage].image_url}
                   alt={roomType.name}
@@ -188,7 +202,7 @@ const RoomDetailModal = ({ isOpen, onClose, roomType }: RoomDetailModalProps) =>
         </div>
 
         {/* Footer (Price and Close) */}
-        <div className="p-6 border-t border-border/50 bg-secondary/10 flex items-center justify-between">
+        <div className="p-6 border-t border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Price per night</p>
             <p className="text-2xl font-bold text-foreground">৳{Number(roomType.base_price).toLocaleString()}</p>

@@ -19,7 +19,7 @@ import { format } from 'date-fns'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 
 type BookingStatus =
   | 'RESERVED'
@@ -281,7 +281,7 @@ export default function SubAdminBookingDetailPage() {
   const nights = Math.ceil(
     (new Date(booking.check_out).getTime() -
       new Date(booking.check_in).getTime()) /
-      86400000
+    86400000
   )
 
   return (

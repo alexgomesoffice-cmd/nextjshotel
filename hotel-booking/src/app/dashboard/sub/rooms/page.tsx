@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 interface Room {
@@ -35,20 +35,20 @@ interface Room {
 }
 
 const STATUS_CONFIG = {
-  AVAILABLE:   { label: 'Available',   badge: 'bg-green-500/20 text-green-700 border-green-500/30', icon: CheckCircle2 },
-  UNAVAILABLE: { label: 'Unavailable', badge: 'bg-gray-500/20  text-gray-600  border-gray-500/30',  icon: XCircle      },
-  MAINTENANCE: { label: 'Maintenance', badge: 'bg-amber-500/20 text-amber-700 border-amber-500/30', icon: Wrench       },
+  AVAILABLE: { label: 'Available', badge: 'bg-green-500/20 text-green-700 border-green-500/30', icon: CheckCircle2 },
+  UNAVAILABLE: { label: 'Unavailable', badge: 'bg-gray-500/20  text-gray-600  border-gray-500/30', icon: XCircle },
+  MAINTENANCE: { label: 'Maintenance', badge: 'bg-amber-500/20 text-amber-700 border-amber-500/30', icon: Wrench },
 }
 
 export default function SubAdminRoomsPage() {
   const { toast } = useToast()
-  const [rooms, setRooms]     = useState<Room[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
-  const [search, setSearch]   = useState('')
-  const [status, setStatus]   = useState('all')
-  const [page, setPage]       = useState(1)
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('all')
+  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [total, setTotal]     = useState(0)
+  const [total, setTotal] = useState(0)
 
   const fetchRooms = useCallback(async () => {
     try {
@@ -57,7 +57,7 @@ export default function SubAdminRoomsPage() {
       if (search) params.append('search', search)
       if (status !== 'all') params.append('status', status)
 
-      const res  = await fetch(`/api/hotel-admin/rooms?${params}`, { credentials: 'include' })
+      const res = await fetch(`/api/hotel-admin/rooms?${params}`, { credentials: 'include' })
       const data = await res.json()
       if (data.success) {
         setRooms(data.data.rooms ?? data.data)
@@ -150,7 +150,7 @@ export default function SubAdminRoomsPage() {
                   </TableCell>
                 </TableRow>
               ) : rooms.map(room => {
-                const cfg  = STATUS_CONFIG[room.status]
+                const cfg = STATUS_CONFIG[room.status]
                 const Icon = cfg.icon
                 return (
                   <TableRow key={room.id} className="hover:bg-secondary/30">

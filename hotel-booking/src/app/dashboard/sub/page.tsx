@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -17,13 +17,13 @@ interface DashStats {
 }
 
 const STATUS_BADGE: Record<string, string> = {
-  RESERVED:    'bg-amber-500/20  text-amber-700  border-amber-500/30',
-  BOOKED:      'bg-blue-500/20   text-blue-700   border-blue-500/30',
-  CHECKED_IN:  'bg-green-500/20  text-green-700  border-green-500/30',
+  RESERVED: 'bg-amber-500/20  text-amber-700  border-amber-500/30',
+  BOOKED: 'bg-blue-500/20   text-blue-700   border-blue-500/30',
+  CHECKED_IN: 'bg-green-500/20  text-green-700  border-green-500/30',
   CHECKED_OUT: 'bg-purple-500/20 text-purple-700 border-purple-500/30',
-  CANCELLED:   'bg-red-500/20    text-red-700    border-red-500/30',
-  EXPIRED:     'bg-gray-500/20   text-gray-600   border-gray-500/30',
-  NO_SHOW:     'bg-orange-500/20 text-orange-700 border-orange-500/30',
+  CANCELLED: 'bg-red-500/20    text-red-700    border-red-500/30',
+  EXPIRED: 'bg-gray-500/20   text-gray-600   border-gray-500/30',
+  NO_SHOW: 'bg-orange-500/20 text-orange-700 border-orange-500/30',
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -75,7 +75,7 @@ export default function SubAdminPage() {
           fetch('/api/hotel-admin/bookings?limit=5', { credentials: 'include' }),
         ])
 
-        const roomsData    = await roomsRes.json()
+        const roomsData = await roomsRes.json()
         const bookingsData = await bookingsRes.json()
 
         const roomList = roomsData.success
@@ -86,25 +86,25 @@ export default function SubAdminPage() {
 
         setStats({
           rooms: {
-            total:       roomList.length,
-            available:   roomList.filter((r: { status: string }) => r.status === 'AVAILABLE').length,
-            occupied:    roomList.filter((r: { status: string }) => r.status === 'UNAVAILABLE').length,
+            total: roomList.length,
+            available: roomList.filter((r: { status: string }) => r.status === 'AVAILABLE').length,
+            occupied: roomList.filter((r: { status: string }) => r.status === 'UNAVAILABLE').length,
             maintenance: roomList.filter((r: { status: string }) => r.status === 'MAINTENANCE').length,
           },
           bookings: {
-            total:     bookingsData.success ? (bookingsData.data.pagination?.total ?? 0) : 0,
-            reserved:  bookingList.filter((b: { status: string }) => b.status === 'RESERVED').length,
-            booked:    bookingList.filter((b: { status: string }) => b.status === 'BOOKED').length,
+            total: bookingsData.success ? (bookingsData.data.pagination?.total ?? 0) : 0,
+            reserved: bookingList.filter((b: { status: string }) => b.status === 'RESERVED').length,
+            booked: bookingList.filter((b: { status: string }) => b.status === 'BOOKED').length,
             checkedIn: bookingList.filter((b: { status: string }) => b.status === 'CHECKED_IN').length,
           },
           recentBookings: bookingList.slice(0, 5).map((b: {
             id: number; booking_reference: string; end_user?: { name: string }; status: string; total_price: number
           }) => ({
-            id:        b.id,
+            id: b.id,
             reference: b.booking_reference,
-            guest:     b.end_user?.name || 'Unknown',
-            status:    b.status,
-            total:     b.total_price,
+            guest: b.end_user?.name || 'Unknown',
+            status: b.status,
+            total: b.total_price,
           })),
         })
       } catch {
@@ -126,18 +126,18 @@ export default function SubAdminPage() {
 
       {/* Room Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Rooms"  value={stats.rooms.total}       icon={Bed}          color="bg-primary/10 text-primary"         loading={loading} />
-        <StatCard title="Available"    value={stats.rooms.available}    icon={CheckCircle2} color="bg-green-500/10 text-green-600"      loading={loading} />
-        <StatCard title="Occupied"     value={stats.rooms.occupied}     icon={AlertCircle}  color="bg-blue-500/10 text-blue-600"        loading={loading} />
-        <StatCard title="Maintenance"  value={stats.rooms.maintenance}  icon={Wrench}       color="bg-amber-500/10 text-amber-600"      loading={loading} />
+        <StatCard title="Total Rooms" value={stats.rooms.total} icon={Bed} color="bg-primary/10 text-primary" loading={loading} />
+        <StatCard title="Available" value={stats.rooms.available} icon={CheckCircle2} color="bg-green-500/10 text-green-600" loading={loading} />
+        <StatCard title="Occupied" value={stats.rooms.occupied} icon={AlertCircle} color="bg-blue-500/10 text-blue-600" loading={loading} />
+        <StatCard title="Maintenance" value={stats.rooms.maintenance} icon={Wrench} color="bg-amber-500/10 text-amber-600" loading={loading} />
       </div>
 
       {/* Booking Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Total Bookings" value={stats.bookings.total}     icon={Calendar}    color="bg-primary/10 text-primary"        loading={loading} />
-        <StatCard title="Reserved"       value={stats.bookings.reserved}  icon={Clock}       color="bg-amber-500/10 text-amber-600"    loading={loading} />
-        <StatCard title="Confirmed"      value={stats.bookings.booked}    icon={CheckCircle2} color="bg-blue-500/10 text-blue-600"     loading={loading} />
-        <StatCard title="Checked In"     value={stats.bookings.checkedIn} icon={LogIn}       color="bg-green-500/10 text-green-600"    loading={loading} />
+        <StatCard title="Total Bookings" value={stats.bookings.total} icon={Calendar} color="bg-primary/10 text-primary" loading={loading} />
+        <StatCard title="Reserved" value={stats.bookings.reserved} icon={Clock} color="bg-amber-500/10 text-amber-600" loading={loading} />
+        <StatCard title="Confirmed" value={stats.bookings.booked} icon={CheckCircle2} color="bg-blue-500/10 text-blue-600" loading={loading} />
+        <StatCard title="Checked In" value={stats.bookings.checkedIn} icon={LogIn} color="bg-green-500/10 text-green-600" loading={loading} />
       </div>
 
       {/* Quick Actions */}

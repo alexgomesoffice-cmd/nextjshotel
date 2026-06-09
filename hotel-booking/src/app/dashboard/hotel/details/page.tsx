@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Separator } from '@/components/ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 
 export default function HotelDetailsPage() {
   const [loading, setLoading] = useState(true)
@@ -50,11 +50,11 @@ export default function HotelDetailsPage() {
       setLoading(true)
       const res = await fetch('/api/hotel-admin/hotel', { credentials: 'include' })
       const data = await res.json()
-      
+
       if (data.success && data.data) {
         const h = data.data
         const d = h.detail || {}
-        
+
         setForm({
           name: h.name || '',
           address: h.address || '',
@@ -72,7 +72,7 @@ export default function HotelDetailsPage() {
           contact_phone: d.contact_phone || h.emergency_contact1 || '',
           website: d.website || '',
         })
-        
+
         setReadOnly({
           slug: h.slug || '',
           city_name: h.city?.name || 'Unknown',
@@ -96,7 +96,7 @@ export default function HotelDetailsPage() {
   const handleSave = async () => {
     try {
       setSaving(true)
-      
+
       const payload = {
         name: form.name,
         address: form.address,
@@ -121,9 +121,9 @@ export default function HotelDetailsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       })
-      
+
       const data = await res.json()
-      
+
       if (data.success) {
         toast({ title: 'Success', description: 'Hotel details updated successfully', variant: 'success' })
       } else {
@@ -161,10 +161,9 @@ export default function HotelDetailsPage() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 rounded-lg bg-secondary/50 px-3 py-1.5 text-sm">
-            <div className={`h-2 w-2 rounded-full ${
-              readOnly.approval_status === 'PUBLISHED' ? 'bg-green-500' :
-              readOnly.approval_status === 'SUSPENDED' ? 'bg-red-500' : 'bg-amber-500'
-            }`} />
+            <div className={`h-2 w-2 rounded-full ${readOnly.approval_status === 'PUBLISHED' ? 'bg-green-500' :
+                readOnly.approval_status === 'SUSPENDED' ? 'bg-red-500' : 'bg-amber-500'
+              }`} />
             <span className="font-medium">{readOnly.approval_status}</span>
           </div>
           <Button onClick={handleSave} disabled={saving} className="gap-2">
@@ -194,21 +193,21 @@ export default function HotelDetailsPage() {
             <CardContent className="space-y-5">
               <div className="space-y-1.5">
                 <Label htmlFor="h-name">Hotel Name</Label>
-                <Input 
-                  id="h-name" 
-                  value={form.name} 
-                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))} 
+                <Input
+                  id="h-name"
+                  value={form.name}
+                  onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 />
               </div>
-              
+
               <div className="space-y-1.5">
                 <Label htmlFor="h-desc">Description</Label>
-                <Textarea 
-                  id="h-desc" 
+                <Textarea
+                  id="h-desc"
                   rows={6}
                   placeholder="Describe your property..."
-                  value={form.description} 
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))} 
+                  value={form.description}
+                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 />
               </div>
 
@@ -218,30 +217,30 @@ export default function HotelDetailsPage() {
                 <Label htmlFor="h-address" className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" /> Full Address
                 </Label>
-                <Input 
-                  id="h-address" 
-                  value={form.address} 
-                  onChange={e => setForm(f => ({ ...f, address: e.target.value }))} 
+                <Input
+                  id="h-address"
+                  value={form.address}
+                  onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="h-lat">Latitude</Label>
-                  <Input 
-                    id="h-lat" 
+                  <Input
+                    id="h-lat"
                     type="number" step="any"
-                    value={form.latitude} 
-                    onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))} 
+                    value={form.latitude}
+                    onChange={e => setForm(f => ({ ...f, latitude: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="h-lng">Longitude</Label>
-                  <Input 
-                    id="h-lng" 
+                  <Input
+                    id="h-lng"
                     type="number" step="any"
-                    value={form.longitude} 
-                    onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))} 
+                    value={form.longitude}
+                    onChange={e => setForm(f => ({ ...f, longitude: e.target.value }))}
                   />
                 </div>
               </div>
@@ -258,28 +257,28 @@ export default function HotelDetailsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div className="space-y-1.5">
                   <Label htmlFor="c-email">Public Email</Label>
-                  <Input 
-                    id="c-email" 
+                  <Input
+                    id="c-email"
                     type="email"
-                    value={form.contact_email} 
-                    onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))} 
+                    value={form.contact_email}
+                    onChange={e => setForm(f => ({ ...f, contact_email: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="c-phone">Contact Phone</Label>
-                  <Input 
-                    id="c-phone" 
-                    value={form.contact_phone} 
-                    onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))} 
+                  <Input
+                    id="c-phone"
+                    value={form.contact_phone}
+                    onChange={e => setForm(f => ({ ...f, contact_phone: e.target.value }))}
                   />
                 </div>
                 <div className="sm:col-span-2 space-y-1.5">
                   <Label htmlFor="c-web">Website</Label>
-                  <Input 
-                    id="c-web" 
+                  <Input
+                    id="c-web"
                     placeholder="https://"
-                    value={form.website} 
-                    onChange={e => setForm(f => ({ ...f, website: e.target.value }))} 
+                    value={form.website}
+                    onChange={e => setForm(f => ({ ...f, website: e.target.value }))}
                   />
                 </div>
               </div>
@@ -315,18 +314,18 @@ export default function HotelDetailsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Check-in</Label>
-                  <Input 
-                    type="time" 
-                    value={form.check_in_time} 
-                    onChange={e => setForm(f => ({ ...f, check_in_time: e.target.value }))} 
+                  <Input
+                    type="time"
+                    value={form.check_in_time}
+                    onChange={e => setForm(f => ({ ...f, check_in_time: e.target.value }))}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Check-out</Label>
-                  <Input 
-                    type="time" 
-                    value={form.check_out_time} 
-                    onChange={e => setForm(f => ({ ...f, check_out_time: e.target.value }))} 
+                  <Input
+                    type="time"
+                    value={form.check_out_time}
+                    onChange={e => setForm(f => ({ ...f, check_out_time: e.target.value }))}
                   />
                 </div>
               </div>
@@ -338,10 +337,10 @@ export default function HotelDetailsPage() {
                   Advance Deposit %
                   <span className="text-xs text-muted-foreground font-normal">Required for booking</span>
                 </Label>
-                <Input 
-                  type="number" min="0" max="100" 
-                  value={form.advance_deposit_percent} 
-                  onChange={e => setForm(f => ({ ...f, advance_deposit_percent: e.target.value }))} 
+                <Input
+                  type="number" min="0" max="100"
+                  value={form.advance_deposit_percent}
+                  onChange={e => setForm(f => ({ ...f, advance_deposit_percent: e.target.value }))}
                 />
               </div>
 
@@ -366,7 +365,7 @@ export default function HotelDetailsPage() {
                   <div className="grid grid-cols-2 gap-4 mt-3 p-3 rounded-lg bg-secondary/30 border border-border/50">
                     <div className="space-y-1.5">
                       <Label className="text-xs">Cancel Before (Hours)</Label>
-                      <Input 
+                      <Input
                         type="number" min="0" placeholder="e.g. 48"
                         value={form.cancellation_hours}
                         onChange={e => setForm(f => ({ ...f, cancellation_hours: e.target.value }))}
@@ -374,7 +373,7 @@ export default function HotelDetailsPage() {
                     </div>
                     <div className="space-y-1.5">
                       <Label className="text-xs">Refund %</Label>
-                      <Input 
+                      <Input
                         type="number" min="0" max="100" placeholder="e.g. 50"
                         value={form.refund_percent}
                         onChange={e => setForm(f => ({ ...f, refund_percent: e.target.value }))}

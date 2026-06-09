@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -51,14 +51,14 @@ const defaultForm = {
 export default function EditRoomTypePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params)
   const id = resolvedParams.id
-  
+
   const { toast } = useToast()
   const router = useRouter()
-  
+
   const [loading, setLoading] = useState(true)
   const [availableBeds, setAvailableBeds] = useState<BedType[]>([])
   const [availableAmenities, setAvailableAmenities] = useState<Amenity[]>([])
-  
+
   const [form, setForm] = useState(defaultForm)
   const [saving, setSaving] = useState(false)
   const [images, setImages] = useState<RoomTypeImage[]>([])
@@ -73,7 +73,7 @@ export default function EditRoomTypePage({ params }: { params: Promise<{ id: str
         fetch('/api/hotel-admin/bed-types', { credentials: 'include' }),
         fetch('/api/hotel-admin/amenities', { credentials: 'include' })
       ])
-      
+
       const rtData = await rtRes.json()
       const bedData = await bedRes.json()
       const amData = await amRes.json()
@@ -339,8 +339,8 @@ export default function EditRoomTypePage({ params }: { params: Promise<{ id: str
                   const isSelected = form.amenity_ids.includes(am.id)
                   return (
                     <label key={am.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'hover:bg-muted/50'}`}>
-                      <input 
-                        type="checkbox" 
+                      <input
+                        type="checkbox"
                         className="accent-primary w-4 h-4 rounded border-gray-300"
                         checked={isSelected}
                         onChange={() => toggleAmenity(am.id)}
@@ -373,7 +373,7 @@ export default function EditRoomTypePage({ params }: { params: Promise<{ id: str
                 </div>
                 {form.cancellation_policy === 'CUSTOM' && (
                   <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-secondary/20 border border-secondary">
-                     <div className="space-y-1.5">
+                    <div className="space-y-1.5">
                       <Label className="text-sm">Cancel Before (Hours)</Label>
                       <Input type="number" value={form.cancellation_hours} onChange={e => setForm(f => ({ ...f, cancellation_hours: e.target.value }))} />
                     </div>

@@ -35,6 +35,7 @@ interface RoomsSectionClientProps {
   onQuantityChange: (variantId: number, qty: number) => void;
   guests?: number;
   highlightedRoomTypeId?: number;
+  onClearHighlight?: () => void;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -45,6 +46,7 @@ export default function RoomsSectionClient({
   onQuantityChange,
   guests = 1,
   highlightedRoomTypeId,
+  onClearHighlight,
 }: RoomsSectionClientProps) {
   const [modalRoom, setModalRoom] = useState<RoomType | null>(null);
 
@@ -102,11 +104,12 @@ export default function RoomsSectionClient({
               guestMismatchReason={guestMismatchReason}
               forceExpanded={roomType.id === highlightedRoomTypeId}
               isHighlighted={roomType.id === highlightedRoomTypeId}
+              onClearHighlight={onClearHighlight}
             />
           );
         })}
       </div>
-
+        
       <RoomDetailModal
         isOpen={!!modalRoom}
         onClose={() => setModalRoom(null)}

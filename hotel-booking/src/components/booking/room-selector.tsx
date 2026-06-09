@@ -39,22 +39,32 @@ export default function RoomSelector({
   // ── Scroll to #rooms then to the specific card and animate it ──
   useEffect(() => {
     if (!focusRoomTypeId) return;
-    // Step 1: scroll the whole rooms section into view
-    const step1 = setTimeout(() => {
-      document.getElementById('rooms')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Step 2: after the first scroll settles, scroll to and highlight the card
-      const step2 = setTimeout(() => {
-        const card = document.getElementById(`room-type-${focusRoomTypeId}`);
-        if (card) {
-          card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          setHighlightedRoomTypeId(focusRoomTypeId);
-          // Clear highlight after animation finishes
-          setTimeout(() => setHighlightedRoomTypeId(null), 3000);
-        }
-      }, 900);
-      return () => clearTimeout(step2);
-    }, 350);
-    return () => clearTimeout(step1);
+
+    let attempt = 0;
+    let timeoutId: number;
+
+    const scrollToRoom = () => {
+      const section = document.getElementById('rooms');
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      const card = document.getElementById(`room-type-${focusRoomTypeId}`);
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightedRoomTypeId(focusRoomTypeId);
+        return;
+      }
+
+      attempt += 1;
+      if (attempt < 3) {
+        timeoutId = window.setTimeout(scrollToRoom, 450);
+      }
+    };
+
+    timeoutId = window.setTimeout(scrollToRoom, 200);
+
+    return () => clearTimeout(timeoutId);
   }, [focusRoomTypeId]);
   const datesChanged = sidebarCheckIn !== checkIn || sidebarCheckOut !== checkOut;
   const hasAnySelection = Object.values(quantities).some(q => q > 0);
@@ -217,6 +227,7 @@ export default function RoomSelector({
             onQuantityChange={handleQuantityChange}
             guests={sidebarGuests}
             highlightedRoomTypeId={highlightedRoomTypeId}
+            onClearHighlight={() => setHighlightedRoomTypeId(null)}
           />
           {filteredRoomTypes.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border border-border/30 rounded-2xl">

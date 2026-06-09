@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 
@@ -65,7 +65,7 @@ export default function HotelSettingsPage() {
           fetch('/api/hotel-admin/hotel', { credentials: 'include' }),
           fetch('/api/hotel-admin/profile', { credentials: 'include' })
         ])
-        
+
         const hotelData = await hotelRes.json()
         const profileData = await profileRes.json()
 
@@ -154,7 +154,7 @@ export default function HotelSettingsPage() {
         return
       }
 
-      const profilePayload = { 
+      const profilePayload = {
         ...profileForm,
         phone: profileForm.phone && profileForm.phone.trim() !== '' ? profileForm.phone : null,
         nid_no: profileForm.nid_no && profileForm.nid_no.trim() !== '' ? profileForm.nid_no : null,
@@ -164,9 +164,9 @@ export default function HotelSettingsPage() {
         manager_phone: profileForm.manager_phone && profileForm.manager_phone.trim() !== '' ? profileForm.manager_phone : null,
         emergency_contact1: profileForm.emergency_contact1 && profileForm.emergency_contact1.trim() !== '' ? profileForm.emergency_contact1 : null,
         emergency_contact2: profileForm.emergency_contact2 && profileForm.emergency_contact2.trim() !== '' ? profileForm.emergency_contact2 : null,
-        ...(securityForm.new_password ? { 
+        ...(securityForm.new_password ? {
           current_password: securityForm.current_password,
-          new_password: securityForm.new_password 
+          new_password: securityForm.new_password
         } : {})
       }
       delete (profilePayload as any).email // Email usually readonly for profile
@@ -193,10 +193,10 @@ export default function HotelSettingsPage() {
         toast({ title: 'Success', description: 'Settings and profile updated successfully', variant: 'success' })
         setSecurityForm({ current_password: '', new_password: '', confirm_password: '' })
       } else {
-        toast({ 
-          title: 'Partial Success', 
-          description: `Hotel: ${hotelData.message || 'OK'}, Profile: ${profileData.message || 'OK'}`, 
-          variant: hotelData.success && profileData.success ? 'success' : 'destructive' 
+        toast({
+          title: 'Partial Success',
+          description: `Hotel: ${hotelData.message || 'OK'}, Profile: ${profileData.message || 'OK'}`,
+          variant: hotelData.success && profileData.success ? 'success' : 'destructive'
         })
       }
     } catch (error) {
@@ -230,8 +230,8 @@ export default function HotelSettingsPage() {
       <Tabs defaultValue="profile" className="w-full flex flex-col gap-0">
         <div className="sticky top-0 z-20 bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 pb-4 pt-2 -mx-4 px-4 lg:-mx-8 lg:px-8 border-b">
           <TabsList className="flex h-12 items-center justify-start rounded-none bg-transparent p-0 w-full overflow-x-auto no-scrollbar">
-            <TabsTrigger 
-              value="profile" 
+            <TabsTrigger
+              value="profile"
               className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
               <div className="flex items-center gap-2">
@@ -239,8 +239,8 @@ export default function HotelSettingsPage() {
                 <span>My Profile</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger 
-              value="general" 
+            <TabsTrigger
+              value="general"
               className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
               <div className="flex items-center gap-2">
@@ -248,7 +248,7 @@ export default function HotelSettingsPage() {
                 <span>Hotel General</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="contact"
               className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
@@ -257,7 +257,7 @@ export default function HotelSettingsPage() {
                 <span>Contact</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="policies"
               className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
@@ -266,7 +266,7 @@ export default function HotelSettingsPage() {
                 <span>Policies</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="cancellation"
               className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
@@ -275,7 +275,7 @@ export default function HotelSettingsPage() {
                 <span>Cancellation</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="security"
               className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
@@ -300,18 +300,18 @@ export default function HotelSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="prof_name">Full Name <span className="text-destructive">*</span></Label>
-                  <Input 
-                    id="prof_name" 
-                    value={profileForm.name} 
-                    onChange={e => setProfileForm({...profileForm, name: e.target.value})} 
+                  <Input
+                    id="prof_name"
+                    value={profileForm.name}
+                    onChange={e => setProfileForm({ ...profileForm, name: e.target.value })}
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="prof_email">Email Address</Label>
-                  <Input 
-                    id="prof_email" 
-                    value={profileForm.email} 
+                  <Input
+                    id="prof_email"
+                    value={profileForm.email}
                     disabled
                     className="bg-muted"
                   />
@@ -322,19 +322,19 @@ export default function HotelSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="prof_phone">Phone Number</Label>
-                  <Input 
-                    id="prof_phone" 
-                    value={profileForm.phone} 
-                    onChange={e => setProfileForm({...profileForm, phone: e.target.value})} 
+                  <Input
+                    id="prof_phone"
+                    value={profileForm.phone}
+                    onChange={e => setProfileForm({ ...profileForm, phone: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="prof_dob">Date of Birth</Label>
-                  <Input 
-                    id="prof_dob" 
+                  <Input
+                    id="prof_dob"
                     type="date"
-                    value={profileForm.dob} 
-                    onChange={e => setProfileForm({...profileForm, dob: e.target.value})} 
+                    value={profileForm.dob}
+                    onChange={e => setProfileForm({ ...profileForm, dob: e.target.value })}
                   />
                 </div>
               </div>
@@ -342,28 +342,28 @@ export default function HotelSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="prof_nid">NID Number</Label>
-                  <Input 
-                    id="prof_nid" 
-                    value={profileForm.nid_no} 
-                    onChange={e => setProfileForm({...profileForm, nid_no: e.target.value})} 
+                  <Input
+                    id="prof_nid"
+                    value={profileForm.nid_no}
+                    onChange={e => setProfileForm({ ...profileForm, nid_no: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="prof_passport">Passport Number</Label>
-                  <Input 
-                    id="prof_passport" 
-                    value={profileForm.passport} 
-                    onChange={e => setProfileForm({...profileForm, passport: e.target.value})} 
+                  <Input
+                    id="prof_passport"
+                    value={profileForm.passport}
+                    onChange={e => setProfileForm({ ...profileForm, passport: e.target.value })}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="prof_address">Permanent Address</Label>
-                <Textarea 
-                  id="prof_address" 
-                  value={profileForm.address} 
-                  onChange={e => setProfileForm({...profileForm, address: e.target.value})} 
+                <Textarea
+                  id="prof_address"
+                  value={profileForm.address}
+                  onChange={e => setProfileForm({ ...profileForm, address: e.target.value })}
                 />
               </div>
             </CardContent>
@@ -378,18 +378,18 @@ export default function HotelSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="man_name">Manager Name</Label>
-                  <Input 
-                    id="man_name" 
-                    value={profileForm.manager_name} 
-                    onChange={e => setProfileForm({...profileForm, manager_name: e.target.value})} 
+                  <Input
+                    id="man_name"
+                    value={profileForm.manager_name}
+                    onChange={e => setProfileForm({ ...profileForm, manager_name: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="man_phone">Manager Phone</Label>
-                  <Input 
-                    id="man_phone" 
-                    value={profileForm.manager_phone} 
-                    onChange={e => setProfileForm({...profileForm, manager_phone: e.target.value})} 
+                  <Input
+                    id="man_phone"
+                    value={profileForm.manager_phone}
+                    onChange={e => setProfileForm({ ...profileForm, manager_phone: e.target.value })}
                   />
                 </div>
               </div>
@@ -397,18 +397,18 @@ export default function HotelSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="prof_em1">Personal Emergency Contact 1</Label>
-                  <Input 
-                    id="prof_em1" 
-                    value={profileForm.emergency_contact1} 
-                    onChange={e => setProfileForm({...profileForm, emergency_contact1: e.target.value})} 
+                  <Input
+                    id="prof_em1"
+                    value={profileForm.emergency_contact1}
+                    onChange={e => setProfileForm({ ...profileForm, emergency_contact1: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="prof_em2">Personal Emergency Contact 2</Label>
-                  <Input 
-                    id="prof_em2" 
-                    value={profileForm.emergency_contact2} 
-                    onChange={e => setProfileForm({...profileForm, emergency_contact2: e.target.value})} 
+                  <Input
+                    id="prof_em2"
+                    value={profileForm.emergency_contact2}
+                    onChange={e => setProfileForm({ ...profileForm, emergency_contact2: e.target.value })}
                   />
                 </div>
               </div>
@@ -429,35 +429,35 @@ export default function HotelSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Hotel Name <span className="text-destructive">*</span></Label>
-                  <Input 
-                    id="name" 
-                    value={form.name} 
-                    onChange={e => setForm({...form, name: e.target.value})} 
+                  <Input
+                    id="name"
+                    value={form.name}
+                    onChange={e => setForm({ ...form, name: e.target.value })}
                     placeholder="Grand Plaza Hotel"
                     required
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Public Contact Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={form.email} 
-                    onChange={e => setForm({...form, email: e.target.value})} 
+                  <Input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    onChange={e => setForm({ ...form, email: e.target.value })}
                     placeholder="info@hotel.com"
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="website">Website URL</Label>
                 <div className="relative">
                   <Globe className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-                  <Input 
-                    id="website" 
+                  <Input
+                    id="website"
                     className="pl-9"
-                    value={form.website} 
-                    onChange={e => setForm({...form, website: e.target.value})} 
+                    value={form.website}
+                    onChange={e => setForm({ ...form, website: e.target.value })}
                     placeholder="https://www.hotel.com"
                   />
                 </div>
@@ -465,10 +465,10 @@ export default function HotelSettingsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="short_description">Short Description (Summary)</Label>
-                <Textarea 
-                  id="short_description" 
-                  value={form.short_description} 
-                  onChange={e => setForm({...form, short_description: e.target.value})} 
+                <Textarea
+                  id="short_description"
+                  value={form.short_description}
+                  onChange={e => setForm({ ...form, short_description: e.target.value })}
                   placeholder="A brief summary of your hotel for search results..."
                   rows={2}
                 />
@@ -476,10 +476,10 @@ export default function HotelSettingsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="description">Full Description</Label>
-                <Textarea 
-                  id="description" 
-                  value={form.description} 
-                  onChange={e => setForm({...form, description: e.target.value})} 
+                <Textarea
+                  id="description"
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
                   placeholder="Detailed description of your hotel, amenities, and surroundings..."
                   rows={6}
                 />
@@ -500,33 +500,33 @@ export default function HotelSettingsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="address">Full Address</Label>
-                <Textarea 
-                  id="address" 
-                  value={form.address} 
-                  onChange={e => setForm({...form, address: e.target.value})} 
+                <Textarea
+                  id="address"
+                  value={form.address}
+                  onChange={e => setForm({ ...form, address: e.target.value })}
                   placeholder="Road 12, Block C, Banani, Dhaka"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="latitude">Latitude</Label>
-                  <Input 
-                    id="latitude" 
-                    type="number" 
+                  <Input
+                    id="latitude"
+                    type="number"
                     step="any"
-                    value={form.latitude} 
-                    onChange={e => setForm({...form, latitude: e.target.value})} 
+                    value={form.latitude}
+                    onChange={e => setForm({ ...form, latitude: e.target.value })}
                     placeholder="23.7947"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="longitude">Longitude</Label>
-                  <Input 
-                    id="longitude" 
-                    type="number" 
+                  <Input
+                    id="longitude"
+                    type="number"
                     step="any"
-                    value={form.longitude} 
-                    onChange={e => setForm({...form, longitude: e.target.value})} 
+                    value={form.longitude}
+                    onChange={e => setForm({ ...form, longitude: e.target.value })}
                     placeholder="90.4043"
                   />
                 </div>
@@ -548,18 +548,18 @@ export default function HotelSettingsPage() {
                   <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Reception</h3>
                   <div className="space-y-2">
                     <Label htmlFor="reception_no1">Reception Phone 1</Label>
-                    <Input 
-                      id="reception_no1" 
-                      value={form.reception_no1} 
-                      onChange={e => setForm({...form, reception_no1: e.target.value})} 
+                    <Input
+                      id="reception_no1"
+                      value={form.reception_no1}
+                      onChange={e => setForm({ ...form, reception_no1: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reception_no2">Reception Phone 2 (Optional)</Label>
-                    <Input 
-                      id="reception_no2" 
-                      value={form.reception_no2} 
-                      onChange={e => setForm({...form, reception_no2: e.target.value})} 
+                    <Input
+                      id="reception_no2"
+                      value={form.reception_no2}
+                      onChange={e => setForm({ ...form, reception_no2: e.target.value })}
                     />
                   </div>
                 </div>
@@ -568,18 +568,18 @@ export default function HotelSettingsPage() {
                   <h3 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Emergency</h3>
                   <div className="space-y-2">
                     <Label htmlFor="emergency_contact1">Emergency Phone 1</Label>
-                    <Input 
-                      id="emergency_contact1" 
-                      value={form.emergency_contact1} 
-                      onChange={e => setForm({...form, emergency_contact1: e.target.value})} 
+                    <Input
+                      id="emergency_contact1"
+                      value={form.emergency_contact1}
+                      onChange={e => setForm({ ...form, emergency_contact1: e.target.value })}
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="emergency_contact2">Emergency Phone 2 (Optional)</Label>
-                    <Input 
-                      id="emergency_contact2" 
-                      value={form.emergency_contact2} 
-                      onChange={e => setForm({...form, emergency_contact2: e.target.value})} 
+                    <Input
+                      id="emergency_contact2"
+                      value={form.emergency_contact2}
+                      onChange={e => setForm({ ...form, emergency_contact2: e.target.value })}
                     />
                   </div>
                 </div>
@@ -597,20 +597,20 @@ export default function HotelSettingsPage() {
             <CardContent className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="check_in">Default Check-in Time</Label>
-                <Input 
-                  id="check_in" 
+                <Input
+                  id="check_in"
                   type="time"
-                  value={form.check_in_time} 
-                  onChange={e => setForm({...form, check_in_time: e.target.value})} 
+                  value={form.check_in_time}
+                  onChange={e => setForm({ ...form, check_in_time: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="check_out">Default Check-out Time</Label>
-                <Input 
-                  id="check_out" 
+                <Input
+                  id="check_out"
                   type="time"
-                  value={form.check_out_time} 
-                  onChange={e => setForm({...form, check_out_time: e.target.value})} 
+                  value={form.check_out_time}
+                  onChange={e => setForm({ ...form, check_out_time: e.target.value })}
                 />
               </div>
             </CardContent>
@@ -625,7 +625,7 @@ export default function HotelSettingsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Star Rating</Label>
-                  <Select value={form.star_rating} onValueChange={v => setForm({...form, star_rating: v})}>
+                  <Select value={form.star_rating} onValueChange={v => setForm({ ...form, star_rating: v })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -640,13 +640,13 @@ export default function HotelSettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="deposit">Advance Deposit %</Label>
-                  <Input 
-                    id="deposit" 
+                  <Input
+                    id="deposit"
                     type="number"
                     min="0"
                     max="100"
-                    value={form.advance_deposit_percent} 
-                    onChange={e => setForm({...form, advance_deposit_percent: parseInt(e.target.value) || 0})} 
+                    value={form.advance_deposit_percent}
+                    onChange={e => setForm({ ...form, advance_deposit_percent: parseInt(e.target.value) || 0 })}
                   />
                   <p className="text-xs text-muted-foreground mt-1">Percentage of total amount to be paid upfront.</p>
                 </div>
@@ -664,7 +664,7 @@ export default function HotelSettingsPage() {
             <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label>Policy Type</Label>
-                <Select value={form.cancellation_policy} onValueChange={v => setForm({...form, cancellation_policy: v})}>
+                <Select value={form.cancellation_policy} onValueChange={v => setForm({ ...form, cancellation_policy: v })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -683,23 +683,23 @@ export default function HotelSettingsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="can_hours">Cancellation Window (Hours)</Label>
-                      <Input 
-                        id="can_hours" 
+                      <Input
+                        id="can_hours"
                         type="number"
-                        value={form.cancellation_hours} 
-                        onChange={e => setForm({...form, cancellation_hours: parseInt(e.target.value) || 0})} 
+                        value={form.cancellation_hours}
+                        onChange={e => setForm({ ...form, cancellation_hours: parseInt(e.target.value) || 0 })}
                       />
                       <p className="text-xs text-muted-foreground">Hours before check-in to qualify for refund.</p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="ref_percent">Refund Percentage</Label>
-                      <Input 
-                        id="ref_percent" 
+                      <Input
+                        id="ref_percent"
                         type="number"
                         min="0"
                         max="100"
-                        value={form.refund_percent} 
-                        onChange={e => setForm({...form, refund_percent: parseInt(e.target.value) || 0})} 
+                        value={form.refund_percent}
+                        onChange={e => setForm({ ...form, refund_percent: parseInt(e.target.value) || 0 })}
                       />
                       <p className="text-xs text-muted-foreground">Percentage of amount to be refunded.</p>
                     </div>
@@ -731,44 +731,44 @@ export default function HotelSettingsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="curr_pass">Current Password</Label>
-                  <Input 
-                    id="curr_pass" 
+                  <Input
+                    id="curr_pass"
                     type="password"
                     placeholder="••••••••"
-                    value={securityForm.current_password} 
-                    onChange={e => setSecurityForm({...securityForm, current_password: e.target.value})} 
+                    value={securityForm.current_password}
+                    onChange={e => setSecurityForm({ ...securityForm, current_password: e.target.value })}
                   />
                   <p className="text-xs text-muted-foreground">Required only if changing password.</p>
                 </div>
                 <div className="hidden md:block"></div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="new_pass">New Password</Label>
-                  <Input 
-                    id="new_pass" 
+                  <Input
+                    id="new_pass"
                     type="password"
                     placeholder="Minimum 6 characters"
-                    value={securityForm.new_password} 
-                    onChange={e => setSecurityForm({...securityForm, new_password: e.target.value})} 
+                    value={securityForm.new_password}
+                    onChange={e => setSecurityForm({ ...securityForm, new_password: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="conf_pass">Confirm New Password</Label>
-                  <Input 
-                    id="conf_pass" 
+                  <Input
+                    id="conf_pass"
                     type="password"
                     placeholder="••••••••"
-                    value={securityForm.confirm_password} 
-                    onChange={e => setSecurityForm({...securityForm, confirm_password: e.target.value})} 
+                    value={securityForm.confirm_password}
+                    onChange={e => setSecurityForm({ ...securityForm, confirm_password: e.target.value })}
                   />
                   {securityForm.new_password && securityForm.confirm_password && securityForm.new_password !== securityForm.confirm_password && (
                     <p className="text-xs text-destructive">Passwords do not match.</p>
                   )}
                 </div>
               </div>
-              
+
               <Separator />
-              
+
               <div className="space-y-4">
                 <h4 className="text-sm font-medium">Security Policies</h4>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 p-3 rounded-lg border border-dashed">

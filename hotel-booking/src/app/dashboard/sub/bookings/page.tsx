@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 type BookingStatus = 'RESERVED' | 'BOOKED' | 'EXPIRED' | 'CANCELLED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW'
@@ -35,25 +35,25 @@ interface Booking {
 }
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; badge: string; icon: React.ElementType }> = {
-  RESERVED:    { label: 'Reserved',    badge: 'bg-amber-500/20  text-amber-700  border-amber-500/30',  icon: Clock        },
-  BOOKED:      { label: 'Confirmed',   badge: 'bg-blue-500/20   text-blue-700   border-blue-500/30',   icon: CheckCircle2 },
-  CHECKED_IN:  { label: 'Checked In',  badge: 'bg-green-500/20  text-green-700  border-green-500/30',  icon: LogIn        },
-  CHECKED_OUT: { label: 'Checked Out', badge: 'bg-purple-500/20 text-purple-700 border-purple-500/30', icon: LogOut       },
-  CANCELLED:   { label: 'Cancelled',   badge: 'bg-red-500/20    text-red-700    border-red-500/30',    icon: XCircle      },
-  EXPIRED:     { label: 'Expired',     badge: 'bg-gray-500/20   text-gray-600   border-gray-500/30',   icon: AlertCircle  },
-  NO_SHOW:     { label: 'No Show',     badge: 'bg-orange-500/20 text-orange-700 border-orange-500/30', icon: UserX        },
+  RESERVED: { label: 'Reserved', badge: 'bg-amber-500/20  text-amber-700  border-amber-500/30', icon: Clock },
+  BOOKED: { label: 'Confirmed', badge: 'bg-blue-500/20   text-blue-700   border-blue-500/30', icon: CheckCircle2 },
+  CHECKED_IN: { label: 'Checked In', badge: 'bg-green-500/20  text-green-700  border-green-500/30', icon: LogIn },
+  CHECKED_OUT: { label: 'Checked Out', badge: 'bg-purple-500/20 text-purple-700 border-purple-500/30', icon: LogOut },
+  CANCELLED: { label: 'Cancelled', badge: 'bg-red-500/20    text-red-700    border-red-500/30', icon: XCircle },
+  EXPIRED: { label: 'Expired', badge: 'bg-gray-500/20   text-gray-600   border-gray-500/30', icon: AlertCircle },
+  NO_SHOW: { label: 'No Show', badge: 'bg-orange-500/20 text-orange-700 border-orange-500/30', icon: UserX },
 }
 
 export default function SubAdminBookingsPage() {
   const { toast } = useToast()
-  const [bookings, setBookings]   = useState<Booking[]>([])
-  const [loading, setLoading]     = useState(true)
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
-  const [search, setSearch]       = useState('')
-  const [status, setStatus]       = useState('all')
-  const [page, setPage]           = useState(1)
+  const [search, setSearch] = useState('')
+  const [status, setStatus] = useState('all')
+  const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
-  const [total, setTotal]         = useState(0)
+  const [total, setTotal] = useState(0)
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -62,7 +62,7 @@ export default function SubAdminBookingsPage() {
       if (search) params.append('search', search)
       if (status !== 'all') params.append('status', status)
 
-      const res  = await fetch(`/api/hotel-admin/bookings?${params}`, { credentials: 'include' })
+      const res = await fetch(`/api/hotel-admin/bookings?${params}`, { credentials: 'include' })
       const data = await res.json()
       if (data.success) {
         setBookings(data.data.bookings)
@@ -86,7 +86,7 @@ export default function SubAdminBookingsPage() {
     if ((action === 'cancel' || action === 'no_show') && !confirm(`Perform ${action} on booking ${reference}?`)) return
     try {
       setActionLoading(reference + action)
-      const res  = await fetch(`/api/hotel-admin/bookings/${reference}/status`, {
+      const res = await fetch(`/api/hotel-admin/bookings/${reference}/status`, {
         method: 'PATCH', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action }),
@@ -170,9 +170,9 @@ export default function SubAdminBookingsPage() {
                   </TableCell>
                 </TableRow>
               ) : bookings.map(booking => {
-                const cfg   = STATUS_CONFIG[booking.status]
-                const Icon  = cfg.icon
-                const n     = Math.round((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / 86400000)
+                const cfg = STATUS_CONFIG[booking.status]
+                const Icon = cfg.icon
+                const n = Math.round((new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / 86400000)
                 const rooms = [...new Set(booking.room_bookings.map(rb => rb.room_type.name))].join(', ')
                 const isActing = actionLoading?.startsWith(booking.booking_reference)
 

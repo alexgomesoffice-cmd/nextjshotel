@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import {
-  Wifi, Shield, CheckCircle2, XCircle, Plus, Trash2, 
+  Wifi, Shield, CheckCircle2, XCircle, Plus, Trash2,
   Hotel, BedDouble, AlertCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
   DialogContent,
@@ -37,14 +37,14 @@ export default function HotelAmenitiesPage() {
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const router = useRouter()
-  
+
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'hotel')
-  
+
   const [amenities, setAmenities] = useState<{ HOTEL: Amenity[], ROOM: Amenity[] }>({ HOTEL: [], ROOM: [] })
 
   const [showAddAmenity, setShowAddAmenity] = useState(false)
-  const [newAmenity, setNewAmenity] = useState({ name: '', icon: 'CheckCircle2', context: 'HOTEL' as 'HOTEL'|'ROOM' })
+  const [newAmenity, setNewAmenity] = useState({ name: '', icon: 'CheckCircle2', context: 'HOTEL' as 'HOTEL' | 'ROOM' })
   const [addingAmenity, setAddingAmenity] = useState(false)
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [saving, setSaving] = useState(false)
@@ -56,7 +56,7 @@ export default function HotelAmenitiesPage() {
         fetch('/api/hotel-admin/amenities', { credentials: 'include' }),
         fetch('/api/hotel-admin/amenities/selection', { credentials: 'include' })
       ])
-      
+
       const amData = await amRes.json()
       const selData = await selRes.json()
 
@@ -136,7 +136,7 @@ export default function HotelAmenitiesPage() {
   }
 
   const handleToggleSelection = (id: number) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
     )
   }
@@ -163,30 +163,28 @@ export default function HotelAmenitiesPage() {
     }
   }
 
-  const AmenityGrid = ({ items, context }: { items: Amenity[], context: 'HOTEL'|'ROOM' }) => (
+  const AmenityGrid = ({ items, context }: { items: Amenity[], context: 'HOTEL' | 'ROOM' }) => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {items.map((item) => {
         const isSelected = selectedIds.includes(item.id)
         return (
-          <div 
-            key={item.id} 
+          <div
+            key={item.id}
             onClick={() => context === 'HOTEL' && handleToggleSelection(item.id)}
-            className={`group relative flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${
-              isSelected 
-                ? 'bg-primary/10 border-primary ring-1 ring-primary' 
+            className={`group relative flex items-center justify-between p-4 rounded-xl border transition-all cursor-pointer ${isSelected
+                ? 'bg-primary/10 border-primary ring-1 ring-primary'
                 : 'bg-card border-border hover:border-primary/50'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-3">
               {/* Disc Selection UI */}
               {context === 'HOTEL' && (
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30 group-hover:border-primary/50'
-                }`}>
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'bg-primary border-primary' : 'border-muted-foreground/30 group-hover:border-primary/50'
+                  }`}>
                   {isSelected && <CheckCircle2 className="w-3 h-3 text-primary-foreground" />}
                 </div>
               )}
-              
+
               <div className={`p-2 rounded-lg ${isSelected ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>
                 {item.context === 'HOTEL' ? <Hotel className="h-4 w-4" /> : <BedDouble className="h-4 w-4" />}
               </div>
@@ -198,7 +196,7 @@ export default function HotelAmenitiesPage() {
               </div>
             </div>
             {!item.is_default && (
-              <button 
+              <button
                 onClick={(e) => { e.stopPropagation(); handleDeleteAmenity(item.id); }}
                 className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors opacity-0 group-hover:opacity-100"
               >
@@ -241,9 +239,9 @@ export default function HotelAmenitiesPage() {
             <h1 className="text-2xl font-bold tracking-tight">Amenities & Features</h1>
             <p className="text-xs text-muted-foreground mt-0.5">Select the amenities your hotel provides and manage your custom features.</p>
           </div>
-          <Button 
-            onClick={handleSaveSelection} 
-            disabled={saving} 
+          <Button
+            onClick={handleSaveSelection}
+            disabled={saving}
             className="w-full sm:w-auto shadow-lg"
           >
             {saving ? 'Saving...' : 'Save Selection'}
@@ -252,7 +250,7 @@ export default function HotelAmenitiesPage() {
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="flex h-12 items-center justify-start rounded-none bg-transparent p-0 w-full">
-            <TabsTrigger 
+            <TabsTrigger
               value="hotel"
               className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
@@ -261,7 +259,7 @@ export default function HotelAmenitiesPage() {
                 <span>Hotel Amenities</span>
               </div>
             </TabsTrigger>
-            <TabsTrigger 
+            <TabsTrigger
               value="room"
               className="relative h-12 rounded-none border-b-2 border-b-transparent bg-transparent px-6 pb-3 pt-2 font-medium text-muted-foreground transition-none data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
@@ -311,8 +309,8 @@ export default function HotelAmenitiesPage() {
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="amenity-name">Amenity Name</Label>
-                <Input 
-                  id="amenity-name" 
+                <Input
+                  id="amenity-name"
                   placeholder="e.g. Private Beach Access"
                   value={newAmenity.name}
                   onChange={(e) => setNewAmenity(a => ({ ...a, name: e.target.value }))}

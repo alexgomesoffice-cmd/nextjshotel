@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 
 interface RoomType {
@@ -31,8 +31,8 @@ interface RoomType {
 }
 
 const TABS = [
-  { value: 'SINGLE', label: 'Single Room',   icon: Bed    },
-  { value: 'BULK',   label: 'Bulk Generate', icon: Layers },
+  { value: 'SINGLE', label: 'Single Room', icon: Bed },
+  { value: 'BULK', label: 'Bulk Generate', icon: Layers },
 ] as const
 
 type Mode = typeof TABS[number]['value']

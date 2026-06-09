@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Trash2, Search, UserPlus, ShieldCheck, Lock, Unlock } from 'lucide-react'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -101,7 +101,8 @@ export default function HotelStaffPage() {
   const handleToggleBlock = async (id: number) => {
     try {
       const res = await fetch(`/api/hotel-admin/staff/${id}/block`, {
-        method: 'PATCH', credentials: 'include' })
+        method: 'PATCH', credentials: 'include'
+      })
       const data = await res.json()
       if (data.success) {
         toast({ title: 'Updated', description: data.message, variant: 'success' })
@@ -118,7 +119,8 @@ export default function HotelStaffPage() {
     if (!confirm('Remove this staff member?')) return
     try {
       const res = await fetch(`/api/hotel-admin/staff/${id}/delete`, {
-        method: 'DELETE', credentials: 'include' })
+        method: 'DELETE', credentials: 'include'
+      })
       const data = await res.json()
       if (data.success) {
         toast({ title: 'Deleted', description: data.message, variant: 'success' })
@@ -203,7 +205,7 @@ export default function HotelStaffPage() {
                     <TableCell>{member.email}</TableCell>
                     <TableCell>
                       <Badge className="gap-1" variant={member.is_blocked ? 'destructive' : 'secondary'}>
-                        {member.is_blocked ? <Lock className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />} 
+                        {member.is_blocked ? <Lock className="h-3.5 w-3.5" /> : <ShieldCheck className="h-3.5 w-3.5" />}
                         {member.is_blocked ? 'Blocked' : 'Active'}
                       </Badge>
                     </TableCell>

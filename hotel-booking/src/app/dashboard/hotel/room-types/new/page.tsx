@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { useToast } from '@/hooks/use-hooks'
+import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -46,11 +46,11 @@ const defaultForm = {
 export default function NewRoomTypePage() {
   const { toast } = useToast()
   const router = useRouter()
-  
+
   const [loading, setLoading] = useState(true)
   const [availableBeds, setAvailableBeds] = useState<BedType[]>([])
   const [availableAmenities, setAvailableAmenities] = useState<Amenity[]>([])
-  
+
   const [form, setForm] = useState(defaultForm)
   const [saving, setSaving] = useState(false)
 
@@ -66,7 +66,7 @@ export default function NewRoomTypePage() {
     setSelectedFiles(prev => [...prev, ...files])
     const newPreviews = files.map(file => URL.createObjectURL(file))
     setPreviews(prev => [...prev, ...newPreviews])
-    
+
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -85,7 +85,7 @@ export default function NewRoomTypePage() {
         fetch('/api/hotel-admin/bed-types', { credentials: 'include' }),
         fetch('/api/hotel-admin/amenities', { credentials: 'include' })
       ])
-      
+
       const bedData = await bedRes.json()
       const amData = await amRes.json()
 
@@ -141,7 +141,7 @@ export default function NewRoomTypePage() {
         if (selectedFiles.length > 0) {
           const formData = new FormData()
           selectedFiles.forEach(file => formData.append('files', file))
-          
+
           await fetch(`/api/hotel-admin/room-types/${newId}/images`, {
             method: 'POST',
             credentials: 'include',
@@ -278,8 +278,8 @@ export default function NewRoomTypePage() {
                 const isSelected = form.amenity_ids.includes(am.id)
                 return (
                   <label key={am.id} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'hover:bg-muted/50'}`}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       className="accent-primary w-4 h-4 rounded border-gray-300"
                       checked={isSelected}
                       onChange={() => toggleAmenity(am.id)}
@@ -316,7 +316,7 @@ export default function NewRoomTypePage() {
               ))}
             </div>
           ) : (
-            <div 
+            <div
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-border rounded-xl py-12 flex flex-col items-center justify-center cursor-pointer hover:bg-secondary/20 transition-colors"
             >
@@ -348,7 +348,7 @@ export default function NewRoomTypePage() {
             </div>
             {form.cancellation_policy === 'CUSTOM' && (
               <div className="grid grid-cols-2 gap-4 p-4 rounded-xl bg-secondary/20 border border-secondary">
-                 <div className="space-y-1.5">
+                <div className="space-y-1.5">
                   <Label className="text-sm">Cancel Before (Hours)</Label>
                   <Input type="number" value={form.cancellation_hours} onChange={e => setForm(f => ({ ...f, cancellation_hours: e.target.value }))} />
                 </div>

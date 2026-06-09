@@ -221,7 +221,7 @@ const HotelCard = ({
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Hotel className="h-3.5 w-3.5 shrink-0" />
             <span>
-              {total_room_types} room type{total_room_types! > 1 ? 's' : ''} available
+              {total_room_types} room type{total_room_types! > 1 ? 's' : ''}  available
               &nbsp;·&nbsp;
               <span className="text-primary/70 font-medium">Add dates to see rooms</span>
             </span>

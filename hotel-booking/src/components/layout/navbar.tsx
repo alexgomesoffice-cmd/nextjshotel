@@ -1,16 +1,5 @@
 'use client'
 
-// filepath: src/components/layout/navbar.tsx
-// Ported from MERN Navbar.tsx
-// Changes:
-//   - 'use client' added
-//   - import Link from 'next/link'
-//   - useNavigate → useRouter, useLocation → usePathname (from 'next/navigation')
-//   - getLoggedInUser() removed — user fetched from /api/auth/me on mount
-//   - handleLogout calls POST /api/auth/logout (clears HttpOnly cookie server-side)
-//   - theme toggle removed (dark theme is applied globally via globals.css)
-//   - custom event 'stayvista-auth-change' replaced with storage event on 'user_name'
-
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
@@ -24,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-//import { useToast } from '@/hooks/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { useTheme } from '@/hooks/use-theme'
 interface AuthUser {
   name: string
@@ -37,7 +26,7 @@ const Navbar = () => {
   const [user, setUser] = useState<AuthUser | null>(null)
   const pathname = usePathname()
   const router = useRouter()
-  // const { toast } = useToast()
+  const { toast } = useToast()
   const { theme, toggleTheme, isInitialized } = useTheme()
 
 

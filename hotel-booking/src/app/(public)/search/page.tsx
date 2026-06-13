@@ -111,7 +111,7 @@ function SearchContent() {
             {/* ── Sidebar — desktop: sticky, NO overflow on sticky container ── */}
             <aside className="hidden lg:block w-72 shrink-0">
               <div
-                className="sticky"
+                className=""
                 style={{ top: SIDEBAR_OFFSET }}
               >
                 <HotelFilterSidebar />

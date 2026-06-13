@@ -20,6 +20,19 @@ export type HotelSearchFilters = {
   bedTypes: string[];
 };
 
+type FilterCheckboxCategory = 'starRatings' | 'hotelTypes' | 'amenities' | 'roomTypes' | 'bedTypes';
+type FilterCheckboxValue = number | string;
+
+interface HotelTypeApiItem {
+  name: string;
+}
+
+interface AmenityApiItem {
+  id: string | number;
+  name: string;
+  context: string;
+}
+
 const HotelFilterSidebar = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -38,19 +51,6 @@ const HotelFilterSidebar = () => {
   const [hotelTypeOptions, setHotelTypeOptions] = useState<FilterOption[]>([]);
   const [amenityOptions, setAmenityOptions] = useState<FilterOption[]>([]);
   
-  // Hardcoded for now per system design
-  const roomTypeOptions = [
-    { id: 'Standard', label: 'Standard' },
-    { id: 'Deluxe', label: 'Deluxe' },
-    { id: 'Suite', label: 'Suite' },
-  ];
-  const bedTypeOptions = [
-    { id: 'Single', label: 'Single' },
-    { id: 'Double', label: 'Double' },
-    { id: 'Queen', label: 'Queen' },
-    { id: 'King', label: 'King' },
-  ];
-
   // Accordion state
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     price: true,
@@ -75,7 +75,7 @@ const HotelFilterSidebar = () => {
     const priceMin = searchParams.get("min_price") ? Number(searchParams.get("min_price")) : undefined;
     const priceMax = searchParams.get("max_price") ? Number(searchParams.get("max_price")) : undefined;
 
-    setFilters({
+    const nextFilters: HotelSearchFilters = {
       starRatings,
       hotelTypes,
       amenities,
@@ -83,6 +83,10 @@ const HotelFilterSidebar = () => {
       bedTypes,
       priceMin,
       priceMax,
+    };
+
+    Promise.resolve().then(() => {
+      setFilters(nextFilters);
     });
   }, [searchParams]);
 
@@ -98,7 +102,7 @@ const HotelFilterSidebar = () => {
         if (htRes.ok) {
           const htData = await htRes.json();
           if (htData.success) {
-            setHotelTypeOptions(htData.data.map((ht: any) => ({ id: ht.name, label: ht.name })));
+            setHotelTypeOptions(htData.data.map((ht: HotelTypeApiItem) => ({ id: ht.name, label: ht.name })));
           }
         }
         
@@ -106,8 +110,8 @@ const HotelFilterSidebar = () => {
           const amData = await amRes.json();
           if (amData.success) {
             // Filter to only HOTEL context amenities for this sidebar
-            const hotelAmenities = amData.data.filter((a: any) => a.context === 'HOTEL');
-            setAmenityOptions(hotelAmenities.map((a: any) => ({ id: a.id.toString(), label: a.name })));
+            const hotelAmenities = amData.data.filter((a: AmenityApiItem) => a.context === 'HOTEL');
+            setAmenityOptions(hotelAmenities.map((a: AmenityApiItem) => ({ id: a.id.toString(), label: a.name })));
           }
         }
       } catch (e) {
@@ -148,8 +152,8 @@ const HotelFilterSidebar = () => {
     router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }, [pathname, router, searchParams]);
 
-  const handleCheckboxChange = (category: keyof HotelSearchFilters, value: any, checked: boolean) => {
-    const currentArray = (filters[category] as any[]) || [];
+  const handleCheckboxChange = (category: FilterCheckboxCategory, value: FilterCheckboxValue, checked: boolean) => {
+    const currentArray = (filters[category] as Array<string | number>) || [];
     const newArray = checked 
       ? [...currentArray, value] 
       : currentArray.filter(item => item !== value);
@@ -296,7 +300,7 @@ const HotelFilterSidebar = () => {
             </button>
             
             {openSections.hotelType && (
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar" data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch>
                 {hotelTypeOptions.map((option) => (
                   <label key={option.id} className="flex items-center gap-2 cursor-pointer group">
                     <input 
@@ -327,7 +331,7 @@ const HotelFilterSidebar = () => {
             </button>
             
             {openSections.amenities && (
-              <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar" data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch>
                 {amenityOptions.map((option) => (
                   <label key={option.id} className="flex items-center gap-2 cursor-pointer group">
                     <input 

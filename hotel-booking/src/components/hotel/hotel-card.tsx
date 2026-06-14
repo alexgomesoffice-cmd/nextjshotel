@@ -3,12 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  MapPin, Star, Building2, ChevronRight, Heart,
-  Users, BedDouble, Hotel, ArrowRight,
+  MapPin, Star, Building2, Heart,
+  Users, BedDouble, ArrowUpRight, ArrowRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// ─── Types (keep identical to current — no API changes) ──────────────────────
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface RoomTypeStrip {
   id:              number;
@@ -52,9 +52,9 @@ function buildRoomUrl(slug: string, roomTypeId: number, checkIn?: string, checkO
   return `/hotels/${slug}?${p.toString()}#available-rooms`;
 }
 
-// ─── Room chip — inside the strip ────────────────────────────────────────────
+// ─── Premium Styled Room Row Component ──────────────────────────────────────
 
-function RoomChip({
+function RoomRow({
   rt,
   slug,
   checkIn,
@@ -62,11 +62,11 @@ function RoomChip({
   guests,
   guestCount,
 }: {
-  rt:        RoomTypeStrip;
-  slug:      string;
-  checkIn?:  string;
-  checkOut?: string;
-  guests?:   number;
+  rt:         RoomTypeStrip;
+  slug:       string;
+  checkIn?:   string;
+  checkOut?:  string;
+  guests?:    number;
   guestCount: number;
 }) {
   const capacityOk = !guestCount || rt.max_occupancy >= guestCount;
@@ -75,74 +75,104 @@ function RoomChip({
 
   const href = disabled ? undefined : buildRoomUrl(slug, rt.id, checkIn, checkOut, guests);
 
-  const chipContent = (
-    <span
+  const rowContent = (
+    <div
       className={cn(
-        'flex-shrink-0 w-[130px] rounded-xl border overflow-hidden transition-all duration-200 flex flex-col',
+        "group/row flex gap-3 p-3 transition-colors bg-card relative z-10",
         disabled
-          ? 'opacity-40 grayscale cursor-not-allowed border-border/20 bg-muted/10'
-          : 'border-border/60 hover:border-primary/70 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5 bg-card cursor-pointer'
+          ? "opacity-40 grayscale bg-muted/10 cursor-not-allowed"
+          : "hover:bg-muted/30"
       )}
     >
-      {/* Image */}
-      <span className="relative h-[72px] w-full overflow-hidden bg-secondary/40 block">
+      {/* Room Image Container */}
+      <div className="relative h-[88px] w-[110px] shrink-0 overflow-hidden rounded-lg bg-secondary/40">
         {rt.cover_image ? (
           <Image
             src={rt.cover_image}
             alt={rt.name}
             fill
-            className="object-cover"
-            sizes="130px"
+            className="object-cover transition-transform duration-500 group-hover/row:scale-105"
+            sizes="110px"
           />
         ) : (
-          <span className="flex h-full items-center justify-center">
+          <div className="flex h-full items-center justify-center">
             <BedDouble className="h-6 w-6 text-muted-foreground/20" />
-          </span>
+          </div>
         )}
-        {/* Status overlay */}
-        {!isAvail ? (
-          <span className="absolute inset-0 flex items-center justify-center bg-background/75">
-            <span className="text-[9px] font-black tracking-widest text-destructive">FULL</span>
-          </span>
-        ) : !capacityOk ? (
-          <span className="absolute inset-0 flex items-center justify-center bg-background/75">
-            <span className="text-[9px] font-black tracking-wide text-amber-500 text-center leading-tight px-1">LOW CAP</span>
-          </span>
-        ) : rt.available_count > 0 && rt.dates_filtered ? (
-          <span className="absolute bottom-1.5 left-1.5 rounded-full bg-green-500 px-1.5 py-0.5 text-[9px] font-bold text-white leading-none">
-            {rt.available_count} left
-          </span>
-        ) : null}
-      </span>
 
-      {/* Text */}
-      <span className="flex flex-col gap-0.5 p-2">
-        <span className="text-[12px] font-semibold leading-tight line-clamp-1">{rt.name}</span>
-        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          <Users className="h-2.5 w-2.5 shrink-0" />
-          <span>{rt.max_occupancy}</span>
-          {rt.bed_types[0] && (
-            <span className="truncate ml-0.5">· {rt.bed_types[0].name}</span>
+        {/* Status Badges Overlay */}
+        {!isAvail ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/75">
+            <span className="text-[9px] font-black tracking-widest text-destructive">FULL</span>
+          </div>
+        ) : !capacityOk ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/75">
+            <span className="text-[9px] font-black tracking-wide text-amber-500 text-center leading-tight px-1">LOW CAP</span>
+          </div>
+        ) : rt.available_count > 0 && rt.dates_filtered ? (
+          <div className="absolute bottom-1.5 left-1.5 rounded bg-green-500 px-1.5 py-0.5 text-[9px] font-bold text-white linen-none">
+            {rt.available_count} left
+          </div>
+        ) : null}
+      </div>
+
+      {/* Room Meta Information */}
+      <div className="flex min-w-0 flex-1 flex-col justify-between">
+        <div className="min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <h4 className="truncate text-[13.5px] font-semibold leading-tight text-foreground group-hover/row:text-primary transition-colors">
+              {rt.name}
+            </h4>
+            <div className="text-right shrink-0">
+              <p className="text-[15px] font-bold leading-none tracking-tight text-foreground">
+                ৳{Number(rt.base_price).toLocaleString()}
+              </p>
+              <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">night</p>
+            </div>
+          </div>
+
+          <div className="mt-1 flex items-center gap-2.5 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <BedDouble className="size-3" />
+              {rt.bed_types[0] ? rt.bed_types[0].name : "Standard Bed"}
+            </span>
+            <span className="flex items-center gap-1">
+              <Users className="size-3" />
+              {rt.max_occupancy} Guests
+            </span>
+            {rt.room_size && <span>{rt.room_size}</span>}
+          </div>
+        </div>
+
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-wrap gap-1">
+            {isAvail && capacityOk && (
+              <span className="rounded-md bg-green-500/10 text-green-600 px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wide dark:bg-green-500/20 dark:text-green-400">
+                Available
+              </span>
+            )}
+          </div>
+
+          {!disabled && (
+            <span className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground transition hover:bg-primary/90 shadow-sm">
+              Book
+            </span>
           )}
-        </span>
-        <span className="text-[13px] font-bold text-primary mt-0.5 leading-none">
-          ৳{Number(rt.base_price).toLocaleString()}
-          <span className="text-[9px] font-normal text-muted-foreground ml-0.5">/n</span>
-        </span>
-      </span>
-    </span>
+        </div>
+      </div>
+    </div>
   );
 
-  if (disabled) return chipContent;
+  if (disabled) return rowContent;
 
   return (
-    <Link href={href!} className="flex-shrink-0 no-underline">
-      {chipContent}
+    <Link href={href!} className="block no-underline relative z-20">
+      {rowContent}
     </Link>
   );
 }
 
-// ─── Main card ────────────────────────────────────────────────────────────────
+// ─── Main Premium Hotel Card Component ───────────────────────────────────────
 
 const HotelCard = ({
   slug,
@@ -175,104 +205,126 @@ const HotelCard = ({
     : 0;
 
   return (
-    <article className="group flex flex-col rounded-3xl border border-border/50 bg-card overflow-hidden shadow-sm hover:shadow-xl hover:shadow-black/20 hover:-translate-y-1 transition-all duration-400">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-400 hover:shadow-xl hover:-translate-y-1">
+      
+      {/* ── HOTEL SHOWCASE FRAME ─────────────────────────────────────────── */}
+      <div className="relative flex flex-col">
+        <Link href={hotelUrl} className="block relative h-64 overflow-hidden bg-muted z-10">
+          {cover_image ? (
+            <Image
+              src={cover_image}
+              alt={name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+              priority={false}
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-secondary/50">
+              <Building2 className="h-12 w-12 text-muted-foreground/20" />
+            </div>
+          )}
+          
+          {/* Vignette Gradient Layer */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20" />
 
-      {/* ── Cover image ─────────────────────────────────────────────────── */}
-      <Link href={hotelUrl} className="block relative overflow-hidden bg-muted"
-        style={{ height: hasRoomStrip ? '200px' : '216px' }}>
-        {cover_image ? (
-          <Image
-            src={cover_image}
-            alt={name}
-            fill
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-110"
-            priority={false}
-          />
-        ) : (
-          <span className="flex h-full items-center justify-center bg-secondary/50">
-            <Building2 className="h-12 w-12 text-muted-foreground/20" />
-          </span>
-        )}
-
-        {/* dark gradient at bottom */}
-        <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
-
-        {/* Top badges */}
-        <span className="absolute top-3 left-3 right-3 flex items-start justify-between">
-          <span className="inline-flex items-center gap-1 rounded-full bg-background/85 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-foreground shadow">
-            {hotel_type}
-          </span>
-          <button
-            onClick={e => { e.preventDefault(); e.stopPropagation(); }}
-            aria-label="Save hotel"
-            className="h-8 w-8 rounded-full bg-background/50 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-rose-500 transition-colors"
-          >
-            <Heart className="h-4 w-4" />
-          </button>
-        </span>
-
-        {/* Guest rating pill */}
-        {guest_rating > 0 && (
-          <span className="absolute top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-amber-400/90 backdrop-blur-sm rounded-full px-2.5 py-1 shadow">
-            <Star className="h-3 w-3 fill-white text-white" />
-            <span className="text-[11px] font-bold text-white">{Number(guest_rating).toFixed(1)}</span>
-          </span>
-        )}
-
-        {/* City */}
-        <span className="absolute bottom-3 left-3 flex items-center gap-1 text-white/90">
-          <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span className="text-sm font-medium drop-shadow">{city}</span>
-        </span>
-      </Link>
-
-      {/* ── Hotel info ──────────────────────────────────────────────────── */}
-      <Link href={hotelUrl} className="block px-5 pt-4 pb-3">
-        {/* Stars */}
-        {star_rating > 0 && (
-          <span className="flex gap-0.5 mb-1.5">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={cn(
-                  'h-3 w-3',
-                  i < Math.floor(star_rating)
-                    ? 'fill-amber-400 text-amber-400'
-                    : 'fill-muted text-muted'
-                )}
-              />
-            ))}
-          </span>
-        )}
-
-        <h3 className="text-[15px] font-bold tracking-tight leading-snug line-clamp-1 group-hover:text-primary transition-colors mb-1.5">
-          {name}
-        </h3>
-
-        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-          {short_description || 'Experience a wonderful stay with premium amenities and excellent service.'}
-        </p>
-      </Link>
-
-      {/* ── Room strip — dates given ─────────────────────────────────────── */}
-      {hasRoomStrip && (
-        <div className="mx-0 border-t border-primary/20 bg-primary/5 px-1.5 pt-3 pb-3">
-          {/* Strip header */}
-          <div className="flex items-center justify-between mb-2.5">
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary/80">
-              <BedDouble className="h-3.5 w-3.5" />
-              Available Rooms
+          {/* Top row actions & tags */}
+          <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4 z-20">
+            <span className="rounded-full bg-background/90 px-2.5 py-1 text-[10px] uppercase font-semibold tracking-[0.12em] text-foreground backdrop-blur">
+              {hotel_type}
             </span>
-            <span className="text-[10px] text-muted-foreground font-medium">
-              {availableCount}/{room_types!.length} open
-            </span>
+            <button
+              onClick={e => { e.preventDefault(); e.stopPropagation(); }}
+              type="button"
+              aria-label="Save hotel"
+              className="grid size-9 place-items-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/30"
+            >
+              <Heart className="size-4" />
+            </button>
           </div>
 
-          {/* Horizontally scrollable chips — partial 3rd card visible as scroll hint */}
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mr-4 pr-4">
+          {/* Bottom Info Overlay */}
+          <div className="absolute inset-x-0 bottom-0 p-5 text-white z-20">
+            <div className="mb-2 flex items-center gap-1.5 text-[11px]">
+              {guest_rating > 0 && (
+                <span className="flex items-center gap-1 rounded-md bg-white/95 px-1.5 py-0.5 text-foreground">
+                  <Star className="size-3 fill-amber-500 text-amber-500" />
+                  <span className="font-semibold">{Number(guest_rating).toFixed(1)}</span>
+                </span>
+              )}
+              {star_rating > 0 && (
+                <span className="font-medium flex items-center text-amber-300">
+                  {star_rating} ★ Rating
+                </span>
+              )}
+            </div>
+
+            <h3 className="text-2xl font-bold leading-tight tracking-tight line-clamp-1 ">
+              {name}
+            </h3>
+
+            <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-white/85">
+              <MapPin className="size-3.5 text-white/70" />
+              <span>{city}</span>
+              <span className="text-white/40">·</span>
+              <span className="truncate max-w-[200px] text-white/80">
+                {short_description || 'Premium Amenities'}
+              </span>
+            </div>
+
+            {/* Embedded Footer Pricing Block */}
+            <div className="mt-4 flex items-end justify-between border-t border-white/15 pt-3">
+              <div className="text-left">
+                {showRoomHint && (
+                  <span className="text-[11px] font-sans text-white/80 bg-white/10 px-2 py-0.5 rounded">
+                    {total_room_types} Room Types Available
+                  </span>
+                )}
+              </div>
+              
+              <div className="text-right">
+                <p className="text-[9px] uppercase tracking-[0.2em] text-white/60">From</p>
+                {starting_price ? (
+                  <p className="text-xl font-bold leading-none">
+                    ৳{Number(starting_price).toLocaleString()}
+                    <span className="ml-0.5 text-[10px] tracking-wide text-white/70">/nt</span>
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-white/70">N/A</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      {/* ── ROOMS VERTICAL SEGMENT ─────────────────────────────────────────── */}
+      {hasRoomStrip && (
+        <div className="flex min-w-0 flex-col bg-card border-t border-border/60 relative z-20">
+          <header className="flex items-center justify-between border-b border-border/60 px-5 py-3 bg-muted/20">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Available rooms
+              </p>
+              <p className="text-[11px] text-muted-foreground/80">
+                {availableCount}/{room_types!.length} configurations open
+              </p>
+            </div>
+            <Link 
+              href={hotelUrl} 
+              className="flex items-center gap-1 text-[11px] font-medium text-foreground hover:text-primary transition-colors"
+            >
+              View hotel <ArrowUpRight className="size-3.5" />
+            </Link>
+          </header>
+
+          {/* List Wrapper */}
+          <div
+            className="flex-1 divide-y divide-border/60 overflow-y-auto bg-card"
+            style={{ maxHeight: "280px" }}
+          >
             {room_types!.map(rt => (
-              <RoomChip
+              <RoomRow
                 key={rt.id}
                 rt={rt}
                 slug={slug}
@@ -282,59 +334,17 @@ const HotelCard = ({
                 guestCount={guestNum}
               />
             ))}
-            {/* Scroll hint fade — only if 3+ rooms */}
-            {room_types!.length >= 3 && (
-              <span className="flex-shrink-0 w-4" aria-hidden />
-            )}
           </div>
 
-          {/* Scroll hint text if more than 2 room types */}
           {room_types!.length > 2 && (
-            <p className="text-[10px] text-muted-foreground/60 mt-1.5 flex items-center gap-1">
-              <ArrowRight className="h-2.5 w-2.5" />
-              Scroll to see all room types
-            </p>
+            <div className="border-t border-border/60 bg-muted/10 px-5 py-2 text-center">
+              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground flex items-center justify-center gap-1">
+                <ArrowRight className="size-2.5 rotate-90" /> Scroll to view more choices
+              </span>
+            </div>
           )}
         </div>
       )}
-
-      {/* ── Room hint — no dates ─────────────────────────────────────────── */}
-      {showRoomHint && !hasRoomStrip && (
-        <div className="mx-4 mb-3 flex items-center justify-between gap-2 rounded-xl border border-dashed border-border/60 bg-secondary/20 px-3 py-2.5">
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Hotel className="h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />
-            {total_room_types} room type{total_room_types! > 1 ? 's' : ''}
-          </span>
-          <span className="text-[11px] text-primary/80 font-medium flex items-center gap-0.5 whitespace-nowrap">
-            Add dates <ChevronRight className="h-3 w-3" />
-          </span>
-        </div>
-      )}
-
-      {/* ── Footer — price + CTA ─────────────────────────────────────────── */}
-      <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/40 px-5 py-3.5">
-        <div>
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mb-0.5">
-            Starts from
-          </p>
-          {starting_price ? (
-            <p className="text-base font-bold text-foreground leading-none">
-              ৳{Number(starting_price).toLocaleString()}
-              <span className="text-xs font-normal text-muted-foreground ml-1">/ night</span>
-            </p>
-          ) : (
-            <p className="text-sm text-muted-foreground font-medium">Price unavailable</p>
-          )}
-        </div>
-
-        <Link
-          href={hotelUrl}
-          className="flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm"
-        >
-          View
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
-      </div>
     </article>
   );
 };

@@ -167,14 +167,14 @@ function SearchContent() {
 
               {/* Results grid */}
               {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <HotelCardSkeleton key={i} />
                   ))}
                 </div>
               ) : hotels.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 items-start">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
                     {hotels.map((hotel) => (
                       <div key={hotel.id}>
                         <HotelCard

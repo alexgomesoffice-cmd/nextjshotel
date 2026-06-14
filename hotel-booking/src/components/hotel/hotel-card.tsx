@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {
   MapPin, Star, Building2, Heart,
-  Users, BedDouble, ArrowUpRight, ArrowRight,
+  Users, BedDouble, ArrowUpRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -85,7 +85,7 @@ function RoomRow({
       )}
     >
       {/* Room Image Container */}
-      <div className="relative h-[88px] w-[110px] shrink-0 overflow-hidden rounded-lg bg-secondary/40">
+      <div className="relative h-[88px] w-[140px] shrink-0 overflow-hidden rounded-lg bg-secondary/40">
         {rt.cover_image ? (
           <Image
             src={rt.cover_image}
@@ -318,10 +318,9 @@ const HotelCard = ({
             </Link>
           </header>
 
-          {/* List Wrapper */}
+          {/* List Wrapper — fixed height so all cards are equal */}
           <div
-            className="flex-1 divide-y divide-border/60 overflow-y-auto bg-card"
-            style={{ maxHeight: "280px" }}
+            className="divide-y divide-border/60 h-[228px] overflow-hidden hover:overflow-y-auto bg-card"
           >
             {room_types!.map(rt => (
               <RoomRow
@@ -336,13 +335,7 @@ const HotelCard = ({
             ))}
           </div>
 
-          {room_types!.length > 2 && (
-            <div className="border-t border-border/60 bg-muted/10 px-5 py-2 text-center">
-              <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground flex items-center justify-center gap-1">
-                <ArrowRight className="size-2.5 rotate-90" /> Scroll to view more choices
-              </span>
-            </div>
-          )}
+
         </div>
       )}
     </article>

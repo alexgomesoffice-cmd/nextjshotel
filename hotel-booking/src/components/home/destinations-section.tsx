@@ -41,7 +41,7 @@ const DestinationsSection = () => {
 
   if (isLoading) {
     return (
-      <section className="py-24 bg-background">
+      <section className="pt-24 bg-background">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="animate-pulse space-y-8">
             <div className="h-10 w-1/3 rounded-md bg-muted" />

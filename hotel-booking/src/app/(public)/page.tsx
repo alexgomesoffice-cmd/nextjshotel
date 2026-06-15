@@ -7,8 +7,8 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       <HeroSection />
-      <DestinationsSection />
       <FeaturedHotels />
+      <DestinationsSection />
       <NewsletterSection />
     </div>
   )

@@ -78,7 +78,7 @@ function RoomRow({
   const rowContent = (
     <div
       className={cn(
-        "group/row flex gap-3 p-3 transition-colors bg-card relative z-10",
+        "group/row flex gap-3 p-3 transition-colors bg-card relative z-10 ",
         disabled
           ? "opacity-40 grayscale bg-muted/10 cursor-not-allowed"
           : "hover:bg-muted/30"
@@ -320,7 +320,10 @@ const HotelCard = ({
 
           {/* List Wrapper — fixed height so all cards are equal */}
           <div
-            className="divide-y divide-border/60 h-[228px] overflow-hidden hover:overflow-y-auto bg-card"
+            className="divide-y divide-border/60 h-[228px] overflow-y-auto bg-card custom-scrollbar [&::-webkit-scrollbar-thumb]:opacity-0 hover:[&::-webkit-scrollbar-thumb]:opacity-100"
+            data-lenis-prevent={room_types!.length >= 3 ? "" : undefined}
+            data-lenis-prevent-wheel={room_types!.length >= 3 ? "" : undefined}
+            data-lenis-prevent-touch={room_types!.length >= 3 ? "" : undefined}
           >
             {room_types!.map(rt => (
               <RoomRow

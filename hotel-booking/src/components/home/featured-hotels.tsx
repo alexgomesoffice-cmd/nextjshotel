@@ -59,7 +59,7 @@ const FeaturedHotels = () => {
   if (hotels.length === 0) return null;
 
   return (
-    <section className="py-24 bg-secondary/20 relative">
+    <section className="pt-24 bg-secondary/20 relative">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="max-w-2xl">
@@ -98,11 +98,11 @@ const FeaturedHotels = () => {
         {/* Horizontal Scroll Container */}
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0"
+          className="flex overflow-x-auto gap-6 pt-8 snap-x snap-mandatory hide-scrollbar -mx-4 px-4 md:mx-0 md:px-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {hotels.map((hotel) => (
-            <div key={hotel.id} className="min-w-[85vw] sm:min-w-[340px] max-w-[380px] shrink-0 snap-start h-[480px]">
+            <div key={hotel.id} className="min-w-[85vw] sm:min-w-[340px] max-w-[380px] shrink-0 snap-start ">
               <HotelCard {...hotel} />
             </div>
           ))}

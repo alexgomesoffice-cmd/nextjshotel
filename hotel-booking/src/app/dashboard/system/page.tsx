@@ -165,14 +165,14 @@ export default function SystemAdminPage() {
         />
         <StatCard
           title="Monthly Revenue"
-          value={stats ? `৳${stats.monthlyRevenue.toLocaleString()}` : 0}
+          value={stats ? `TK ${stats.monthlyRevenue.toLocaleString()}` : 0}
           icon={DollarSign}
           loading={loading}
           trend={{ value: 15, isPositive: true }}
         />
         <StatCard
           title="Total Revenue"
-          value={stats ? `৳${stats.totalRevenue.toLocaleString()}` : 0}
+          value={stats ? `TK ${stats.totalRevenue.toLocaleString()}` : 0}
           icon={TrendingUp}
           loading={loading}
         />

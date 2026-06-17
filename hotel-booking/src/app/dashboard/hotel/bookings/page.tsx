@@ -246,7 +246,7 @@ export default function HotelAdminBookingsPage() {
                       <p className="text-xs text-muted-foreground max-w-32 truncate" title={rooms}>{rooms || '—'}</p>
                       <p className="text-xs text-muted-foreground">{booking.rooms_count} room{booking.rooms_count !== 1 ? 's' : ''}</p>
                     </TableCell>
-                    <TableCell className="font-semibold text-sm">৳{booking.total_price.toLocaleString()}</TableCell>
+                    <TableCell className="font-semibold text-sm">TK {booking.total_price.toLocaleString()}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5">
                         <Icon className="h-3.5 w-3.5" />

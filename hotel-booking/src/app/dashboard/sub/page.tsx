@@ -174,7 +174,7 @@ export default function SubAdminPage() {
                       <p className="text-sm text-muted-foreground">{booking.guest}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-sm">৳{booking.total.toLocaleString()}</p>
+                      <p className="font-semibold text-sm">TK{booking.total.toLocaleString()}</p>
                       <Badge variant="outline" className={cn('text-xs mt-0.5', STATUS_BADGE[booking.status] ?? '')}>
                         {STATUS_LABEL[booking.status] ?? booking.status}
                       </Badge>

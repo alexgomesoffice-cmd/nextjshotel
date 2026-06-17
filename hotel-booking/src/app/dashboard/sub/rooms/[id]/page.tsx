@@ -297,7 +297,7 @@ export default function SubAdminEditRoomPage({ params }: { params: Promise<{ id:
                 />
               </div>
               <div className="space-y-2">
-                <Label>Nightly Price (৳)</Label>
+                <Label>Nightly Price (TK)</Label>
                 <Input
                   type="number"
                   step="0.01"

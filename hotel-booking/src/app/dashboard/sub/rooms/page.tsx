@@ -159,7 +159,7 @@ export default function SubAdminRoomsPage() {
                     <TableCell className="text-sm text-muted-foreground">
                       {room.floor != null ? `Floor ${room.floor}` : '—'}
                     </TableCell>
-                    <TableCell className="font-medium">৳{Number(room.price).toLocaleString()}</TableCell>
+                    <TableCell className="font-medium">TK {Number(room.price).toLocaleString()}</TableCell>
                     <TableCell>
                       <div className="flex gap-1.5 flex-wrap">
                         {room.ac && <span className="text-xs bg-blue-500/10 text-blue-700 border border-blue-500/20 rounded-full px-2 py-0.5">AC</span>}

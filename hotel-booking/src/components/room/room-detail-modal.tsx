@@ -205,7 +205,7 @@ const RoomDetailModal = ({ isOpen, onClose, roomType }: RoomDetailModalProps) =>
         <div className="p-6 border-t border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Price per night</p>
-            <p className="text-2xl font-bold text-foreground">৳{Number(roomType.base_price).toLocaleString()}</p>
+            <p className="text-2xl font-bold text-foreground">TK {Number(roomType.base_price).toLocaleString()}</p>
           </div>
           <Button onClick={onClose} size="lg">
             Done

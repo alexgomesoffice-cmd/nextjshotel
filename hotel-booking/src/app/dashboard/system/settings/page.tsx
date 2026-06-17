@@ -45,7 +45,7 @@ const CONFIG_ITEMS = [
     bg: 'bg-green-500/10',
     items: [
       { label: 'Target Market', value: 'Bangladesh', description: 'Platform is localised for BD — BDT currency, BD cities seeded' },
-      { label: 'Currency', value: 'BDT (৳)', description: 'All prices displayed in Bangladeshi Taka' },
+      { label: 'Currency', value: 'BDT (TK)', description: 'All prices displayed in Bangladeshi Taka' },
       { label: 'Default Check-in', value: '14:00', description: 'Default check-in time applied to new hotels' },
       { label: 'Default Check-out', value: '12:00', description: 'Default check-out time applied to new hotels' },
     ],

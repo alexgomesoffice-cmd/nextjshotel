@@ -375,8 +375,8 @@ export default function SubAdminBookingDetailPage() {
                   <p className="text-sm text-muted-foreground">Room {rb.room_detail.room_number}{rb.room_detail.floor ? ` · Floor ${rb.room_detail.floor}` : ''}</p>
                 </div>
                 <div className="text-right text-sm">
-                  <p className="font-medium">৳{rb.subtotal.toLocaleString()}</p>
-                  <p className="text-muted-foreground">৳{rb.price_per_night.toLocaleString()} × {rb.nights}n</p>
+                  <p className="font-medium">-{rb.subtotal.toLocaleString()}</p>
+                  <p className="text-muted-foreground">TK {rb.price_per_night.toLocaleString()} × {rb.nights}n</p>
                 </div>
               </div>
             ))}
@@ -390,12 +390,12 @@ export default function SubAdminBookingDetailPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total</span>
-                <span className="font-semibold">৳{booking.total_price.toLocaleString()}</span>
+                <span className="font-semibold">TK {booking.total_price.toLocaleString()}</span>
               </div>
               {booking.advance_amount > 0 && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Advance Paid</span>
-                  <span>৳{booking.advance_amount.toLocaleString()}</span>
+                  <span>TK {booking.advance_amount.toLocaleString()}</span>
                 </div>
               )}
               {booking.payment_method && (

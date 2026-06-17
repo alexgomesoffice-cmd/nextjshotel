@@ -229,7 +229,7 @@ const HotelFilterSidebar = () => {
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">৳</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">TK </span>
                   <input 
                     type="number" 
                     placeholder="Min"
@@ -240,7 +240,7 @@ const HotelFilterSidebar = () => {
                 </div>
                 <span className="text-muted-foreground">-</span>
                 <div className="relative flex-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">৳</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">TK </span>
                   <input 
                     type="number" 
                     placeholder="Max"

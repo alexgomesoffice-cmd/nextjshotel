@@ -174,7 +174,7 @@ export default function HotelDashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Monthly Revenue"
-          value={`৳${stats?.revenue.total.toLocaleString() ?? 0}`}
+          value={`TK ${stats?.revenue.total.toLocaleString() ?? 0}`}
           icon={DollarSign}
           description="Total from confirmed bookings"
           loading={loading}
@@ -238,7 +238,7 @@ export default function HotelDashboardPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold">৳{booking.amount.toLocaleString()}</div>
+                      <div className="font-bold">TK {booking.amount.toLocaleString()}</div>
                       <div className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${booking.status === 'BOOKED' ? 'bg-green-500/10 text-green-500' :
                           booking.status === 'CHECKED_IN' ? 'bg-blue-500/10 text-blue-500' :
                             booking.status === 'CANCELLED' ? 'bg-red-500/10 text-red-500' :

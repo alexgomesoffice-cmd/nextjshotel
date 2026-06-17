@@ -193,9 +193,9 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                   {roomSelections.map(selection => (
                     <div key={selection.roomType.id} className="flex justify-between">
                       <span>
-                        {selection.roomType.name} · ৳{Number(selection.roomType.base_price).toLocaleString()} × {nights} night{nights !== 1 ? "s" : ""} × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
+                        {selection.roomType.name} · TK {Number(selection.roomType.base_price).toLocaleString()} × {nights} night{nights !== 1 ? "s" : ""} × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
                       </span>
-                      <span>৳{(Number(selection.roomType.base_price) * nights * selection.quantity).toLocaleString()}</span>
+                      <span>TK {(Number(selection.roomType.base_price) * nights * selection.quantity).toLocaleString()}</span>
                     </div>
                   ))}
                   <div className="flex justify-between text-muted-foreground">
@@ -211,7 +211,7 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                     <h3 className="text-xl font-bold">Total Price</h3>
                     <p className="text-xs text-muted-foreground">Includes taxes and charges</p>
                   </div>
-                  <span className="text-2xl font-bold text-primary">৳{totalPrice.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-primary">TK {totalPrice.toLocaleString()}</span>
                 </div>
               </div>
             </div>

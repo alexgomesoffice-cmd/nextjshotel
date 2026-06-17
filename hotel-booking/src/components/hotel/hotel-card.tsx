@@ -125,7 +125,7 @@ function RoomRow({
             </h4>
             <div className="text-right shrink-0">
               <p className="text-[15px] font-bold leading-none tracking-tight text-foreground">
-                ৳{Number(rt.base_price).toLocaleString()}
+                TK {Number(rt.base_price).toLocaleString()}
               </p>
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">night</p>
             </div>
@@ -286,7 +286,7 @@ const HotelCard = ({
                 <p className="text-[9px] uppercase tracking-[0.2em] text-white/60">From</p>
                 {starting_price ? (
                   <p className="text-xl font-bold leading-none">
-                    ৳{Number(starting_price).toLocaleString()}
+                    TK {Number(starting_price).toLocaleString()}
                     <span className="ml-0.5 text-[10px] tracking-wide text-white/70">/nt</span>
                   </p>
                 ) : (
@@ -337,7 +337,6 @@ const HotelCard = ({
               />
             ))}
           </div>
-
 
         </div>
       )}

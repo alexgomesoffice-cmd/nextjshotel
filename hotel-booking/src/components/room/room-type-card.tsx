@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   Users, Bed, Check,
   ChevronUp, ChevronLeft, ChevronRight,
-  Maximize2, Cigarette, PawPrint, ShieldAlert,
+  Maximize2, Cigarette, PawPrint, ShieldAlert, Images,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -56,7 +56,6 @@ interface VariantRowProps {
   roomName: string;
   typeImages: RoomTypeImage[];
   bedTypes: RoomBedType[];
-  amenities: RoomProperty[];
   quantity: number;
   available: number;
   onQtyChange: (qty: number) => void;
@@ -66,7 +65,7 @@ interface VariantRowProps {
 }
 
 function VariantRow({
-  variant, roomName, typeImages, bedTypes, amenities,
+  variant, roomName, typeImages, bedTypes,
   quantity, available, onQtyChange, onViewDetails,
   isGuestMismatch, guestMismatchReason,
 }: VariantRowProps) {
@@ -137,7 +136,7 @@ function VariantRow({
             </span>
           </div>
 
-          {/* Guest / smoking / pet flags */}
+          {/* Guest / smoking / pet / AC flags */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" /> 2 guests
@@ -150,20 +149,11 @@ function VariantRow({
               <PawPrint className="h-3.5 w-3.5" />
               {variant.pet_allowed ? "Pet friendly" : "No pets"}
             </span>
-          </div>
-
-          {/* Amenity checkmarks */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
             {variant.ac && (
-              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Check className="h-3 w-3 text-primary/80 shrink-0" /> AC
+              <span className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-primary/80" /> AC
               </span>
             )}
-            {amenities.map((prop, i) => (
-              <span key={i} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Check className="h-3 w-3 text-primary/80 shrink-0" /> {prop.amenity.name}
-              </span>
-            ))}
           </div>
 
           {/* Notes / policy */}
@@ -178,7 +168,7 @@ function VariantRow({
         <div className="flex flex-col items-end justify-start gap-2 shrink-0 min-w-25">
           <div className="text-right">
             <p className="text-primary font-bold text-xl leading-tight">
-              ৳{Number(variant.price).toLocaleString()}
+              TK {Number(variant.price).toLocaleString()}
             </p>
             <p className="text-xs text-muted-foreground">per night</p>
           </div>
@@ -274,106 +264,139 @@ const RoomTypeCard = ({
             : "border-border/30 hover:border-border/50"
       )}
     >
-      {/* ── Collapsed Header ── */}
+      {/* ── Card Header: image LEFT + info RIGHT ── */}
       <div
         onClick={handleHeaderClick}
         className={cn(
-          "cursor-pointer hover:bg-white/5 transition-colors select-none",
+          "cursor-pointer select-none",
           isDisabled && "cursor-not-allowed"
         )}
       >
-        {/* Row 1: icon + name/desc + price + chevron */}
-        <div className="flex items-start gap-3 px-4 pt-4 pb-3">
-          {/* Square icon */}
-          <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+        {/* Side-by-side row */}
+        <div className="flex min-h-[240px]">
+
+          {/* Left: image panel */}
+          <div className="relative w-[260px] sm:w-[320px] shrink-0 bg-muted overflow-hidden self-stretch">
             {coverImage ? (
-              <div className="relative w-11 h-11 rounded-xl overflow-hidden">
-                <Image src={coverImage} alt={name} fill sizes="44px" className="object-cover" />
-              </div>
+              <Image
+                src={coverImage}
+                alt={name}
+                fill
+                sizes="(max-width: 640px) 260px, 320px"
+                className="object-cover"
+              />
             ) : (
-              <Bed className="h-5 w-5 text-primary" />
+              <div className="flex items-center justify-center h-full">
+                <Bed className="h-10 w-10 text-muted-foreground/20" />
+              </div>
+            )}
+            {/* View gallery button */}
+            {onViewDetails && (
+              <button
+                onClick={e => { e.stopPropagation(); onViewDetails(); }}
+                className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/60 text-white text-xs px-2.5 py-1.5 rounded-md backdrop-blur-sm hover:bg-black/75 transition-colors"
+              >
+                <Images className="h-3.5 w-3.5" /> View gallery
+              </button>
             )}
           </div>
 
-          {/* Name + description */}
-          <div className="flex-1 min-w-0 pt-0.5">
+          {/* Right: info panel */}
+          <div className="flex-1 min-w-0 p-5 flex flex-col">
+            {/* Name */}
             <h3
-              className="font-bold text-base text-foreground leading-tight cursor-pointer hover:text-primary transition-colors"
+              className="font-bold text-xl text-foreground leading-tight cursor-pointer hover:text-primary transition-colors"
               onClick={e => { if (onViewDetails) { e.stopPropagation(); onViewDetails(); } }}
             >
               {name}
             </h3>
+
+            {/* Description */}
             {description && (
-              <p className="text-sm text-muted-foreground mt-0.5 line-clamp-1">{description}</p>
+              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{description}</p>
             )}
-          </div>
 
-          {/* Price + chevron */}
-          <div className="flex items-start gap-3 shrink-0">
-            <div className="text-right pt-0.5">
-              <p className="text-xs text-muted-foreground leading-none">from</p>
-              <p className="text-2xl font-bold text-primary leading-tight mt-0.5">
-                ৳{Number(base_price).toLocaleString()}
-              </p>
-              <p className="text-xs text-muted-foreground leading-none mt-0.5">per night</p>
-            </div>
-            {/* Blue circle chevron */}
-            <div className={cn(
-              "h-9 w-9 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all duration-75",
-              "bg-primary text-white"
-            )}>
-              <ChevronUp className={cn("h-4 w-4 transition-transform duration-75", !shouldExpand && "rotate-180")} />
-            </div>
-          </div>
-        </div>
+            {/* Divider */}
+            <hr className="border-border/30 my-3" />
 
-        {/* Row 2: stats */}
-        <div className="flex items-center gap-4 px-4 pb-2 text-sm text-muted-foreground flex-wrap">
-          {room_size && (
-            <span className="flex items-center gap-1.5">
-              <Maximize2 className="h-3.5 w-3.5" /> {room_size}
-            </span>
-          )}
-          <span className="flex items-center gap-1.5">
-            <Users className="h-3.5 w-3.5" /> Up to {occupancy_adults} guests
-          </span>
-          {room_bed_types?.map((b, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              <Bed className="h-3.5 w-3.5" /> {b.bed_type.name}
-            </span>
-          ))}
-          {available_rooms_count > 0 && (
-            <span className="text-primary font-semibold text-sm">{available_rooms_count} available</span>
-          )}
-        </div>
-
-        {/* Row 3: amenity pill chips (bordered) */}
-        {room_properties && room_properties.length > 0 && (
-          <div className="flex flex-wrap gap-2 px-4 pb-4">
-            {room_properties.slice(0, 7).map((prop, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 rounded-full px-3 py-1"
-              >
-                <Check className="h-3 w-3 text-primary shrink-0" />
-                {prop.amenity.name}
+            {/* Stats */}
+            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+              {room_size && (
+                <span className="flex items-center gap-1.5">
+                  <Maximize2 className="h-3.5 w-3.5" /> {room_size}
+                </span>
+              )}
+              <span className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Up to {occupancy_adults} guests
               </span>
-            ))}
-            {room_properties.length > 7 && (
-              <button
-                onClick={e => { e.stopPropagation(); if (onViewDetails) onViewDetails(); }}
-                className="text-xs text-primary hover:underline"
-              >
-                +{room_properties.length - 7} more
-              </button>
+              {room_bed_types?.map((b, i) => (
+                <span key={i} className="flex items-center gap-1.5">
+                  <Bed className="h-3.5 w-3.5" /> {b.bed_type.name}
+                </span>
+              ))}
+            </div>
+
+            {/* Top highlights */}
+            {room_properties && room_properties.length > 0 && (
+              <div className="mt-4">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70 mb-2">
+                  Top highlights
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {room_properties.slice(0, 4).map((prop, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 rounded-full px-3 py-1"
+                    >
+                      <Check className="h-3 w-3 text-primary shrink-0" />
+                      {prop.amenity.name}
+                    </span>
+                  ))}
+                  {room_properties.length > 4 && (
+                    <button
+                      onClick={e => { e.stopPropagation(); if (onViewDetails) onViewDetails(); }}
+                      className="inline-flex items-center text-xs font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1 hover:bg-primary/10 transition-colors"
+                    >
+                      +{room_properties.length - 4} more
+                    </button>
+                  )}
+                </div>
+              </div>
             )}
+
+            {/* Price — bottom right of info panel */}
+            <div className="mt-auto pt-4 flex items-end justify-end">
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">From</p>
+                <p className="text-xl font-bold text-primary leading-tight">
+                  TK {Number(base_price).toLocaleString()}
+                  <span className="text-sm font-normal text-muted-foreground ml-1">/ night</span>
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Bottom expand strip */}
+        <div className="border-t border-border/20 px-5 py-3 flex items-center justify-between bg-muted/20 hover:bg-muted/30 transition-colors">
+          <span className="text-sm text-muted-foreground">
+            {room_variants.length} room option{room_variants.length !== 1 ? 's' : ''} available
+          </span>
+          <ChevronUp className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", !shouldExpand && "rotate-180")} />
+        </div>
       </div>
 
-      {/* ── Expanded: Variant rows ── */}
+      {/* ── Expanded: Choose your room header + variant rows ── */}
       {shouldExpand && (
         <div className="animate-in slide-in-from-top-1 duration-50">
+          {/* Section header */}
+          <div className="border-t border-border/30 px-5 py-3 flex items-center gap-2 bg-muted/10">
+            <span className="text-sm font-semibold text-foreground">Choose your room</span>
+            {available_rooms_count > 0 && (
+              <span className="text-sm text-primary font-semibold">{available_rooms_count} available</span>
+            )}
+          </div>
+
           {room_variants.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground border-t border-border/20">
               No rooms currently available in this category.
@@ -386,7 +409,6 @@ const RoomTypeCard = ({
                 roomName={name}
                 typeImages={type_images}
                 bedTypes={room_bed_types}
-                amenities={room_properties}
                 quantity={selectedQuantities[variant.id] ?? 0}
                 available={variant.available_count}
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}

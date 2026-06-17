@@ -198,7 +198,7 @@ export default function NewRoomPage() {
                   <Input type="number" value={formData.floor} onChange={(e) => setFormData(p => ({ ...p, floor: parseInt(e.target.value) || 0 }))} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nightly Price (৳)</Label>
+                  <Label>Nightly Price (TK)</Label>
                   <Input type="number" step="0.01" value={formData.price} onChange={(e) => setFormData(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} required />
                 </div>
                 <div className="space-y-2">
@@ -303,7 +303,7 @@ export default function NewRoomPage() {
                   <Input type="number" value={bulkData.floor} onChange={(e) => setBulkData(p => ({ ...p, floor: parseInt(e.target.value) || 0 }))} />
                 </div>
                 <div className="space-y-2">
-                  <Label>Price / Night (৳)</Label>
+                  <Label>Price / Night (TK)</Label>
                   <Input type="number" step="0.01" value={bulkData.price} onChange={(e) => setBulkData(p => ({ ...p, price: parseFloat(e.target.value) || 0 }))} required />
                 </div>
               </div>

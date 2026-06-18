@@ -42,6 +42,20 @@ function buildRoomDetailWhere(checkIn?: string, checkOut?: string) {
   return where;
 }
 
+function formatTime12(time?: string | null) {
+  if (!time) return null;
+  const normalized = time.trim();
+  if (/\b(am|pm)\b/i.test(normalized)) return normalized;
+  const [hoursStr, minutesStr = '00'] = normalized.split(':');
+  const hours = Number(hoursStr);
+  const minutes = Number(minutesStr);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return normalized;
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hour12 = ((hours + 11) % 12) + 1;
+  const paddedMinutes = String(minutes).padStart(2, '0');
+  return `${hour12}:${paddedMinutes} ${period}`;
+}
+
 export default async function HotelDetailPage({ 
   params,
   searchParams
@@ -228,13 +242,13 @@ export default async function HotelDetailPage({
                 {hotel.detail?.check_in_time && (
                   <div>
                     <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Check-in</p>
-                    <p className="font-semibold">{hotel.detail.check_in_time}</p>
+                    <p className="font-semibold">{formatTime12(hotel.detail.check_in_time)}</p>
                   </div>
                 )}
                 {hotel.detail?.check_out_time && (
                   <div>
                     <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Check-out</p>
-                    <p className="font-semibold">{hotel.detail.check_out_time}</p>
+                    <p className="font-semibold">{formatTime12(hotel.detail.check_out_time)}</p>
                   </div>
                 )}
                 {hotel.detail?.cancellation_policy && (

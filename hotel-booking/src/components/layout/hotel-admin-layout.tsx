@@ -98,7 +98,10 @@ export default function HotelAdminLayout({
             )}
           </div>
 
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar [&::-webkit-scrollbar-thumb]:opacity-0 hover:[&::-webkit-scrollbar-thumb]:opacity-100"
+            data-lenis-prevent
+            data-lenis-prevent-wheel
+            data-lenis-prevent-touch>
             {hotelAdminLinks.map((link) => {
               const Icon = link.icon
               const hasSubItems = !!link.subItems

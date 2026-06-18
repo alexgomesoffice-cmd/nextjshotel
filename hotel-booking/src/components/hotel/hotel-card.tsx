@@ -35,6 +35,7 @@ export interface HotelCardProps {
   starting_price?:   number;
   room_types?:       RoomTypeStrip[];
   total_room_types?: number;
+  amenities?:        string[];
   has_dates?:        boolean;
   checkIn?:          string;
   checkOut?:         string;
@@ -190,6 +191,7 @@ const HotelCard = ({
   checkIn,
   checkOut,
   guests,
+  amenities,
 }: HotelCardProps) => {
   const dateParams = checkIn && checkOut
     ? `?check_in=${checkIn}&check_out=${checkOut}&guests=${guests || 1}`
@@ -274,11 +276,19 @@ const HotelCard = ({
 
             {/* Embedded Footer Pricing Block */}
             <div className="mt-4 flex items-end justify-between border-t border-white/15 pt-3">
-              <div className="text-left">
-                {showRoomHint && (
-                  <span className="text-[11px] font-sans text-white/80 bg-white/10 px-2 py-0.5 rounded">
-                    {total_room_types} Room Types Available
-                  </span>
+              <div className="text-left flex items-center gap-3">
+                {amenities && amenities.length > 0 ? (
+                  <div className="flex items-center gap-2">
+                    {amenities.slice(0,3).map((a, i) => (
+                      <span key={i} className="text-[10px] px-2 py-0.5 bg-white/10 rounded text-white/90">{a}</span>
+                    ))}
+                  </div>
+                ) : (
+                  showRoomHint && (
+                    <span className="text-[11px] font-sans text-white/80 bg-white/10 px-2 py-0.5 rounded">
+                      {total_room_types} Room Types Available
+                    </span>
+                  )
                 )}
               </div>
               

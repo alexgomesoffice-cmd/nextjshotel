@@ -17,7 +17,9 @@ const HotelsContent = () => {
       setIsLoading(true);
       try {
         const query = searchParams.toString();
-        const res = await fetch(`/api/public/hotels${query ? `?${query}` : ''}`);
+        // If there are no search filters, request room data so cards show description/room hints
+        const includeRooms = query === '' ? '?include_rooms=true' : (query ? `?${query}` : '');
+        const res = await fetch(`/api/public/hotels${includeRooms}`);
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.data)) {

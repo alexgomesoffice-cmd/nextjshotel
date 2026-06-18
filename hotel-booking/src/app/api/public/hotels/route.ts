@@ -2,12 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 function buildRoomDetailWhere(checkIn?: string | null, checkOut?: string | null) {
-  const base: any = { status: 'AVAILABLE', deleted_at: null };
+  const base: Record<string, unknown> = { status: 'AVAILABLE', deleted_at: null };
   if (checkIn && checkOut) {
     const ci = new Date(checkIn);
     const co = new Date(checkOut);
     if (!isNaN(ci.getTime()) && !isNaN(co.getTime())) {
-      base.room_trackers = {
+      (base as Record<string, unknown>).room_trackers = {
         none: {
           status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
           check_in:  { lt: co },
@@ -41,50 +41,55 @@ export async function GET(req: NextRequest) {
     const checkOut      = searchParams.get('check_out');
     const hasDates      = !!(checkIn && checkOut);
 
-    const where: any = { approval_status: 'PUBLISHED', deleted_at: null };
+    const where: Record<string, unknown> = { approval_status: 'PUBLISHED', deleted_at: null };
 
     if (location) {
       const locStr = location.split(',')[0].trim();
-      where.OR = [
+      (where as Record<string, unknown>).OR = [
         { name:    { contains: locStr } },
         { address: { contains: locStr } },
         { city:    { name: { contains: locStr } } },
       ];
     }
     if (hotelTypesStr) {
-      where.hotel_type = { name: { in: hotelTypesStr.split(',').map((t: string) => t.trim()).filter(Boolean) } };
+      (where as Record<string, unknown>).hotel_type = { name: { in: hotelTypesStr.split(',').map((t: string) => t.trim()).filter(Boolean) } };
     }
     if (roomTypesStr || bedTypesStr) {
-      const rtc: any = {};
+      const rtc: Record<string, unknown> = {};
       if (roomTypesStr) rtc.name = { in: roomTypesStr.split(',').map((t: string) => t.trim()).filter(Boolean) };
       if (bedTypesStr)  rtc.room_bed_types = { some: { bed_type: { name: { in: bedTypesStr.split(',').map((t: string) => t.trim()).filter(Boolean) } } } };
-      where.room_types = { some: rtc };
+      (where as Record<string, unknown>).room_types = { some: rtc };
     }
     if (starsStr) {
       where.detail = { star_rating: { in: starsStr.split(',').map(Number).filter(Boolean) } };
     }
     if (amenitiesStr) {
       const amenityIds = amenitiesStr.split(',').map(Number).filter(Boolean);
-      where.AND = where.AND || [];
-      where.AND.push({
+      const existingAnd = ((where as Record<string, unknown>)['AND'] as Array<Record<string, unknown>> | undefined) ?? [];
+      existingAnd.push({
         OR: [
           { hotel_amenities: { some: { amenity_id: { in: amenityIds } } } },
           { room_types: { some: { room_properties: { some: { amenity_id: { in: amenityIds } } } } } },
         ],
       });
+      (where as Record<string, unknown>)['AND'] = existingAnd;
     }
     if (minPrice || maxPrice) {
-      const pc: any = {};
+      const pc: Record<string, number> = {};
       if (minPrice) pc.gte = Number(minPrice);
       if (maxPrice) pc.lte = Number(maxPrice);
-      where.room_types = { ...where.room_types, some: { ...(where.room_types?.some || {}), base_price: pc } };
+      const existingRoomTypes = ((where as Record<string, unknown>)['room_types'] as Record<string, unknown> | undefined) ?? {};
+      const existingSome = ((existingRoomTypes as Record<string, unknown>)['some'] as Record<string, unknown> | undefined) ?? {};
+      (where as Record<string, unknown>)['room_types'] = { ...existingRoomTypes, some: { ...existingSome, base_price: pc } };
     }
     if (guests) {
       const g = parseInt(guests);
-      where.room_types = { ...where.room_types, some: { ...(where.room_types?.some || {}), max_occupancy: { gte: g } } };
+      const existingRoomTypes = ((where as Record<string, unknown>)['room_types'] as Record<string, unknown> | undefined) ?? {};
+      const existingSome = ((existingRoomTypes as Record<string, unknown>)['some'] as Record<string, unknown> | undefined) ?? {};
+      (where as Record<string, unknown>)['room_types'] = { ...existingRoomTypes, some: { ...existingSome, max_occupancy: { gte: g } } };
     }
 
-    let orderBy: any = { created_at: 'desc' };
+    let orderBy: Record<string, unknown> = { created_at: 'desc' };
     if (sort === 'price_asc')  orderBy = { room_types: { _min: { base_price: 'asc'  } } };
     if (sort === 'price_desc') orderBy = { room_types: { _min: { base_price: 'desc' } } };
     if (sort === 'rating')     orderBy = { detail: { guest_rating: 'desc' } };
@@ -124,7 +129,10 @@ export async function GET(req: NextRequest) {
           hotel_type: true,
           images:     { where: { is_cover: true }, take: 1 },
           detail:     true,
-          room_types: roomTypesInclude as any,
+                  room_types: roomTypesInclude as Record<string, unknown>,
+          hotel_amenities: {
+            include: { amenity: { select: { name: true } } },
+          },
         },
         skip,
         take:    limit,
@@ -133,9 +141,9 @@ export async function GET(req: NextRequest) {
     ]);
 
     const formattedHotels = hotels.map((hotel) => {
-      const rts = hotel.room_types as any[];
+      const rts = hotel.room_types as Array<Record<string, unknown>>;
       const startingPrice = rts.length > 0
-        ? Math.min(...rts.map((rt: any) => Number(rt.base_price)))
+        ? Math.min(...rts.map((rt) => Number(String(rt.base_price))))
         : null;
 
       const base = {
@@ -149,24 +157,29 @@ export async function GET(req: NextRequest) {
         cover_image:       hotel.images[0]?.image_url || null,
         short_description: hotel.detail?.short_description,
         starting_price:    startingPrice,
+        amenities:         (hotel.hotel_amenities || []).slice(0, 3).map((ha) => String(((ha as Record<string, unknown>).amenity as Record<string, unknown>).name)),
       };
 
       if (!includeRooms) return base;
 
-      const room_types = rts.map((rt: any) => ({
-        id:              rt.id,
-        name:            rt.name,
-        base_price:      Number(rt.base_price),
-        max_occupancy:   rt.max_occupancy,
-        room_size:       rt.room_size ?? null,
-        cover_image:     rt.type_images?.[0]?.image_url ?? null,
-        bed_types:       (rt.room_bed_types ?? []).map((rbt: any) => ({
-          name:  rbt.bed_type.name,
-          count: rbt.count,
-        })),
-        available_count: rt.room_details?.length ?? 0,
-        dates_filtered:  hasDates,
-      }));
+      const room_types = rts.map((rt) => {
+        const rtRec = rt as Record<string, unknown>;
+        const roomBedTypes = ((rtRec.room_bed_types as Array<Record<string, unknown>> | undefined) ?? []);
+        return {
+          id:              rtRec.id,
+          name:            rtRec.name,
+          base_price:      Number(String(rtRec.base_price)),
+          max_occupancy:   rtRec.max_occupancy,
+          room_size:       (rtRec.room_size as string) ?? null,
+          cover_image:     ((rtRec.type_images as Array<Record<string, unknown>> | undefined)?.[0] as Record<string, unknown> | undefined)?.image_url ?? null,
+          bed_types:       roomBedTypes.map((rbt) => ({
+            name:  String(((rbt as Record<string, unknown>).bed_type as Record<string, unknown>).name),
+            count: (rbt as Record<string, unknown>).count,
+          })),
+          available_count: (((rtRec.room_details as Array<unknown> | undefined) ?? [])).length,
+          dates_filtered:  hasDates,
+        };
+      });
 
       return {
         ...base,

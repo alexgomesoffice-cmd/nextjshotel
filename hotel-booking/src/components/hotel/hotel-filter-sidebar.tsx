@@ -197,7 +197,7 @@ const HotelFilterSidebar = () => {
     filters.priceMax;
 
   return (
-    <div className="w-full bg-card border border-border/50 rounded-2xl p-5 shadow-sm sticky top-24">
+    <div className="w-full bg-card border border-border/50 rounded-2xl p-5 shadow-sm top-24">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2 text-primary font-bold text-lg">
           <Filter className="h-5 w-5" />

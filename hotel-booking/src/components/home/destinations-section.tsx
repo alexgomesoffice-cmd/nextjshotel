@@ -42,20 +42,21 @@ const DestinationsSection = () => {
   if (isLoading) {
     return (
       <section className="pt-24 bg-background">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-10 w-1/3 rounded-md bg-muted" />
+        <div className="grid auto-rows-[200px] grid-cols-1 gap-4 sm:grid-cols-2 md:auto-rows-[260px] md:gap-5 lg:grid-cols-4">
+  {/* Tall Left */}
+  <div className="rounded-3xl bg-muted lg:row-span-2" />
 
-            <div className="grid auto-rows-[200px] grid-cols-1 gap-4 sm:grid-cols-2 md:auto-rows-[260px] md:gap-5 lg:grid-cols-4">
-              <div className="rounded-3xl bg-muted lg:row-span-2" />
-              <div className="rounded-3xl bg-muted" />
-              <div className="rounded-3xl bg-muted" />
-              <div className="rounded-3xl bg-muted" />
-              <div className="rounded-3xl bg-muted" />
-              <div className="rounded-3xl bg-muted lg:row-span-2" />
-            </div>
-          </div>
-        </div>
+  {/* Top Middle */}
+  <div className="rounded-3xl bg-muted" />
+  <div className="rounded-3xl bg-muted" />
+
+  {/* Tall Right */}
+  <div className="rounded-3xl bg-muted lg:row-span-2" />
+
+  {/* Bottom Middle */}
+  <div className="rounded-3xl bg-muted" />
+  <div className="rounded-3xl bg-muted" />
+</div>
       </section>
     );
   }

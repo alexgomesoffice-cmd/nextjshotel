@@ -65,9 +65,9 @@ const HotelsContent = () => {
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
               </div>
             ) : hotels.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
                 {hotels.map((hotel) => (
-                  <div key={hotel.id} className="h-112.5">
+                  <div key={hotel.id} className="w-full">
                     <HotelCard
                       {...hotel}
                       checkIn={searchParams.get("check_in") || undefined}

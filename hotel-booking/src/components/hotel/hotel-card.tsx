@@ -199,12 +199,12 @@ const HotelCard = ({
   const hotelUrl  = `/hotels/${slug}${dateParams}`;
   const guestNum  = guests ?? 0;
 
-  const hasRoomStrip = has_dates && !!room_types && room_types.length > 0;
+  const hasRoomStrip = !!room_types && room_types.length > 0;
   const showRoomHint = !has_dates && !!total_room_types && total_room_types > 0;
 
   const availableCount = hasRoomStrip
-    ? room_types!.filter(rt => rt.available_count > 0 || !rt.dates_filtered).length
-    : 0;
+  ? room_types!.filter(rt => !rt.dates_filtered || rt.available_count > 0).length
+  : 0;
 
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-400 hover:shadow-xl hover:-translate-y-1">
@@ -284,11 +284,7 @@ const HotelCard = ({
                     ))}
                   </div>
                 ) : (
-                  showRoomHint && (
-                    <span className="text-[11px] font-sans text-white/80 bg-white/10 px-2 py-0.5 rounded">
-                      {total_room_types} Room Types Available
-                    </span>
-                  )
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/60">No amenities info</p>
                 )}
               </div>
               
@@ -317,7 +313,10 @@ const HotelCard = ({
                 Available rooms
               </p>
               <p className="text-[11px] text-muted-foreground/80">
-                {availableCount}/{room_types!.length} configurations open
+                {has_dates
+  ? `${availableCount}/${room_types!.length} configurations open`
+  : `${room_types!.length} room type${room_types!.length !== 1 ? 's' : ''} available`
+}
               </p>
             </div>
             <Link 

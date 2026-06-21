@@ -40,6 +40,7 @@ export interface HotelCardProps {
   checkIn?:          string;
   checkOut?:         string;
   guests?:           number;
+  roomListMaxHeight?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -192,6 +193,7 @@ const HotelCard = ({
   checkOut,
   guests,
   amenities,
+  roomListMaxHeight,
 }: HotelCardProps) => {
   const dateParams = checkIn && checkOut
     ? `?check_in=${checkIn}&check_out=${checkOut}&guests=${guests || 1}`
@@ -329,7 +331,10 @@ const HotelCard = ({
 
           {/* List Wrapper — fixed height so all cards are equal */}
           <div
-            className="divide-y divide-border/60 h-[228px] overflow-y-auto bg-card custom-scrollbar [&::-webkit-scrollbar-thumb]:opacity-0 hover:[&::-webkit-scrollbar-thumb]:opacity-100"
+            className={cn(
+              "divide-y divide-border/60 overflow-y-auto bg-card custom-scrollbar [&::-webkit-scrollbar-thumb]:opacity-0 hover:[&::-webkit-scrollbar-thumb]:opacity-100",
+              roomListMaxHeight || "h-[228px]"
+            )}
             data-lenis-prevent={room_types!.length >= 3 ? "" : undefined}
             data-lenis-prevent-wheel={room_types!.length >= 3 ? "" : undefined}
             data-lenis-prevent-touch={room_types!.length >= 3 ? "" : undefined}

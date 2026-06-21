@@ -13,7 +13,7 @@ const FeaturedHotels = () => {
   useEffect(() => {
     const fetchHotels = async () => {
       try {
-        const res = await fetch("/api/public/hotels");
+        const res = await fetch("/api/public/hotels?include_rooms=true");
         if (res.ok) {
           const data = await res.json();
           if (data.success && Array.isArray(data.data)) {
@@ -102,8 +102,8 @@ const FeaturedHotels = () => {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {hotels.map((hotel) => (
-            <div key={hotel.id} className="min-w-[85vw] sm:min-w-[340px] max-w-[380px] shrink-0 snap-start ">
-              <HotelCard {...hotel} />
+            <div key={hotel.id} className="min-w-[90vw] sm:min-w-[360px] md:min-w-[420px] lg:min-w-[420px] shrink-0 snap-start">
+              <HotelCard {...hotel} roomListMaxHeight="h-[296px]" />
             </div>
           ))}
         </div>

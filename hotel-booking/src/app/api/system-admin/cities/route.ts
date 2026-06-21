@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         orderBy: { name: 'asc' },
+        include: { _count: { select: { hotels: true } } },
       }),
       prisma.cities.count({ where }),
     ])

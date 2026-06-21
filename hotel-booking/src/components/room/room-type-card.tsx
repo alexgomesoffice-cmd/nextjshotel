@@ -56,6 +56,7 @@ interface VariantRowProps {
   roomName: string;
   typeImages: RoomTypeImage[];
   bedTypes: RoomBedType[];
+  occupancy_adults: number;
   quantity: number;
   available: number;
   onQtyChange: (qty: number) => void;
@@ -65,7 +66,7 @@ interface VariantRowProps {
 }
 
 function VariantRow({
-  variant, roomName, typeImages, bedTypes,
+  variant, roomName, typeImages, bedTypes, occupancy_adults,
   quantity, available, onQtyChange, onViewDetails,
   isGuestMismatch, guestMismatchReason,
 }: VariantRowProps) {
@@ -139,7 +140,8 @@ function VariantRow({
           {/* Guest / smoking / pet / AC flags */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" /> 2 guests
+              <Users className="h-3.5 w-3.5" />
+              {occupancy_adults} guest{occupancy_adults > 1 ? 's' : ''}
             </span>
             <span className="flex items-center gap-1.5">
               <Cigarette className="h-3.5 w-3.5" />
@@ -409,6 +411,7 @@ const RoomTypeCard = ({
                 roomName={name}
                 typeImages={type_images}
                 bedTypes={room_bed_types}
+                occupancy_adults={occupancy_adults}
                 quantity={selectedQuantities[variant.id] ?? 0}
                 available={variant.available_count}
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}

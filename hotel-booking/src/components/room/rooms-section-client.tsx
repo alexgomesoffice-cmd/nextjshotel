@@ -76,7 +76,7 @@ export default function RoomsSectionClient({
 
   return (
     <>
-      <div className="space-y-3">
+      <div className="space-y-6">
         {roomTypes.map((roomType) => {
           const isGuestMismatch = guests > 1 && roomType.max_occupancy < guests;
           const guestMismatchReason = isGuestMismatch

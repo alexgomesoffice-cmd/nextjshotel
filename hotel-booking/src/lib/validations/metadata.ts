@@ -2,7 +2,11 @@ import { z } from 'zod'
 
 export const createCitySchema = z.object({
   name: z.string().min(1, 'City name is required'),
-  image_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+  image_url: z.union([
+    z.string().url('Must be a valid URL'),
+    z.string().regex(/^\/uploads\//, 'Must be a relative uploads path'),
+    z.literal(''),
+  ]).optional(),
   is_active: z.boolean().default(true),
 })
 

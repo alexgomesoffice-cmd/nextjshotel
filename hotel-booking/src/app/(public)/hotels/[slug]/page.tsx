@@ -213,7 +213,7 @@ export default async function HotelDetailPage({
 
           {/* Description */}
           <section>
-            <h2 className="text-2xl font-bold mb-4">About this property</h2>
+            <h2 className="text-2xl font-bold mb-4 pt-24">About this property</h2>
             <div className="prose prose-neutral dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
               {hotel.detail?.description || hotel.detail?.short_description || "No description available."}
             </div>

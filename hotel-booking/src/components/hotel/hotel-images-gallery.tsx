@@ -12,7 +12,7 @@ interface HotelImage {
 
 interface HotelImagesGalleryProps {
   images: HotelImage[];
-  onShowAllPhotos: () => void;
+  onShowAllPhotos: (index?: number) => void;
 }
 
 const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps) => {
@@ -46,13 +46,14 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
       <div className="grid grid-cols-2 gap-2 h-100 md:h-125 rounded-3xl overflow-hidden">
         {sortedImages.map((img, i) => (
           <div key={img.id} className="relative w-full h-full group">
-            <Image
-              src={img.image_url}
-              alt={`Hotel property ${i + 1}`}
-              fill
-              sizes="(max-width: 768px) 100vw, 50vw"
-              className="object-cover transition-transform duration-700 group-hover:scale-105"
-            />
+              <Image
+                src={img.image_url}
+                alt={`Hotel property ${i + 1}`}
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-700 group-hover:scale-105 cursor-pointer"
+                onClick={() => onShowAllPhotos(images.findIndex(orig => orig.id === img.id))}
+              />
           </div>
         ))}
       </div>
@@ -74,7 +75,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             className="object-cover transition-transform duration-700 hover:scale-105 cursor-pointer"
-            onClick={onShowAllPhotos}
+            onClick={() => onShowAllPhotos(images.findIndex(orig => orig.id === displayImages[0].id))}
           />
         </div>
 
@@ -92,14 +93,14 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
                   className={`object-cover transition-transform duration-700 hover:scale-105 cursor-pointer ${
                     isLast && remainingCount > 0 ? "opacity-80" : ""
                   }`}
-                  onClick={onShowAllPhotos}
+                  onClick={() => onShowAllPhotos(images.findIndex(orig => orig.id === img.id))}
                 />
                 
                 {/* Overlay for the last image if there are more */}
                 {isLast && remainingCount > 0 && (
                   <div 
                     className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-colors"
-                    onClick={onShowAllPhotos}
+                    onClick={() => onShowAllPhotos(images.findIndex(orig => orig.id === img.id))}
                   >
                     <span className="text-white text-xl font-semibold tracking-wider">
                       +{remainingCount}

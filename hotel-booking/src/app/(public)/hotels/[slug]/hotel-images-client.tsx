@@ -17,17 +17,19 @@ interface HotelImagesGalleryClientProps {
 
 export default function HotelImagesGalleryClient({ images }: HotelImagesGalleryClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
   return (
     <>
       <HotelImagesGallery 
         images={images} 
-        onShowAllPhotos={() => setIsModalOpen(true)} 
+        onShowAllPhotos={(idx) => { setCurrentIndex(typeof idx === 'number' ? idx : 0); setIsModalOpen(true); }}
       />
       <PhotosReviewsModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         images={images} 
+        initialIndex={currentIndex}
       />
     </>
   );

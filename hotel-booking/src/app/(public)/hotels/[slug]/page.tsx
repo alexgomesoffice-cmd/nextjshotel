@@ -4,6 +4,7 @@ import { MapPin, Star, CheckCircle2 } from "lucide-react";
 
 import HotelImagesGalleryClient from "./hotel-images-client";
 import RoomSelector from "@/components/booking/room-selector";
+import ExpandableDescription from "@/components/hotel/expandable-description";
 import { groupRoomVariants } from "@/lib/room-grouping";
 
 // Force fresh DB read on every request — availability data must be live
@@ -214,9 +215,10 @@ export default async function HotelDetailPage({
           {/* Description */}
           <section>
             <h2 className="text-2xl font-bold mb-4 pt-24">About this property</h2>
-            <div className="prose prose-neutral dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
-              {hotel.detail?.description || hotel.detail?.short_description || "No description available."}
-            </div>
+            <ExpandableDescription 
+              text={hotel.detail?.description || hotel.detail?.short_description}
+              maxLines={3}
+            />
           </section>
 
           {/* Amenities */}

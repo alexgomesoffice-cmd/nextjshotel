@@ -7,8 +7,8 @@
 
 import { useState } from "react";
 import RoomTypeCard, { type RoomVariant } from "@/components/room/room-type-card";
+import RoomTypeDetailModal from "@/components/room/roomtype-detail-modal";
 import RoomDetailModal from "@/components/room/room-detail-modal";
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface RoomTypeImage { id: number; image_url: string; }
@@ -49,6 +49,7 @@ export default function RoomsSectionClient({
   onClearHighlight,
 }: RoomsSectionClientProps) {
   const [modalRoom, setModalRoom] = useState<RoomType | null>(null);
+  const [modalVariant, setModalVariant] = useState<{ variant: RoomVariant; roomType: RoomType } | null>(null);
 
   const modalData = modalRoom
     ? {
@@ -98,6 +99,10 @@ export default function RoomsSectionClient({
               available_rooms_count={roomType.available_rooms_count}
               room_variants={roomType.room_variants}
               onViewDetails={() => setModalRoom(roomType)}
+              onViewRoomDetails={(variantId) => {
+                const variant = roomType.room_variants.find(v => v.id === variantId);
+                if (variant) setModalVariant({ variant, roomType });
+              }}
               selectedQuantities={getQuantitiesForRoomType(roomType)}
               onQuantityChange={onQuantityChange}
               isGuestMismatch={isGuestMismatch}
@@ -110,10 +115,25 @@ export default function RoomsSectionClient({
         })}
       </div>
         
-      <RoomDetailModal
+      <RoomTypeDetailModal
         isOpen={!!modalRoom}
         onClose={() => setModalRoom(null)}
         roomType={modalData}
+      />
+
+      <RoomDetailModal
+        isOpen={!!modalVariant}
+        onClose={() => setModalVariant(null)}
+        room={
+          modalVariant
+            ? {
+                ...modalVariant.variant,
+                price: modalVariant.variant.price,
+                room_type_name: modalVariant.roomType.name,
+                type_images: modalVariant.roomType.type_images,
+              }
+            : null
+        }
       />
     </>
   );

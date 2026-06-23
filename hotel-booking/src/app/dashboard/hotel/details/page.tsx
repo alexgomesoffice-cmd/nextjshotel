@@ -60,7 +60,7 @@ export default function HotelDetailsPage() {
           address: h.address || '',
           latitude: h.latitude?.toString() || '',
           longitude: h.longitude?.toString() || '',
-          star_rating: h.star_rating?.toString() || '',
+          star_rating: d.star_rating?.toString() || '',
           description: d.description || '',
           check_in_time: d.check_in_time || '14:00',
           check_out_time: d.check_out_time || '12:00',

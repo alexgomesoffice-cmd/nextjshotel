@@ -47,6 +47,7 @@ export interface RoomTypeCardProps {
   forceExpanded?: boolean;
   isHighlighted?: boolean;
   onClearHighlight?: () => void;
+  onViewRoomDetails?: (variantId: number) => void;
 }
 
 // ─── Variant Row ─────────────────────────────────────────────────────────────
@@ -61,13 +62,14 @@ interface VariantRowProps {
   available: number;
   onQtyChange: (qty: number) => void;
   onViewDetails?: () => void;
+  onViewRoomDetails?: () => void;
   isGuestMismatch?: boolean;
   guestMismatchReason?: string;
 }
 
 function VariantRow({
   variant, roomName, typeImages, bedTypes, occupancy_adults,
-  quantity, available, onQtyChange, onViewDetails,
+  quantity, available, onQtyChange, onViewDetails, onViewRoomDetails,
   isGuestMismatch, guestMismatchReason,
 }: VariantRowProps) {
   const images = variant.room_images.length > 0 ? variant.room_images : typeImages;
@@ -84,7 +86,7 @@ function VariantRow({
     )}>
       {/* ── Image ── */}
       <div
-        onClick={onViewDetails}
+        onClick={onViewRoomDetails ?? onViewDetails}
         tabIndex={-1}
         className="relative w-32.5 sm:w-37.5 shrink-0 group overflow-hidden bg-muted self-stretch cursor-pointer"
       >
@@ -232,6 +234,7 @@ const RoomTypeCard = ({
   type_images, room_bed_types, room_properties, available_rooms_count,
   room_variants, onViewDetails, selectedQuantities, onQuantityChange,
   isGuestMismatch, guestMismatchReason, forceExpanded = false, isHighlighted = false, onClearHighlight,
+  onViewRoomDetails
 }: RoomTypeCardProps) => {
   const [isExpanded, setIsExpanded] = useState(forceExpanded);
   const coverImage = type_images?.[0]?.image_url || null;
@@ -416,6 +419,7 @@ const RoomTypeCard = ({
                 available={variant.available_count}
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}
                 onViewDetails={onViewDetails}
+                onViewRoomDetails={() => onViewRoomDetails?.(variant.id)}
                 isGuestMismatch={isGuestMismatch}
                 guestMismatchReason={guestMismatchReason}
               />

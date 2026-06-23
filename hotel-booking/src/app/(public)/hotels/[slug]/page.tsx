@@ -236,6 +236,64 @@ export default async function HotelDetailPage({
             </section>
           )}
 
+          {/* Contact & Web */}
+          {(hotel.detail?.reception_no1 || hotel.detail?.reception_no2 || hotel.detail?.website) && (
+            <section>
+              <h2 className="text-xl font-bold mb-4">Contact & Links</h2>
+              <div className="flex flex-wrap gap-3">
+                {hotel.detail?.reception_no1 && (
+                  <a
+                    href={`tel:${hotel.detail.reception_no1}`}
+                    className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-border/50 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/40 transition-all group"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.63 4.35 2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5">Reception</p>
+                      <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">{hotel.detail.reception_no1}</p>
+                    </div>
+                  </a>
+                )}
+
+                {hotel.detail?.reception_no2 && (
+                  <a
+                    href={`tel:${hotel.detail.reception_no2}`}
+                    className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-border/50 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/40 transition-all group"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.63 4.35 2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5">Alternate</p>
+                      <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">{hotel.detail.reception_no2}</p>
+                    </div>
+                  </a>
+                )}
+
+                {hotel.detail?.website && (
+                  <a
+                    href={hotel.detail.website.startsWith('http') ? hotel.detail.website : `https://${hotel.detail.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-border/50 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/40 transition-all group"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5">Website</p>
+                      <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate max-w-[160px]">
+                        {hotel.detail.website.replace(/^https?:\/\//, '')}
+                      </p>
+                    </div>
+                  </a>
+                )}
+              </div>
+            </section>
+          )}
+
           {/* Policies */}
           {(hotel.detail?.check_in_time || hotel.detail?.check_out_time || hotel.detail?.cancellation_policy) && (
             <section className="bg-secondary/20 p-6 rounded-3xl border border-border/50">
@@ -263,9 +321,6 @@ export default async function HotelDetailPage({
             </section>
           )}
         </div>
-
-        
-
       </div>
     </div>
   );

@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   if (!hotel) return { title: 'Hotel Not Found' };
   
   return {
-    title: `${hotel.name} | StayVista`,
-    description: hotel.detail?.short_description || `Book your stay at ${hotel.name} with StayVista.`,
+    title: `${hotel.name} | GhuriBangla`,
+    description: hotel.detail?.short_description || `Book your stay at ${hotel.name} with GhuriBangla.`,
   };
 }
 

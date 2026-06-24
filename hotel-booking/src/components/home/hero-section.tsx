@@ -57,7 +57,7 @@ export function HeroSection() {
                         style={{ animationDelay: '100ms' }}
                     >
                         <span className="block hover:tracking-wide transition-all duration-500">Book your stay with</span>
-                        <span className="text-gradient animate-gradient bg-size-[200%_auto]">StayVista</span>
+                        <span className="text-gradient animate-gradient bg-size-[200%_auto]">GhuriBangla</span>
                     </h1>
 
                     {/* Subheading */}

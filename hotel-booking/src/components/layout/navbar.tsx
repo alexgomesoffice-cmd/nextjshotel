@@ -97,7 +97,7 @@ const Navbar = () => {
                 <Hotel className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
-            <span className="text-2xl font-bold text-linear-to-r">StayVista</span>
+            <span className="text-2xl font-bold text-linear-to-r">GhuriBangla</span>
           </Link>
 
           {/* Desktop nav links */}

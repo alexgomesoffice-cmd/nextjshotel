@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Confirm Your Booking | StayVista",
+  title: "Confirm Your Booking | GhuriBangla",
   description: "Complete your reservation",
 };
 

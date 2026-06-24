@@ -51,7 +51,7 @@ const Footer = () => {
               <div className="bg-linear-to-r from-primary to-accent p-2.5 rounded-xl">
                 <Hotel className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-2xl font-bold text-gradient">StayVista</span>
+              <span className="text-2xl font-bold text-gradient">GhuriBangla</span>
             </Link>
             <p className="text-muted-foreground mb-6 max-w-sm">
               Your favorite hotel booking experience. Discover extraordinary stays
@@ -60,7 +60,7 @@ const Footer = () => {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span className="text-sm">hello@stayvista.com</span>
+                <span className="text-sm">hello@GhuriBangla.com</span>
               </div>
               <div className="flex items-center gap-3 text-muted-foreground">
                 <Phone className="h-4 w-4" />
@@ -96,7 +96,7 @@ const Footer = () => {
         {/* Bottom section */}
         {/*<div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © 2024 StayVista. All rights reserved.
+            © 2024 GhuriBangla. All rights reserved.
           </p>
           <div className="flex items-center gap-4">
             {socialLinks.map((social) => (

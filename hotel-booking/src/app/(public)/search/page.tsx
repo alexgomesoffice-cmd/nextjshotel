@@ -145,7 +145,7 @@ function SearchContent() {
                     <p className="text-muted-foreground text-sm mt-1">
                       {totalResults === 0
                         ? "No properties found"
-                        : `${totalResults} propert${totalResults === 1 ? "y" : "ies"} found`}
+                        : `Total ${totalResults} propert${totalResults === 1 ? "y" : "ies"}`}
                     </p>
                   )}
                 </div>

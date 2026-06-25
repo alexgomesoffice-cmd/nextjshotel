@@ -20,9 +20,10 @@ const FeaturedHotels = () => {
   const autoplay = useMemo(
     () =>
       Autoplay({
-        delay: 1700, // slow smooth movement
+        delay: 3500, // slow smooth movement
         stopOnInteraction: false,
         stopOnMouseEnter: true, // IMPORTANT: hover stops automatically
+        playOnInit: true
       }),
     []
   );
@@ -76,10 +77,10 @@ const FeaturedHotels = () => {
   if (hotels.length === 0) return null;
 
   return (
-    <section className="pt-24 bg-secondary/20 relative">
+    <section className="pt-24 relative">
       <div className="max-w-7xl mx-auto px-4 md:px-8">
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
           <div className="max-w-2xl">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="h-5 w-5 text-primary animate-pulse" />
@@ -105,17 +106,21 @@ const FeaturedHotels = () => {
         <Carousel
           plugins={[autoplay]}
           opts={{
-            loop: true, 
+            loop: true,
+            dragFree: true,
+            skipSnaps: true,
+            duration: 100,
+            align: "start",
           }}
           className="w-full"
         >
-          <CarouselContent className="-ml-4">
+          <CarouselContent className="-ml-4 py-4">
             {hotels.map((hotel) => (
               <CarouselItem
                 key={hotel.id}
-                className="pl-4 basis-[90%] sm:basis-[360px] md:basis-[420px]"
+                className="pl-4 basis-[90%] sm:basis-[360px] md:basis-1/2"
               >
-                <HotelCard {...hotel} roomListMaxHeight="h-[296px]" />
+                <HotelCard {...hotel} roomListMaxHeight="h-[240px]" />
               </CarouselItem>
             ))}
           </CarouselContent>

@@ -232,7 +232,7 @@ const HotelFilterSidebar = () => {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">TK </span>
                   <input 
                     type="number" 
-                    placeholder="Min"
+                    placeholder=" Min"
                     className="w-full h-9 pl-7 pr-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                     value={filters.priceMin || ''}
                     onChange={(e) => handlePriceChange(e.target.value ? Number(e.target.value) : undefined, filters.priceMax)}
@@ -243,7 +243,7 @@ const HotelFilterSidebar = () => {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs">TK </span>
                   <input 
                     type="number" 
-                    placeholder="Max"
+                    placeholder=" Max"
                     className="w-full h-9 pl-7 pr-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
                     value={filters.priceMax || ''}
                     onChange={(e) => handlePriceChange(filters.priceMin, e.target.value ? Number(e.target.value) : undefined)}

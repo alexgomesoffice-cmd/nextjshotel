@@ -73,7 +73,7 @@ const handlePageChange = (newPage: number) => {
           <main className="flex-1">
             <div className="mb-6 flex items-center justify-between">
               <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                {isLoading ? "Searching..." : `${totalResults} Properties Found`}
+                {isLoading ? "Searching..." : `Total ${totalResults} Properties`}
               </h1>
             </div>
 

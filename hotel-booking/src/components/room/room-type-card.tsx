@@ -391,9 +391,17 @@ const RoomTypeCard = ({
         </div>
       </div>
 
+
+
+
       {/* ── Expanded: Choose your room header + variant rows ── */}
-      {shouldExpand && (
-        <div className="animate-in slide-in-from-top-1 duration-50">
+      <div 
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
+          shouldExpand ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="overflow-hidden min-h-0">
           {/* Section header */}
           <div className="border-t border-border/30 px-5 py-3 flex items-center gap-2 bg-muted/10">
             <span className="text-sm font-semibold text-foreground">Choose your room</span>
@@ -426,7 +434,7 @@ const RoomTypeCard = ({
             ))
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 };

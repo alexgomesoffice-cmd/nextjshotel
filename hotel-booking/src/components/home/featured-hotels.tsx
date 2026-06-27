@@ -118,7 +118,7 @@ const FeaturedHotels = () => {
             {hotels.map((hotel) => (
               <CarouselItem
                 key={hotel.id}
-                className="pl-4 basis-[90%] sm:basis-[360px] md:basis-1/2"
+                className="pl-4 basis-[90%] sm:basis-[360px] md:basis-1/3"
               >
                 <HotelCard {...hotel} roomListMaxHeight="h-[240px]" />
               </CarouselItem>

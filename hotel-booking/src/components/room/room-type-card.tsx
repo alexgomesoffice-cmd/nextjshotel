@@ -243,19 +243,6 @@ const RoomTypeCard = ({
   const isDisabled = isGuestMismatch || isUnavailable;
   const shouldExpand = forceExpanded || isExpanded;
 
-  const handleHeaderClick = () => {
-    if (!isDisabled) {
-      if (isHighlighted) {
-        // User is closing the highlighted room - clear highlight AND collapse immediately
-        onClearHighlight?.();
-        setIsExpanded(false);
-      } else {
-        // Normal toggle
-        setIsExpanded(!isExpanded);
-      }
-    }
-  };
-
   return (
     <div
       id={id ? `room-type-${id}` : undefined}
@@ -270,13 +257,7 @@ const RoomTypeCard = ({
       )}
     >
       {/* ── Card Header: image LEFT + info RIGHT ── */}
-      <div
-        onClick={handleHeaderClick}
-        className={cn(
-          "cursor-pointer select-none",
-          isDisabled && "cursor-not-allowed"
-        )}
-      >
+      <div className={cn("select-none", isDisabled && "cursor-not-allowed")}> 
         {/* Side-by-side row */}
         <div className="flex min-h-[240px]">
 
@@ -308,13 +289,22 @@ const RoomTypeCard = ({
 
           {/* Right: info panel */}
           <div className="flex-1 min-w-0 p-5 flex flex-col">
-            {/* Name */}
-            <h3
-              className="font-bold text-xl text-foreground leading-tight cursor-pointer hover:text-primary transition-colors"
-              onClick={e => { if (onViewDetails) { e.stopPropagation(); onViewDetails(); } }}
-            >
-              {name}
-            </h3>
+            {/* Name + price */}
+            <div className="flex items-start justify-between gap-4">
+              <h3
+                className="font-bold text-xl text-foreground leading-tight cursor-pointer hover:text-primary transition-colors"
+                onClick={e => { if (onViewDetails) { e.stopPropagation(); onViewDetails(); } }}
+              >
+                {name}
+              </h3>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">From</p>
+                <p className="text-xl font-bold text-primary leading-tight">
+                  TK {Number(base_price).toLocaleString()}
+                  <span className="text-sm font-normal text-muted-foreground ml-1">/ night</span>
+                </p>
+              </div>
+            </div>
 
             {/* Description */}
             {description && (
@@ -369,26 +359,28 @@ const RoomTypeCard = ({
               </div>
             )}
 
-            {/* Price — bottom right of info panel */}
+            {/* Expand/collapse button in place of footer price */}
             <div className="mt-auto pt-4 flex items-end justify-end">
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">From</p>
-                <p className="text-xl font-bold text-primary leading-tight">
-                  TK {Number(base_price).toLocaleString()}
-                  <span className="text-sm font-normal text-muted-foreground ml-1">/ night</span>
-                </p>
-              </div>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  if (isDisabled) return;
+                  if (isHighlighted && isExpanded) {
+                    onClearHighlight?.();
+                    setIsExpanded(false);
+                  } else {
+                    setIsExpanded(!isExpanded);
+                  }
+                }}
+                className="inline-flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1 hover:bg-primary/10 transition-colors"
+              >
+                <span>{shouldExpand ? 'Hide rooms' : `${room_variants.length} room${room_variants.length !== 1 ? 's' : ''}`}</span>
+                <ChevronUp className={cn("h-4 w-4 transition-transform duration-200", !shouldExpand && "rotate-180")} />
+              </button>
             </div>
           </div>
         </div>
-
-        {/* Bottom expand strip */}
-        <div className="border-t border-border/20 px-5 py-3 flex items-center justify-between bg-muted/20 hover:bg-muted/30 transition-colors">
-          <span className="text-sm text-muted-foreground">
-            {room_variants.length} room option{room_variants.length !== 1 ? 's' : ''} available
-          </span>
-          <ChevronUp className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", !shouldExpand && "rotate-180")} />
-        </div>
+        
       </div>
 
 

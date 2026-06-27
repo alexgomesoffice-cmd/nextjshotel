@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   HelpCircle, XCircle, Phone,
-  FileText, Shield, Cookie, Scale, Info,
+  FileText, Shield, Cookie, Scale, Info, Building
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +15,7 @@ const groups = [
       { label: 'Help Center',  href: '/help',         icon: HelpCircle },
       { label: 'Cancellation', href: '/cancellation', icon: XCircle },
       { label: 'Contact Us',   href: '/contact',      icon: Phone },
+      { label: 'Register Your Property', href: '/register-property', icon: Building },
     ],
   },
   {

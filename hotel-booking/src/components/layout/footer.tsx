@@ -14,6 +14,7 @@ const Footer = () => {
       { name: 'Help Center', href: '/help' },
       { name: 'Cancellation', href: '/cancellation' },
       { name: 'Contact Us', href: '/contact' },
+      { name: 'Register Your Property', href: '/register-property' },
     ],
     Legal: [
       { name: 'Terms of Service', href: '/terms' },
@@ -35,7 +36,7 @@ const Footer = () => {
   //]
 
   return (
-    <footer className="relative pt-20 pb-8 border-t border-border bg-card/50">
+    <footer className="relative pt-20 border-t border-border bg-card/50">
       {/* Gradient line */}
       <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/50 to-transparent" />
 

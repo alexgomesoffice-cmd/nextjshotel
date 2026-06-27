@@ -19,14 +19,25 @@ export default function ContactPage() {
         {[
           { icon: Mail,   label: 'Email',   value: 'support@ghuribangla.com' },
           { icon: Phone,  label: 'Phone',   value: '+880 1800-000000' },
-          { icon: MapPin, label: 'Address', value: 'Dhaka, Bangladesh' },
+          { icon: MapPin, label: 'Address', value: '1179 East Monipur Monipur,Dhaka-1216' },
         ].map(({ icon: Icon, label, value }) => (
           <div key={label} className="flex flex-col items-center text-center p-4 rounded-2xl border border-border/50 bg-secondary/20">
             <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-2">
               <Icon className="h-4 w-4" />
             </div>
             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">{label}</p>
-            <p className="text-xs font-medium">{value}</p>
+            {label === 'Address' ? (
+              <a
+                href="https://www.google.com/maps/search/?api=1&query=1179+East+Monipur+Road+Dhaka+1216+Monipur%2C+1216"
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-xs font-medium hover:underline"
+              >
+                {value}
+              </a>
+            ) : (
+              <p className="text-xs font-medium">{value}</p>
+            )}
           </div>
         ))}
       </div>

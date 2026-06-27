@@ -79,7 +79,7 @@ export function HeroSection() {
                 >
                     {[
                         { value: '500K+', label: 'Active Users' },
-                        { value: '180+', label: 'Countries' },
+                        { value: '8', label: 'Cities' },
                         { value: '50K+', label: 'Hotels' },
                         { value: '4.9', label: 'App Rating' },
                     ].map((stat, index) => (

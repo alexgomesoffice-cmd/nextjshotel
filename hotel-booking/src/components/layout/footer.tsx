@@ -6,19 +6,12 @@
 //   - No 'use client' needed — no state or hooks
 
 import Link from 'next/link'
-import { Hotel, Mail, Phone, MapPin } from 'lucide-react'
+import { Hotel } from 'lucide-react'
 
 const Footer = () => {
   const footerLinks = {
-    Company: [
-      { name: 'About Us', href: '/about' },
-      { name: 'Careers', href: '/careers' },
-      { name: 'Press', href: '/press' },
-      { name: 'Blog', href: '/blog' },
-    ],
     Support: [
       { name: 'Help Center', href: '/help' },
-      { name: 'Safety', href: '/safety' },
       { name: 'Cancellation', href: '/cancellation' },
       { name: 'Contact Us', href: '/contact' },
     ],
@@ -27,6 +20,10 @@ const Footer = () => {
       { name: 'Privacy Policy', href: '/privacy' },
       { name: 'Cookie Policy', href: '/cookies' },
       { name: 'Licenses', href: '/licenses' },
+    ],
+    Company: [
+      { name: 'About Us', href: '/about' },
+      
     ],
   }
 
@@ -57,20 +54,7 @@ const Footer = () => {
               Your favorite hotel booking experience. Discover extraordinary stays
               and create unforgettable memories around the world.
             </p>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Mail className="h-4 w-4" />
-                <span className="text-sm">hello@GhuriBangla.com</span>
-              </div>
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Phone className="h-4 w-4" />
-                <span className="text-sm">+880 1234 56789</span>
-              </div>
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm">Dhaka, Bangladesh</span>
-              </div>
-            </div>
+            
           </div>
 
           {/* Link columns */}

@@ -65,7 +65,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
   const remainingCount = images.length - 5;
 
   return (
-    <div className="relative h-100 md:h-125 rounded-3xl overflow-hidden group">
+    <div className="relative h-100 md:h-125 rounded-xl overflow-hidden group">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 h-full">
         {/* Left: Main large image */}
         <div className="relative h-full w-full overflow-hidden">

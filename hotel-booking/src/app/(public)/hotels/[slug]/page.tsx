@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import * as LucideIcons from "lucide-react";
 import { MapPin, Star, CheckCircle2 } from "lucide-react";
 import {
   Clock,
   Phone,
   Globe,
   Shield,
+  type LucideIcon,
 } from "lucide-react";
 import HotelImagesGalleryClient from "./hotel-images-client";
 import RoomSelector from "@/components/booking/room-selector";
@@ -60,6 +62,20 @@ function formatTime12(time?: string | null) {
   const hour12 = ((hours + 11) % 12) + 1;
   const paddedMinutes = String(minutes).padStart(2, '0');
   return `${hour12}:${paddedMinutes} ${period}`;
+}
+
+function AmenityIcon({ iconName, className }: { iconName?: string | null; className?: string }) {
+
+  const resolvedName = iconName?.trim();
+  const IconComponent = resolvedName
+    ? (LucideIcons as Record<string, LucideIcon | undefined>)[resolvedName]
+    : undefined;
+
+  if (IconComponent) {
+    return <IconComponent className={className} />;
+  }
+
+  return <CheckCircle2 className={className} />;
 }
 
 export default async function HotelDetailPage({ 
@@ -128,8 +144,14 @@ export default async function HotelDetailPage({
   }
 
   const allAmenities = [
-    ...(hotel.hotel_amenities || []).map(ha => ha.amenity.name),
-    ...(hotel.custom_amenities || []).map(ca => ca.name)
+    ...(hotel.hotel_amenities || []).map((ha) => ({
+      name: ha.amenity.name,
+      icon: ha.amenity.icon,
+    })),
+    ...(hotel.custom_amenities || []).map((ca) => ({
+      name: ca.name,
+      icon: ca.icon,
+    }))
   ];
 
   return (
@@ -218,7 +240,7 @@ export default async function HotelDetailPage({
         <div className="space-y-12 mb-12">
 
           {/* Description */}
-          <section className="glass mt-24 rounded-2xl">
+          <section className="glass mt-24 rounded-2xl shadow-md">
             <h2 className="text-2xl font-bold m-6 rounded ">About this property</h2>
             <ExpandableDescription
               text={hotel.detail?.description || hotel.detail?.short_description}
@@ -228,13 +250,13 @@ export default async function HotelDetailPage({
 
           {/* Amenities */}
           {allAmenities.length > 0 && (
-            <section className="glass p-6 rounded-2xl">
+            <section className="glass p-6 rounded-2xl shadow-md">
               <h2 className="text-2xl font-bold mb-6 ">Property Amenities</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6">
                 {allAmenities.map((amenity, idx) => (
-                  <div key={idx} className="flex items-center gap-3 ">
-                    <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
-                    <span className="text-sm font-medium">{amenity}</span>
+                  <div key={idx} className="flex items-center gap-3 glass rounded-2xl p-3 text-sm font-medium text-muted-foreground shadow-md hover:border-primary/40 ">
+                    <AmenityIcon iconName={amenity.icon} className="h-5 w-5 text-primary shrink-0" />
+                    <span className="text-sm font-medium">{amenity.name}</span>
                   </div>
                 ))}
               </div>
@@ -253,7 +275,7 @@ export default async function HotelDetailPage({
   hotel.detail?.reception_no2 ||
   hotel.detail?.website
 ) && (
-  <section className="glass rounded-3xl p-8">
+  <section className="glass rounded-3xl p-8 shadow-md">
     <h2 className="text-2xl font-bold mb-8">Things to know</h2>
 
     {/* Top Cards */}

@@ -116,7 +116,7 @@ export default function BookingSidebar({
   };
 
   return (
-    <div className="bg-card border border-border/40 rounded-2xl overflow-hidden sticky top-24">
+    <div className="bg-card border border-border/40 rounded-2xl overflow-hidden sticky top-24 shadow-md">
       {/* Header */}
       <div className="flex items-baseline justify-between px-5 pt-5 pb-4">
         <h3 className="font-bold text-lg text-foreground">Book your stay</h3>

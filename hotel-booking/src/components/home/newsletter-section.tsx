@@ -31,7 +31,7 @@ const NewsletterSection = () => {
       <div className="max-w-5xl mx-auto px-4 md:px-8">
         <div className="relative rounded-3xl overflow-hidden bg-primary/5 border border-primary/10 shadow-xl">
           {/* Background shapes */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+          <div className="absolute top-0 right-0 w-125 h-125 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
           <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-3xl translate-y-1/3 -translate-x-1/3 pointer-events-none" />
 
           <div className="relative z-10 px-6 py-16 md:px-12 md:py-20 flex flex-col items-center text-center">
@@ -51,6 +51,7 @@ const NewsletterSection = () => {
               <div className="relative flex items-center">
                 <Mail className="absolute left-4 h-5 w-5 text-muted-foreground" />
                 <input
+                  id="mail"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

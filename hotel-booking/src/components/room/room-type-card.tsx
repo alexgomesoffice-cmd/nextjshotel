@@ -247,7 +247,7 @@ const RoomTypeCard = ({
     <div
       id={id ? `room-type-${id}` : undefined}
       className={cn(
-        "rounded-2xl border overflow-hidden bg-card transition-all duration-50",
+        "rounded-xl border overflow-hidden bg-card transition-all duration-50  shadow-xl",
         isHighlighted && "ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]",
         isDisabled
           ? "opacity-60 border-border/30"

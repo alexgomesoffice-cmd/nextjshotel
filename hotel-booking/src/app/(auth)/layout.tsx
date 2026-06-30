@@ -3,7 +3,7 @@ import "../globals.css";
 
 
 export const metadata: Metadata = {
-  title: "Hotel Booking App"
+  title: "GhuriBangla"
 };
 
 export default function LogInLayout({

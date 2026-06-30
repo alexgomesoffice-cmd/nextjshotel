@@ -213,7 +213,7 @@ const HotelCard = ({
       
       {/* ── HOTEL SHOWCASE FRAME ─────────────────────────────────────────── */}
       <div className="relative flex flex-col">
-        <Link href={hotelUrl} className="block relative h-64 overflow-hidden bg-muted z-10">
+        <Link href={hotelUrl} className="block relative h-72 overflow-hidden bg-muted z-10">
           {cover_image ? (
             <Image
               src={cover_image}
@@ -263,7 +263,7 @@ const HotelCard = ({
               )}
             </div>
 
-            <h3 className="text-2xl font-bold leading-tight tracking-tight line-clamp-1 ">
+            <h3 className="text-2xl font-bold leading-tight tracking-tight line-clamp-2 ">
               {name}
             </h3>
 
@@ -272,7 +272,7 @@ const HotelCard = ({
               <span>{city}</span>
               <span className="text-white/40">·</span>
               <span className="truncate max-w-[200px] text-white/80">
-                {short_description || 'Premium Amenities'}
+                {short_description}
               </span>
             </div>
 

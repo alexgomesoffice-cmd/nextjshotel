@@ -38,7 +38,7 @@ function DestinationsContent() {
     <div className="min-h-screen bg-background pt-28 pb-20">
       <div className="container mx-auto px-4 md:px-8 max-w-7xl">
         {/* Page header */}
-        <div className="text-center mb-14">
+        <div className="text-center mb-14 animate-fade-in-up">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-sm font-medium text-primary mb-4">
             <MapPin className="h-3.5 w-3.5" />
             Explore Bangladesh
@@ -57,13 +57,13 @@ function DestinationsContent() {
 
         {/* Cities grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid animate-fade-in-up grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 9 }).map((_, i) => (
               <CityCardSkeleton key={i} />
             ))}
           </div>
         ) : cities.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid animate-fade-in-up grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {cities.map((city) => (
               <Link
                 key={city.id}

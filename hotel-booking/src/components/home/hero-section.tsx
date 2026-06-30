@@ -65,7 +65,7 @@ export function HeroSection() {
                         className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in-up"
                         style={{ animationDelay: '200ms' }}
                     >
-                        Discover extraordinary hotels and unique stays around the world. Your perfect getaway is just a search away.
+                        "Discover extraordinary hotels and unique stays around the <span className="text-gradient">Bangladesh</span>. Your perfect getaway is just a search away."
                     </p>
                 </div>
 

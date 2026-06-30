@@ -56,7 +56,7 @@ const handlePageChange = (newPage: number) => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background pt-24 pb-12">
-      <div className="container mx-auto px-4 md:px-8">
+      <div className="container mx-auto px-4 md:px-8 max-w-7xl">
         
         {/* Top Search Bar */}
         <div className="mb-8">

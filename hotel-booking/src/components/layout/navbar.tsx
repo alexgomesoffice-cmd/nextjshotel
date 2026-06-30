@@ -71,7 +71,11 @@ const Navbar = () => {
     { name: 'Stay', path: '/' },
     { name: 'Explore', path: '/hotels' },
     { name: 'Destinations', path: '/destinations' },
-    { name: 'Blog', path: '/blog' }
+    { name: 'Car Rental', path: '/car-rental' },
+    { name: 'Attractions', path: '/attract' },
+    { name: 'Blog', path: '/blog' },
+
+    
   ]
 
   const initials = user

@@ -1,7 +1,12 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { MapPin, Star, CheckCircle2 } from "lucide-react";
-
+import {
+  Clock,
+  Phone,
+  Globe,
+  Shield,
+} from "lucide-react";
 import HotelImagesGalleryClient from "./hotel-images-client";
 import RoomSelector from "@/components/booking/room-selector";
 import ExpandableDescription from "@/components/hotel/expandable-description";
@@ -213,9 +218,9 @@ export default async function HotelDetailPage({
         <div className="space-y-12 mb-12">
 
           {/* Description */}
-          <section>
-            <h2 className="text-2xl font-bold mb-4 pt-24">About this property</h2>
-            <ExpandableDescription 
+          <section className="glass mt-24 rounded-2xl">
+            <h2 className="text-2xl font-bold m-6 rounded ">About this property</h2>
+            <ExpandableDescription
               text={hotel.detail?.description || hotel.detail?.short_description}
               maxLines={3}
             />
@@ -223,11 +228,11 @@ export default async function HotelDetailPage({
 
           {/* Amenities */}
           {allAmenities.length > 0 && (
-            <section>
-              <h2 className="text-2xl font-bold mb-6">Property Amenities</h2>
+            <section className="glass p-6 rounded-2xl">
+              <h2 className="text-2xl font-bold mb-6 ">Property Amenities</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6">
                 {allAmenities.map((amenity, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
+                  <div key={idx} className="flex items-center gap-3 ">
                     <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
                     <span className="text-sm font-medium">{amenity}</span>
                   </div>
@@ -237,89 +242,177 @@ export default async function HotelDetailPage({
           )}
 
           {/* Contact & Web */}
-          {(hotel.detail?.reception_no1 || hotel.detail?.reception_no2 || hotel.detail?.website) && (
-            <section>
-              <h2 className="text-xl font-bold mb-4">Contact & Links</h2>
-              <div className="flex flex-wrap gap-3">
-                {hotel.detail?.reception_no1 && (
-                  <a
-                    href={`tel:${hotel.detail.reception_no1}`}
-                    className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-border/50 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/40 transition-all group"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.63 4.35 2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5">Reception</p>
-                      <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">{hotel.detail.reception_no1}</p>
-                    </div>
-                  </a>
-                )}
+          {/* Things to know */}
+{/* Things to know */}
+{/* Things to know */}
+{(
+  hotel.detail?.check_in_time ||
+  hotel.detail?.check_out_time ||
+  hotel.detail?.cancellation_policy ||
+  hotel.detail?.reception_no1 ||
+  hotel.detail?.reception_no2 ||
+  hotel.detail?.website
+) && (
+  <section className="glass rounded-3xl p-8">
+    <h2 className="text-2xl font-bold mb-8">Things to know</h2>
 
-                {hotel.detail?.reception_no2 && (
-                  <a
-                    href={`tel:${hotel.detail.reception_no2}`}
-                    className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-border/50 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/40 transition-all group"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.63 4.35 2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.16 6.16l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5">Alternate</p>
-                      <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">{hotel.detail.reception_no2}</p>
-                    </div>
-                  </a>
-                )}
+    {/* Top Cards */}
+    <div className="grid gap-6 lg:grid-cols-2">
 
-                {hotel.detail?.website && (
-                  <a
-                    href={hotel.detail.website.startsWith('http') ? hotel.detail.website : `https://${hotel.detail.website}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl border border-border/50 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/40 transition-all group"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/>
-                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                    </svg>
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5">Website</p>
-                      <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors truncate max-w-[160px]">
-                        {hotel.detail.website.replace(/^https?:\/\//, '')}
-                      </p>
-                    </div>
-                  </a>
-                )}
+      {/* Check In / Out */}
+      {(hotel.detail?.check_in_time || hotel.detail?.check_out_time) && (
+        <div className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Clock className="h-5 w-5" />
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg">
+                Check-in & Check-out
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Hotel timings
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {hotel.detail?.check_in_time && (
+              <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                <span className="text-muted-foreground">
+                  Check-in
+                </span>
+
+                <span className="font-semibold">
+                  {formatTime12(hotel.detail.check_in_time)}
+                </span>
               </div>
-            </section>
-          )}
+            )}
 
-          {/* Policies */}
-          {(hotel.detail?.check_in_time || hotel.detail?.check_out_time || hotel.detail?.cancellation_policy) && (
-            <section className="bg-secondary/20 p-6 rounded-3xl border border-border/50">
-              <h2 className="text-xl font-bold mb-6">Good to know</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {hotel.detail?.check_in_time && (
-                  <div>
-                    <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Check-in</p>
-                    <p className="font-semibold">{formatTime12(hotel.detail.check_in_time)}</p>
-                  </div>
-                )}
-                {hotel.detail?.check_out_time && (
-                  <div>
-                    <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Check-out</p>
-                    <p className="font-semibold">{formatTime12(hotel.detail.check_out_time)}</p>
-                  </div>
-                )}
-                {hotel.detail?.cancellation_policy && (
-                  <div className="sm:col-span-2">
-                    <p className="text-sm text-muted-foreground uppercase tracking-wider mb-1">Cancellation Policy</p>
-                    <p className="text-sm">{hotel.detail.cancellation_policy}</p>
-                  </div>
-                )}
+            {hotel.detail?.check_out_time && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  Check-out
+                </span>
+
+                <span className="font-semibold">
+                  {formatTime12(hotel.detail.check_out_time)}
+                </span>
               </div>
-            </section>
-          )}
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Contact */}
+      {(hotel.detail?.reception_no1 ||
+        hotel.detail?.reception_no2 ||
+        hotel.detail?.website) && (
+        <div className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Phone className="h-5 w-5" />
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-lg">
+                Contact
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Reach the property
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+
+            {hotel.detail?.reception_no1 && (
+              <a
+                href={`tel:${hotel.detail.reception_no1}`}
+                className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
+              >
+                <span className="text-muted-foreground">
+                  Reception
+                </span>
+
+                <span className="font-medium">
+                  {hotel.detail.reception_no1}
+                </span>
+              </a>
+            )}
+
+            {hotel.detail?.reception_no2 && (
+              <a
+                href={`tel:${hotel.detail.reception_no2}`}
+                className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
+              >
+                <span className="text-muted-foreground">
+                  Alternate
+                </span>
+
+                <span className="font-medium">
+                  {hotel.detail.reception_no2}
+                </span>
+              </a>
+            )}
+
+            {hotel.detail?.website && (
+              <a
+                href={
+                  hotel.detail.website.startsWith("http")
+                    ? hotel.detail.website
+                    : `https://${hotel.detail.website}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
+              >
+                <span className="flex items-center gap-2 text-muted-foreground">
+                  <Globe className="h-4 w-4" />
+                  Website
+                </span>
+
+                <span className="truncate max-w-[180px] font-medium text-primary">
+                  {hotel.detail.website.replace(/^https?:\/\//, "")}
+                </span>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+
+    {/* Cancellation */}
+    {hotel.detail?.cancellation_policy && (
+      <div className="mt-6 rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
+        <div className="mb-5 flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Shield className="h-5 w-5" />
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-lg">
+              Cancellation Policy
+            </h3>
+
+            <p className="text-sm text-muted-foreground">
+              Booking terms
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border/50 bg-background/50 p-5">
+          <p className="leading-7 text-muted-foreground">
+            {hotel.detail.cancellation_policy}
+          </p>
+        </div>
+      </div>
+    )}
+  </section>
+
+
+)}
         </div>
       </div>
     </div>

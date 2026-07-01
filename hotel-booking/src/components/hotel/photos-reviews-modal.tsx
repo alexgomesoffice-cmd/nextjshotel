@@ -62,7 +62,7 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
   if (!isOpen || !images || images.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 backdrop-blur-xl animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/95 backdrop-blur-xl animate-fade-in">
       <div className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between z-10 bg-linear-to-b from-black/80 to-transparent">
         <div className="text-white/80 font-medium tracking-wider text-sm bg-black/50 px-4 py-1.5 rounded-full backdrop-blur-md">
           {currentIndex + 1} / {images.length}
@@ -83,7 +83,7 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
             src={images[currentIndex].image_url}
             alt={`Hotel photo ${currentIndex + 1}`}
             fill
-            className="object-contain animate-in zoom-in-95 duration-300"
+            className="object-contain animate-zoom-in"
             sizes="100vw"
             priority
           />

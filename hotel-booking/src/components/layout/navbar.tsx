@@ -73,7 +73,7 @@ const Navbar = () => {
     { name: 'Destinations', path: '/destinations' },
     { name: 'Car Rental', path: '/car-rental' },
     { name: 'Attractions', path: '/attract' },
-    { name: 'Blog', path: '/blog' },
+    { name: 'Blog', path: '/all-blog' },
 
     
   ]

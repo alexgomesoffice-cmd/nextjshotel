@@ -68,8 +68,8 @@ function AmenityIcon({ iconName, className }: { iconName?: string | null; classN
 
   const resolvedName = iconName?.trim();
   const IconComponent = resolvedName
-    ? (LucideIcons as Record<string, LucideIcon | undefined>)[resolvedName]
-    : undefined;
+  ? (LucideIcons as unknown as Record<string, LucideIcon | undefined>)[resolvedName]
+  : undefined;
 
   if (IconComponent) {
     return <IconComponent className={className} />;

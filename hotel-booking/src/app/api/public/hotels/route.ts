@@ -89,10 +89,10 @@ export async function GET(req: NextRequest) {
       (where as Record<string, unknown>)['room_types'] = { ...existingRoomTypes, some: { ...existingSome, max_occupancy: { gte: g } } };
     }
 
-    let orderBy: Record<string, unknown> = { created_at: 'desc' };
-    if (sort === 'price_asc')  orderBy = { room_types: { _min: { base_price: 'asc'  } } };
-    if (sort === 'price_desc') orderBy = { room_types: { _min: { base_price: 'desc' } } };
-    if (sort === 'rating')     orderBy = { detail: { guest_rating: 'desc' } };
+    let orderBy: Record<string, unknown> | undefined = { created_at: 'desc' };
+    const isPriceSort = sort === 'price_asc' || sort === 'price_desc';
+    if (isPriceSort) orderBy = undefined; // We will sort in memory
+    if (sort === 'rating') orderBy = { detail: { guest_rating: 'desc' } };
 
     const roomTypesInclude = includeRooms
       ? {
@@ -120,7 +120,7 @@ export async function GET(req: NextRequest) {
         }
       : { where: { is_active: true }, select: { base_price: true } };
 
-    const [total, hotels] = await Promise.all([
+    const [total, allHotelsOrPage] = await Promise.all([
       prisma.hotels.count({ where }),
       prisma.hotels.findMany({
         where,
@@ -129,16 +129,29 @@ export async function GET(req: NextRequest) {
           hotel_type: true,
           images:     { where: { is_cover: true }, take: 1 },
           detail:     true,
-                  room_types: roomTypesInclude as Record<string, unknown>,
+          room_types: roomTypesInclude as Record<string, unknown>,
           hotel_amenities: {
             include: { amenity: { select: { name: true } } },
           },
         },
-        skip,
-        take:    limit,
+        skip: isPriceSort ? undefined : skip,
+        take: isPriceSort ? undefined : limit,
         orderBy,
       }),
     ]);
+
+    let hotels = allHotelsOrPage;
+
+    if (isPriceSort) {
+      hotels.sort((a, b) => {
+        const rtsA = a.room_types as Array<Record<string, unknown>>;
+        const rtsB = b.room_types as Array<Record<string, unknown>>;
+        const priceA = rtsA.length > 0 ? Math.min(...rtsA.map((rt) => Number(String(rt.base_price)))) : Infinity;
+        const priceB = rtsB.length > 0 ? Math.min(...rtsB.map((rt) => Number(String(rt.base_price)))) : Infinity;
+        return sort === 'price_asc' ? priceA - priceB : priceB - priceA;
+      });
+      hotels = hotels.slice(skip, skip + limit);
+    }
 
     const formattedHotels = hotels.map((hotel) => {
       const rts = hotel.room_types as Array<Record<string, unknown>>;

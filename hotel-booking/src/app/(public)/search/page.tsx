@@ -10,10 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const SORT_OPTIONS = [
-  { label: "Newest", value: "newest" },
   { label: "Price: Low to High", value: "price_asc" },
   { label: "Price: High to Low", value: "price_desc" },
-  { label: "Top Rated", value: "rating" },
 ];
 
 function HotelCardSkeleton() {

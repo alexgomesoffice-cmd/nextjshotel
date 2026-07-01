@@ -109,7 +109,7 @@ function RoomRow({
           </div>
         ) : !capacityOk ? (
           <div className="absolute inset-0 flex items-center justify-center bg-background/75">
-            <span className="text-[9px] font-black tracking-wide text-amber-500 text-center leading-tight px-1">LOW CAP</span>
+            <span className="text-[9px] font-black tracking-wide text-amber-500 text-center leading-tight px-1">Doesnt fit guest count</span>
           </div>
         ) : rt.available_count > 0 && rt.dates_filtered ? (
           <div className="absolute bottom-1.5 left-1.5 rounded bg-green-500 px-1.5 py-0.5 text-[9px] font-bold text-white linen-none">

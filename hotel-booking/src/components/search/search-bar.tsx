@@ -113,13 +113,19 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
   };
 
   const handleSearch = () => {
-    const params = new URLSearchParams();
+    // Preserve existing params (e.g. filter sidebar selections) so they don't reset
+    const params = new URLSearchParams(searchParams.toString());
     if (searchLocation) params.set("location", searchLocation);
+    else params.delete("location");
     if (date?.from) params.set("check_in", format(date.from, "yyyy-MM-dd"));
+    else params.delete("check_in");
     if (date?.to) params.set("check_out", format(date.to, "yyyy-MM-dd"));
+    else params.delete("check_out");
     params.set("guests", String(guests));
     params.set("rooms", String(rooms));
-    router.push(`/search?${params.toString()}`);
+    // Reset to page 1 on new search
+    params.delete("page");
+    router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
   const hasSuggestions =

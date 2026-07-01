@@ -121,11 +121,19 @@ export default function BookingSidebar({
       <div className="flex items-baseline justify-between px-5 pt-5 pb-4">
         <h3 className="font-bold text-lg text-foreground">Book your stay</h3>
         {headerPrice && (
-          <span className="font-bold text-lg text-primary">
-            TK {Number(headerPrice).toLocaleString()}
-            <span className="text-xs text-muted-foreground font-normal">/night</span>
-          </span>
-        )}
+  <div className="flex flex-col items-end leading-tight">
+    {!hasSelections && (
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+        Starts from
+      </span>
+    )}
+
+    <span className="font-bold text-lg text-primary">
+      TK {Number(headerPrice).toLocaleString()}
+      <span className="text-xs text-muted-foreground font-normal">/night</span>
+    </span>
+  </div>
+)}
       </div>
 
       <div className="px-5 pb-5 space-y-3">

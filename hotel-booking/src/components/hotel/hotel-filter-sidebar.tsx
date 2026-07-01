@@ -269,7 +269,7 @@ const HotelFilterSidebar = () => {
           
           {openSections.star && (
             <div className="space-y-2">
-              {[5, 4, 3, 2, 1].map((star) => (
+              {[5, 4, 3, ].map((star) => (
                 <label key={star} className="flex items-center gap-2 cursor-pointer group">
                   <input 
                     type="checkbox" 

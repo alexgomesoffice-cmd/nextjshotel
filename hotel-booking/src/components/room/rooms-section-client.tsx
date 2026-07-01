@@ -75,10 +75,24 @@ export default function RoomsSectionClient({
     return result;
   };
 
+  // Sort room types: available first, mismatched/unavailable last
+  const sortedRoomTypes = [...roomTypes].sort((a, b) => {
+    const aMismatch = guests > 1 && a.max_occupancy < guests;
+    const bMismatch = guests > 1 && b.max_occupancy < guests;
+    const aUnavailable = a.available_rooms_count === 0 && a.room_variants.length === 0;
+    const bUnavailable = b.available_rooms_count === 0 && b.room_variants.length === 0;
+    
+    const aDisabled = aMismatch || aUnavailable;
+    const bDisabled = bMismatch || bUnavailable;
+
+    if (aDisabled === bDisabled) return 0;
+    return aDisabled ? 1 : -1;
+  });
+
   return (
     <>
       <div className="space-y-6">
-        {roomTypes.map((roomType) => {
+        {sortedRoomTypes.map((roomType) => {
           const isGuestMismatch = guests > 1 && roomType.max_occupancy < guests;
           const guestMismatchReason = isGuestMismatch
             ? `This room fits up to ${roomType.max_occupancy} guest${roomType.max_occupancy !== 1 ? 's' : ''}. Your search needs ${guests}.`

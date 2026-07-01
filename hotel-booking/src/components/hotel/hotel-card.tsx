@@ -339,7 +339,20 @@ const HotelCard = ({
             data-lenis-prevent-wheel={room_types!.length >= 3 ? "" : undefined}
             data-lenis-prevent-touch={room_types!.length >= 3 ? "" : undefined}
           >
-            {room_types!.map(rt => (
+            {[...room_types!]
+              .sort((a, b) => {
+                const aCapacityOk = !guestNum || a.max_occupancy >= guestNum;
+                const aAvail = !a.dates_filtered || a.available_count > 0;
+                const aDisabled = !aCapacityOk || !aAvail;
+
+                const bCapacityOk = !guestNum || b.max_occupancy >= guestNum;
+                const bAvail = !b.dates_filtered || b.available_count > 0;
+                const bDisabled = !bCapacityOk || !bAvail;
+
+                if (aDisabled === bDisabled) return 0;
+                return aDisabled ? 1 : -1;
+              })
+              .map(rt => (
               <RoomRow
                 key={rt.id}
                 rt={rt}

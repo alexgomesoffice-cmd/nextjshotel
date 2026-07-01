@@ -54,22 +54,21 @@ const getIconForAmenity = (name: string) => {
 const RoomTypeDetailModal = ({ isOpen, onClose, roomType }: RoomTypeDetailModalProps) => {
   const [activeImage, setActiveImage] = useState(0);
 
-  useEffect(() => {
-    if (!isOpen) return;
+useEffect(() => {
+  if (!isOpen) return;
 
-    const lenis = getLenis();
-    if (lenis) lenis.stop();
+  const lenis = getLenis();
+  if (lenis) lenis.stop();
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    setActiveImage(0);
+  const previousOverflow = document.body.style.overflow;
+  document.body.style.overflow = "hidden";
 
-    return () => {
-      document.body.style.overflow = previousOverflow || "unset";
-      const activeLenis = getLenis();
-      if (activeLenis) activeLenis.start();
-    };
-  }, [isOpen]);
+  return () => {
+    document.body.style.overflow = previousOverflow || "unset";
+    const activeLenis = getLenis();
+    if (activeLenis) activeLenis.start();
+  };
+}, [isOpen]);
 
   if (!isOpen || !roomType) return null;
 

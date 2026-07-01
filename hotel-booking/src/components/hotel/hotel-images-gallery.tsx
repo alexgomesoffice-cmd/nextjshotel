@@ -117,7 +117,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
       <Button
         variant="secondary"
         className="absolute bottom-6 right-6 shadow-xl bg-background/90 backdrop-blur-md hover:bg-background transition-all hover:scale-105 rounded-full px-6 gap-2 border border-border/50"
-        onClick={onShowAllPhotos}
+        onClick={() => onShowAllPhotos()}
       >
         <Grid2X2 className="h-4 w-4 text-primary" />
         <span className="font-semibold text-foreground">Show all photos</span>

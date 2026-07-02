@@ -23,7 +23,6 @@ const systemAdminLinks: NavLink[] = [
     ]
   },
   { name: 'Cities', href: '/dashboard/system/cities', icon: MapPin },
-  { name: 'Hotel Types', href: '/dashboard/system/hotel-types', icon: Star },
   { name: 'Amenities', href: '/dashboard/system/amenities', icon: Star },
   { name: 'Admins', href: '/dashboard/system/admins', icon: Users },
   { name: 'Users', href: '/dashboard/system/users', icon: Users },
@@ -84,7 +83,7 @@ export default function AdminLayout({
             sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
           }`}
         >
-          <div className="p-6  shrink-0">
+          <div className="px-6 pt-6  shrink-0">
             <h2 className="text-xl font-bold">System Admin</h2>
             {user && (
               <p className="text-sm text-muted-foreground mt-1">{user.name}</p>

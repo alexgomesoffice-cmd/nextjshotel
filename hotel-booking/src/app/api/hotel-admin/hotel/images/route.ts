@@ -68,9 +68,15 @@ export async function POST(req: NextRequest) {
       const file = files[i]
       if (!(file instanceof Blob)) continue
 
+      if (file.size > 1 * 1024 * 1024) {
+        return NextResponse.json({ success: false, message: 'File size exceeds limit' }, { status: 400 })
+      }
+
       const buffer = Buffer.from(await file.arrayBuffer())
       const filename = `${uuidv4()}.webp`
       const filepath = path.join(UPLOAD_DIR, filename)
+
+
 
       // Resize and convert to WebP using sharp
       await sharp(buffer)

@@ -77,6 +77,20 @@ export async function POST(
       return NextResponse.json({ success: false, message: 'No files provided' }, { status: 400 })
     }
 
+    const MAX_FILE_SIZE = 1 * 1024 * 1024 // 1 MB
+
+    for (const file of files) {
+    if (file.size > MAX_FILE_SIZE) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: `${file.name} exceeds the 1 MB limit.`,
+      },
+      { status: 400 }
+    )
+  }
+}
+
     await ensureDir()
     const uploadedImages = []
 

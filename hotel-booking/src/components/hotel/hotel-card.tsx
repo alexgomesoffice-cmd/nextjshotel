@@ -316,7 +316,7 @@ const HotelCard = ({
               </p>
               <p className="text-[11px] text-muted-foreground/80">
                 {has_dates
-  ? `${availableCount}/${room_types!.length} configurations open`
+  ? `${availableCount}/${room_types!.length} room type open`
   : `${room_types!.length} room type${room_types!.length !== 1 ? 's' : ''} available`
 }
               </p>

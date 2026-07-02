@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import {
@@ -193,6 +193,11 @@ export default function BookingSidebar({
               onSelect={handleDateSelect}
               numberOfMonths={1}
               className="p-3 w-full"
+              disabled={(d) => {
+                const t = new Date(); t.setHours(0, 0, 0, 0);
+                const max = new Date(t); max.setFullYear(max.getFullYear() + 1);
+                return d < t || d > max;
+              }}
             />
           </PopoverContent>
         </Popover>

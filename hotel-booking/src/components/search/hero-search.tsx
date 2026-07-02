@@ -221,7 +221,7 @@ const SearchBar = ({ showFilters = true }: SearchBarProps) => {
                                         <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setDate({ from: undefined, to: undefined })}>Clear</Button>
                                     )}
                                 </div>
-                                <Calendar initialFocus mode="range" defaultMonth={date?.from} selected={date} onSelect={setDate} numberOfMonths={1} className="p-3 w-full" />
+                                <Calendar initialFocus mode="range" defaultMonth={date?.from} selected={date} onSelect={setDate} numberOfMonths={1} className="p-3 w-full" disabled={(d) => { const t = new Date(); t.setHours(0, 0, 0, 0); const max = new Date(t); max.setFullYear(max.getFullYear() + 1); return d < t || d > max; }} />
                             </PopoverContent>
                         </Popover>
                     </div>

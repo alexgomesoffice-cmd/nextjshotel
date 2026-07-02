@@ -44,13 +44,13 @@ interface Booking {
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
-  RESERVED:    { label: "Reserved",    color: "bg-amber-500/20 text-amber-700 border-amber-500/30",   icon: Clock },
-  BOOKED:      { label: "Confirmed",   color: "bg-green-500/20 text-green-700 border-green-500/30",   icon: CheckCircle2 },
-  EXPIRED:     { label: "Expired",     color: "bg-gray-500/20 text-gray-600 border-gray-500/30",      icon: AlertCircle },
-  CANCELLED:   { label: "Cancelled",   color: "bg-red-500/20 text-red-700 border-red-500/30",         icon: XCircle },
-  CHECKED_IN:  { label: "Checked In",  color: "bg-blue-500/20 text-blue-700 border-blue-500/30",     icon: CheckCircle2 },
+  RESERVED: { label: "Reserved", color: "bg-amber-500/20 text-amber-700 border-amber-500/30", icon: Clock },
+  BOOKED: { label: "Confirmed", color: "bg-green-500/20 text-green-700 border-green-500/30", icon: CheckCircle2 },
+  EXPIRED: { label: "Expired", color: "bg-gray-500/20 text-gray-600 border-gray-500/30", icon: AlertCircle },
+  CANCELLED: { label: "Cancelled", color: "bg-red-500/20 text-red-700 border-red-500/30", icon: XCircle },
+  CHECKED_IN: { label: "Checked In", color: "bg-blue-500/20 text-blue-700 border-blue-500/30", icon: CheckCircle2 },
   CHECKED_OUT: { label: "Checked Out", color: "bg-purple-500/20 text-purple-700 border-purple-500/30", icon: CheckCircle2 },
-  NO_SHOW:     { label: "No Show",     color: "bg-red-500/20 text-red-700 border-red-500/30",         icon: XCircle },
+  NO_SHOW: { label: "No Show", color: "bg-red-500/20 text-red-700 border-red-500/30", icon: XCircle },
 };
 
 interface BookingConfirmationProps {

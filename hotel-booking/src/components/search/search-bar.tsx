@@ -272,7 +272,11 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                   selected={date}
                   onSelect={setDate}
                   numberOfMonths={1}
-                  disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                  disabled={(d) => {
+                    const t = new Date(); t.setHours(0, 0, 0, 0);
+                    const max = new Date(t); max.setFullYear(max.getFullYear() + 1);
+                    return d < t || d > max;
+                  }}
                   className="p-3 w-full"
                 />
               </PopoverContent>

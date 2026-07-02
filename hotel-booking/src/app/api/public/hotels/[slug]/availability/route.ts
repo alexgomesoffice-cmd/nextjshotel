@@ -19,6 +19,26 @@ export async function GET(
       );
     }
 
+    // Validate date range: not more than 1 year from today
+    if (checkIn && checkOut) {
+      const ci = new Date(checkIn);
+      const co = new Date(checkOut);
+      const maxAllowed = new Date();
+      maxAllowed.setFullYear(maxAllowed.getFullYear() + 1);
+      if (!isNaN(ci.getTime()) && ci > maxAllowed) {
+        return NextResponse.json(
+          { success: false, message: 'Check-in date cannot be more than 1 year from today' },
+          { status: 400 }
+        );
+      }
+      if (!isNaN(co.getTime()) && co > maxAllowed) {
+        return NextResponse.json(
+          { success: false, message: 'Check-out date cannot be more than 1 year from today' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Build room detail where clause for availability filtering
     const buildRoomDetailWhere = (checkIn?: string | null, checkOut?: string | null) => {
       const where: Record<string, unknown> = { status: 'AVAILABLE', deleted_at: null };

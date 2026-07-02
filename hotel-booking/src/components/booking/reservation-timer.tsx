@@ -49,11 +49,10 @@ export default function ReservationTimer({ reservedUntil }: ReservationTimerProp
   }
 
   return (
-    <div className={`flex items-center gap-3 rounded-xl px-5 py-4 text-sm border ${
-      isUrgent
+    <div className={`flex items-center gap-3 rounded-xl px-5 py-4 text-sm border ${isUrgent
         ? "bg-destructive/10 border-destructive/30"
         : "bg-amber-500/10 border-amber-500/30"
-    }`}>
+      }`}>
       <Clock className={`h-5 w-5 shrink-0 ${isUrgent ? "text-destructive" : "text-amber-600 dark:text-amber-400"}`} />
       <div className="flex-1">
         <p className={`font-semibold ${isUrgent ? "text-destructive" : "text-amber-800 dark:text-amber-300"}`}>

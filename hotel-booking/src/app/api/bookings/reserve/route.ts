@@ -70,6 +70,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Enforce 1-year maximum booking window
+    const maxAllowedDate = new Date();
+    maxAllowedDate.setFullYear(maxAllowedDate.getFullYear() + 1);
+    if (checkInDate > maxAllowedDate) {
+      return NextResponse.json(
+        { success: false, message: "Check-in date cannot be more than 1 year from today" },
+        { status: 400 }
+      );
+    }
+    if (checkOutDate > maxAllowedDate) {
+      return NextResponse.json(
+        { success: false, message: "Check-out date cannot be more than 1 year from today" },
+        { status: 400 }
+      );
+    }
+
     const nights = Math.ceil(
       (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
     );
@@ -148,6 +164,20 @@ export async function POST(req: NextRequest) {
         }
 
         const selectedRooms = availableRooms.slice(0, selection.quantity);
+
+        // Re-confirm no tracker was inserted between our read and this write (race condition guard)
+        const conflictCheck = await tx.room_trackers.findFirst({
+          where: {
+            room_detail_id: { in: selectedRooms.map((r) => r.id) },
+            status: { in: ["RESERVED", "BOOKED", "CHECKED_IN"] },
+            check_in: { lt: checkOutDate },
+            check_out: { gt: checkInDate },
+          },
+        });
+        if (conflictCheck) {
+          throw new Error("Rooms are sold out for the selected dates");
+        }
+
         totalPrice += selectedRooms.reduce((sum, room) => sum + Number(room.price) * nights, 0);
         selectedRoomsByType.push({ roomTypeId: roomType.id, rooms: selectedRooms });
       }

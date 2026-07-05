@@ -41,6 +41,8 @@ export interface HotelCardProps {
   checkOut?:         string;
   guests?:           number;
   roomListMaxHeight?: string;
+  minPrice?:         number;
+  maxPrice?:         number;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -194,6 +196,8 @@ const HotelCard = ({
   guests,
   amenities,
   roomListMaxHeight,
+  minPrice,
+  maxPrice,
 }: HotelCardProps) => {
   const dateParams = checkIn && checkOut
     ? `?check_in=${checkIn}&check_out=${checkOut}&guests=${guests || 1}`
@@ -349,8 +353,19 @@ const HotelCard = ({
                 const bAvail = !b.dates_filtered || b.available_count > 0;
                 const bDisabled = !bCapacityOk || !bAvail;
 
-                if (aDisabled === bDisabled) return 0;
-                return aDisabled ? 1 : -1;
+                if (aDisabled !== bDisabled) return aDisabled ? 1 : -1;
+
+                if (minPrice || maxPrice) {
+                  const minP = minPrice ?? 0;
+                  const maxP = maxPrice ?? Infinity;
+                  const aMatches = a.base_price >= minP && a.base_price <= maxP;
+                  const bMatches = b.base_price >= minP && b.base_price <= maxP;
+                  
+                  if (aMatches && !bMatches) return -1;
+                  if (!aMatches && bMatches) return 1;
+                }
+
+                return 0;
               })
               .map(rt => (
               <RoomRow

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { MapPin, Loader2, Building2, SlidersHorizontal, ArrowUpDown } from "lucide-react";
 import HotelFilterSidebar from "@/components/hotel/hotel-filter-sidebar";
 import HotelCard, { HotelCardProps } from "@/components/hotel/hotel-card";
@@ -31,6 +31,7 @@ function HotelCardSkeleton() {
 function CityHotelsContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const cityName = decodeURIComponent(params.name as string);
 
   const [hotels, setHotels] = useState<HotelCardProps[]>([]);
@@ -46,12 +47,11 @@ function CityHotelsContent() {
     const fetchHotels = async () => {
       setIsLoading(true);
       try {
-        const query = new URLSearchParams({
-          location: cityName,
-          sort: sort === "price" ? `price_${sortDirection}` : sort,
-          page: String(currentPage),
-          limit: "12",
-        });
+        const query = new URLSearchParams(searchParams.toString());
+        query.set("location", cityName);
+        query.set("sort", sort === "price" ? `price_${sortDirection}` : sort);
+        query.set("page", String(currentPage));
+        query.set("limit", "12");
 
         const res = await fetch(`/api/public/hotels?${query.toString()}`);
         if (res.ok) {
@@ -75,7 +75,7 @@ function CityHotelsContent() {
     };
 
     fetchHotels();
-  }, [cityName, sort, sortDirection, currentPage]);
+  }, [cityName, sort, sortDirection, currentPage, searchParams]);
 
   return (
     <div className="min-h-screen bg-background pt-28 pb-20">
@@ -176,7 +176,14 @@ function CityHotelsContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {hotels.map((hotel) => (
                     <div key={hotel.id} className="h-[420px]">
-                      <HotelCard {...hotel} />
+                      <HotelCard
+                        {...hotel}
+                        checkIn={searchParams.get("check_in") || undefined}
+                        checkOut={searchParams.get("check_out") || undefined}
+                        guests={searchParams.get("guests") ? parseInt(searchParams.get("guests")!) : undefined}
+                        minPrice={searchParams.get("min_price") ? parseInt(searchParams.get("min_price")!) : undefined}
+                        maxPrice={searchParams.get("max_price") ? parseInt(searchParams.get("max_price")!) : undefined}
+                      />
                     </div>
                   ))}
                 </div>

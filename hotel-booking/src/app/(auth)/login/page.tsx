@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { ArrowLeft } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -47,66 +48,149 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Welcome Back</h1>
-          <p className="text-muted-foreground mt-2">Sign in to your account</p>
-        </div>
+  <div className="min-h-screen w-full flex bg-background">
+    {/* Left Image */}
+    <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+      <img
+        src="/loginImg.jpg"
+        alt="Luxury Hotel"
+        className="absolute inset-0 w-full h-full object-cover"
+      />
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
-              {error}
-            </div>
-          )}
+      <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/20 to-transparent" />
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="your@email.com"
-              required
-            />
-          </div>
+      <div className="absolute top-8 left-8 z-10">
+        <Link
+          href="/"
+          className="inline-flex items-center px-5 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold text-lg hover:bg-white/20 transition"
+        >
+          GhuriBangla
+        </Link>
+      </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
-              required
-            />
-          </div>
+      <div className="absolute bottom-16 left-12 text-white max-w-lg">
+        <h2 className="text-5xl font-bold leading-tight">
+          Find your perfect stay.
+        </h2>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        <p className="text-center text-muted-foreground mt-6">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-primary hover:underline">
-            Register
-          </Link>
+        <p className="mt-4 text-lg text-white/80">
+          Book luxury hotels and unforgettable experiences around the world.
         </p>
       </div>
     </div>
-  )
+
+    {/* Right Side */}
+    <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-background">
+
+      <div className="w-full max-w-md">
+
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Link>
+        </div>
+
+        <div className="rounded-3xl border border-border bg-card shadow-2xl p-8">
+
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold">
+              Welcome Back
+            </h1>
+
+            <p className="text-muted-foreground mt-2">
+              Sign in to your account
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+
+            {error && (
+              <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/10 text-red-500 text-sm">
+                {error}
+              </div>
+            )}
+
+            {/* Email */}
+
+            <div>
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium mb-2"
+              >
+                Email
+              </label>
+
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className="w-full rounded-xl border border-input bg-background px-4 py-3 outline-none transition focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* Password */}
+
+            <div>
+
+              <div className="flex justify-between items-center mb-2">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium"
+                >
+                  Password
+                </label>
+
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-primary hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className="w-full rounded-xl border border-input bg-background px-4 py-3 outline-none transition focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+
+          </form>
+
+          <p className="mt-8 text-center text-sm text-muted-foreground">
+            Dont have an account?{" "}
+            <Link
+              href="/register"
+              className="text-primary font-medium hover:underline"
+            >
+              Register
+            </Link>
+          </p>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+);
 }

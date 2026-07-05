@@ -72,6 +72,23 @@ export default function RegisterPage() {
 
       {/* Layout */}
       <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+        <Link
+        href="/"
+        className="absolute top-4 left-1/2 -translate-x-1/2
+    lg:top-8 lg:left-8 lg:translate-x-0
+
+    px-3 py-1.5 lg:px-5 lg:py-2
+    rounded-full
+    bg-white/10 backdrop-blur-xl
+    border border-white/20
+    text-white font-semibold tracking-wide
+    shadow-lg shadow-black/30
+    hover:bg-white/20 transition
+
+    text-base lg:text-2xl"
+      >
+        GhuriBangla
+      </Link>
 
         {/* LEFT SIDE */}
         <div className="hidden lg:flex lg:w-1/2 items-center px-16">

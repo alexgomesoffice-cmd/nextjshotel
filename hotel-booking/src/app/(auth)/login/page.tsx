@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -31,19 +30,18 @@ export default function LoginPage() {
 
       const data = await res.json()
 
-      if (!data.success) {
-        setError(data.message)
+      if (!res.ok || !data.success) {
+        setError(data.message || 'Login failed')
+        setLoading(false)
         return
       }
 
-      // Store user name for UI display only (not for security)
       localStorage.setItem('user_name', data.data.user.name)
 
-      // Redirect to callback URL or home
+      setLoading(false)
       router.push(callbackUrl)
     } catch (err) {
       setError('Something went wrong. Please try again.')
-    } finally {
       setLoading(false)
     }
   }
@@ -51,7 +49,7 @@ export default function LoginPage() {
   return (
     <div className="relative min-h-screen w-full">
 
-      {/* Background Image */}
+      {/* Background */}
       <img
         src="/loginImg.jpg"
         alt="Hotel"
@@ -59,7 +57,30 @@ export default function LoginPage() {
       />
 
       {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black/60" />
+      <div className="absolute inset-0 bg-black/60 " />
+
+      {/*  GLASS MORPHISM BRAND (TOP LEFT) */}
+      <Link
+        href="/"
+        className="absolute top-4 left-1/2 -translate-x-1/2
+    lg:top-8 lg:left-8 lg:translate-x-0
+
+    z-20
+    px-4 py-2 lg:px-5 lg:py-2
+    rounded-full
+
+    bg-white/10 backdrop-blur-xl
+    border border-white/20
+
+    text-white font-semibold tracking-wide
+    shadow-lg shadow-black/30
+
+    hover:bg-white/20 transition
+
+    text-base lg:text-2xl"
+      >
+        GhuriBangla
+      </Link>
 
       {/* MAIN LAYOUT */}
       <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
@@ -72,7 +93,6 @@ export default function LoginPage() {
             </h1>
             <p className="mt-6 text-lg text-white/80">
               Discover luxury hotels, unique stays, and unforgettable experiences around the world.
-              Book effortlessly and travel with confidence.
             </p>
           </div>
         </div>

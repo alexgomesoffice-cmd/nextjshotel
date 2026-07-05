@@ -19,6 +19,7 @@ export interface SearchSuggestion {
     name: string;
     type: 'hotel' | 'city';
     city?: string;
+    address?: string;
 }
 
 interface SearchBarProps { showFilters?: boolean; }
@@ -94,7 +95,7 @@ const SearchBar = ({ showFilters = true }: SearchBarProps) => {
                 ]);
                 const ns: typeof suggestions = { hotels: [], cities: [] };
                 if (citiesRes.ok) { const d = await citiesRes.json(); if (d.success) ns.cities = d.data.map((c: any) => ({ id: c.id, name: c.name, type: 'city' })); }
-                if (hotelsRes.ok) { const d = await hotelsRes.json(); if (d.success) ns.hotels = d.data.map((h: any) => ({ id: h.id, name: h.name, type: 'hotel', city: h.city })); }
+                if (hotelsRes.ok) { const d = await hotelsRes.json(); if (d.success) ns.hotels = d.data.map((h: any) => ({ id: h.id, name: h.name, type: 'hotel', city: h.city, address: h.address })); }
                 setSuggestions(ns);
             } catch { setSuggestions({ hotels: [], cities: [] }); }
             finally { setIsLoadingSuggestions(false); }
@@ -169,7 +170,8 @@ const SearchBar = ({ showFilters = true }: SearchBarProps) => {
                                                         <Hotel className="h-4 w-4 text-primary shrink-0" />
                                                         <div className="flex-1 min-w-0">
                                                             <div className="text-sm font-medium truncate">{h.name}</div>
-                                                            <div className="text-xs text-muted-foreground truncate">{h.city}</div>
+                                                            {h.address && <div className="text-xs text-muted-foreground truncate">{h.address}</div>}
+                                                            <div className="text-xs text-muted-foreground/70 truncate">{h.city}</div>
                                                         </div>
                                                     </button>
                                                 ))}

@@ -170,6 +170,7 @@ export async function GET(req: NextRequest) {
         cover_image:       hotel.images[0]?.image_url || null,
         short_description: hotel.detail?.short_description,
         starting_price:    startingPrice,
+        address:           hotel.address,
         amenities:         (hotel.hotel_amenities || []).slice(0, 3).map((ha) => String(((ha as Record<string, unknown>).amenity as Record<string, unknown>).name)),
       };
 

@@ -173,7 +173,11 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                   className="w-(--radix-popover-trigger-width) p-0 overflow-hidden"
                   onOpenAutoFocus={(e) => e.preventDefault()}
                 >
-                  <div className="bg-popover border border-border/40 rounded-lg shadow-2xl max-h-72 overflow-y-auto">
+                  <div className="bg-popover border border-border/40 rounded-lg shadow-2xl max-h-72 overflow-y-auto custom-scrollbar"
+                  data-lenis-prevent="true"
+                  data-lenis-prevent-wheel="true"
+                  data-lenis-prevent-touch="true"
+                  >
                     {suggestions.hotels.length > 0 && (
                       <div className={cn(suggestions.cities.length > 0 ? "border-b border-border/40" : "", "p-2")}>
                         <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Hotels</div>

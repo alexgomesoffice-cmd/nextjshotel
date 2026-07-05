@@ -160,7 +160,10 @@ const SearchBar = ({ showFilters = true }: SearchBarProps) => {
                             </PopoverTrigger>
                             {(suggestions.hotels.length > 0 || suggestions.cities.length > 0) && (
                                 <PopoverContent align="start" side="bottom" sideOffset={6} className="w-(--radix-popover-trigger-width) p-0 overflow-hidden" onOpenAutoFocus={e => e.preventDefault()}>
-                                    <div className="bg-popover border border-border/40 rounded-lg shadow-2xl max-h-80 overflow-y-auto">
+                                    <div className="bg-popover border border-border/40 rounded-lg shadow-2xl max-h-80 overflow-y-auto custom-scrollbar"
+                                    data-lenis-prevent="true"
+                  data-lenis-prevent-wheel="true"
+                  data-lenis-prevent-touch="true">
                                         
                                         {suggestions.hotels.length > 0 && (
                                             <div className={cn(suggestions.cities.length > 0 ? 'border-t border-border/40' : '', 'p-2')}>

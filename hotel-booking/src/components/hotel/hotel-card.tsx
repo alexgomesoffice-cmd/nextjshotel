@@ -31,7 +31,7 @@ export interface HotelCardProps {
   star_rating?:      number;
   guest_rating?:     number;
   cover_image:       string | null;
-  short_description?: string;
+  address?:          string;
   starting_price?:   number;
   room_types?:       RoomTypeStrip[];
   total_room_types?: number;
@@ -186,7 +186,7 @@ const HotelCard = ({
   star_rating  = 0,
   guest_rating = 0,
   cover_image,
-  short_description,
+  address,
   starting_price,
   room_types,
   total_room_types,
@@ -276,7 +276,7 @@ const HotelCard = ({
               <span>{city}</span>
               <span className="text-white/40">·</span>
               <span className="truncate max-w-[200px] text-white/80">
-                {short_description}
+                {address}
               </span>
             </div>
 

@@ -160,17 +160,7 @@ const SearchBar = ({ showFilters = true }: SearchBarProps) => {
                             {(suggestions.hotels.length > 0 || suggestions.cities.length > 0) && (
                                 <PopoverContent align="start" side="bottom" sideOffset={6} className="w-(--radix-popover-trigger-width) p-0 overflow-hidden" onOpenAutoFocus={e => e.preventDefault()}>
                                     <div className="bg-popover border border-border/40 rounded-lg shadow-2xl max-h-80 overflow-y-auto">
-                                        {suggestions.cities.length > 0 && (
-                                            <div className="p-2">
-                                                <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Locations</div>
-                                                {suggestions.cities.map(c => (
-                                                    <button key={`city-${c.id}`} onClick={() => handleSuggestionSelect(c)} className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors">
-                                                        <MapPin className="h-4 w-4 text-primary shrink-0" />
-                                                        <div className="text-sm font-medium truncate">{c.name}</div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
+                                        
                                         {suggestions.hotels.length > 0 && (
                                             <div className={cn(suggestions.cities.length > 0 ? 'border-t border-border/40' : '', 'p-2')}>
                                                 <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Hotels</div>
@@ -181,6 +171,17 @@ const SearchBar = ({ showFilters = true }: SearchBarProps) => {
                                                             <div className="text-sm font-medium truncate">{h.name}</div>
                                                             <div className="text-xs text-muted-foreground truncate">{h.city}</div>
                                                         </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {suggestions.cities.length > 0 && (
+                                            <div className="p-2">
+                                                <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Locations</div>
+                                                {suggestions.cities.map(c => (
+                                                    <button key={`city-${c.id}`} onClick={() => handleSuggestionSelect(c)} className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors">
+                                                        <MapPin className="h-4 w-4 text-primary shrink-0" />
+                                                        <div className="text-sm font-medium truncate">{c.name}</div>
                                                     </button>
                                                 ))}
                                             </div>

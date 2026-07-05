@@ -188,24 +188,7 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                         ))}
                       </div>
                     )}
-                    {suggestions.hotels.length > 0 && (
-                      <div className={cn("p-2", suggestions.cities.length > 0 && "border-t border-border/40")}>
-                        <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Hotels</div>
-                        {suggestions.hotels.map((hotel) => (
-                          <button
-                            key={`hotel-${hotel.id}`}
-                            onClick={() => handleSuggestionSelect(hotel)}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors"
-                          >
-                            <Hotel className="h-4 w-4 text-primary shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <div className="text-sm font-medium truncate">{hotel.name}</div>
-                              <div className="text-xs text-muted-foreground truncate">{hotel.city}</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    
                   </div>
                 </PopoverContent>
               )}

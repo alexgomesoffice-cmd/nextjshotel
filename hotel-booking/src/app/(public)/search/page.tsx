@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const SORT_OPTIONS = [
-  { label: "Price: Low to High", value: "price_asc" },
-  { label: "Price: High to Low", value: "price_desc" },
+  { label: "Price", value: "price" },
+  { label: "Newest", value: "newest" },
 ];
 
 function HotelCardSkeleton() {
@@ -37,6 +37,7 @@ function SearchContent() {
   const [totalResults, setTotalResults] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [sort, setSort] = useState("newest");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   const currentPage = parseInt(searchParams.get("page") || "1");
@@ -48,7 +49,8 @@ function SearchContent() {
       try {
         // Forward all URL params to the API + add sort
         const params = new URLSearchParams(searchParams.toString());
-        params.set("sort", sort);
+        const sortValue = sort === "price" ? `price_${sortDirection}` : sort;
+        params.set("sort", sortValue);
         params.set("limit", "12");
         params.set("include_rooms", "true");
 
@@ -73,7 +75,7 @@ function SearchContent() {
       }
     };
     fetchHotels();
-  }, [searchParams, sort]);
+  }, [searchParams, sort, sortDirection]);
 
   const handlePageChange = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -150,7 +152,19 @@ function SearchContent() {
 
                 {/* Sort dropdown */}
                 <div className="flex items-center gap-2 shrink-0">
-                  <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() =>
+                      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
+                    }
+                  >
+                    <ArrowUpDown
+                      className={`h-4 w-4 transition-transform ${
+                        sortDirection === "desc" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
                   <select
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}

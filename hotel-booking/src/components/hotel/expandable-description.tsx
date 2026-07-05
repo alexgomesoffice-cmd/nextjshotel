@@ -22,7 +22,7 @@ export default function ExpandableDescription({
 
   return (
     <div>
-      <div className=" px-6 prose prose-neutral dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
+      <div className=" px-6 pb-6 prose prose-neutral dark:prose-invert max-w-none text-muted-foreground leading-relaxed whitespace-pre-wrap">
         {isExpanded ? displayText : collapsedText}
       </div>
       

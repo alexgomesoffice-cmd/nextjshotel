@@ -10,8 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const SORT_OPTIONS = [
   { label: "Newest", value: "newest" },
-  { label: "Price: Low to High", value: "price_asc" },
-  { label: "Price: High to Low", value: "price_desc" },
+  { label: "Price", value: "price" },
   { label: "Top Rated", value: "rating" },
 ];
 
@@ -40,6 +39,7 @@ function CityHotelsContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [sort, setSort] = useState("newest");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ function CityHotelsContent() {
       try {
         const query = new URLSearchParams({
           location: cityName,
-          sort,
+          sort: sort === "price" ? `price_${sortDirection}` : sort,
           page: String(currentPage),
           limit: "12",
         });
@@ -75,7 +75,7 @@ function CityHotelsContent() {
     };
 
     fetchHotels();
-  }, [cityName, sort, currentPage]);
+  }, [cityName, sort, sortDirection, currentPage]);
 
   return (
     <div className="min-h-screen bg-background pt-28 pb-20">
@@ -140,7 +140,19 @@ function CityHotelsContent() {
           <main className="flex-1 min-w-0">
             {/* Sort row */}
             <div className="flex items-center justify-end gap-3 mb-6">
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+              <Button
+  variant="outline"
+  size="icon"
+  onClick={() =>
+    setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
+  }
+>
+  <ArrowUpDown
+    className={`h-4 w-4 transition-transform ${
+      sortDirection === "desc" ? "rotate-180" : ""
+    }`}
+  />
+</Button>
               <select
                 value={sort}
                 onChange={(e) => { setSort(e.target.value); setCurrentPage(1); }}

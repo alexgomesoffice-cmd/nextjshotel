@@ -45,11 +45,10 @@ export default function RegisterPage() {
       const data = await res.json()
 
       if (!data.success) {
-        setError(data.message)
+        setError(data.message || 'Registration failed')
         return
       }
 
-      // Redirect to login with success message
       router.push('/login?registered=true')
     } catch (err) {
       setError('Something went wrong. Please try again.')
@@ -59,100 +58,153 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Create Account</h1>
-          <p className="text-muted-foreground mt-2">Join us and start booking</p>
+    <div className="relative min-h-screen w-full">
+
+      {/* Background */}
+      <img
+        src="/loginImg.jpg"
+        alt="Hotel"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+
+      {/* Overlay */}
+      <div className="absolute inset-0 bg-black/60" />
+
+      {/* Layout */}
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
+
+        {/* LEFT SIDE */}
+        <div className="hidden lg:flex lg:w-1/2 items-center px-16">
+          <div className="text-white max-w-xl">
+
+            <h1 className="text-5xl font-bold leading-tight">
+              Create your account.
+            </h1>
+
+            <p className="mt-6 text-lg text-white/80">
+              Join us and start booking luxury hotels, unique stays, and unforgettable experiences around the world.
+            </p>
+
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
-              {error}
+        {/* MOBILE HEADER */}
+        <div className="lg:hidden text-center text-white px-6 pt-20 pb-10">
+          <h1 className="text-3xl font-bold">
+            Create your account
+          </h1>
+          <p className="mt-3 text-white/80 text-sm">
+            Join and start booking amazing stays
+          </p>
+        </div>
+
+        {/* FORM SIDE */}
+        <div className="flex-1 flex items-center justify-center px-6 pb-12 lg:pb-0">
+
+          <div className="w-full max-w-md">
+
+            <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-2xl shadow-2xl p-8">
+
+              {/* Header */}
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-white">
+                  Sign Up
+                </h2>
+                <p className="text-white/70 mt-2">
+                  Create your free account
+                </p>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-200 text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* FORM */}
+              <form onSubmit={handleSubmit} className="space-y-5">
+
+                {/* NAME */}
+                <div>
+                  <label className="text-sm text-white/80">Full Name</label>
+                  <input
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="John Doe"
+                    required
+                    className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
+                  />
+                </div>
+
+                {/* EMAIL */}
+                <div>
+                  <label className="text-sm text-white/80">Email</label>
+                  <input
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="you@example.com"
+                    required
+                    className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
+                  />
+                </div>
+
+                {/* PASSWORD */}
+                <div>
+                  <label className="text-sm text-white/80">Password</label>
+                  <input
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    minLength={6}
+                    required
+                    className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
+                  />
+                </div>
+
+                {/* CONFIRM PASSWORD */}
+                <div>
+                  <label className="text-sm text-white/80">Confirm Password</label>
+                  <input
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="••••••••"
+                    required
+                    className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
+                  />
+                </div>
+
+                {/* BUTTON */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-xl py-3 font-semibold bg-white text-black hover:bg-white/90 transition disabled:opacity-50"
+                >
+                  {loading ? 'Creating account...' : 'Sign Up'}
+                </button>
+
+              </form>
+
+              {/* FOOTER */}
+              <p className="text-center text-white/70 text-sm mt-6">
+                Already have an account?{' '}
+                <Link href="/login" className="text-white underline">
+                  Sign In
+                </Link>
+              </p>
+
             </div>
-          )}
-
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-              Full Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              type="text"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="John Doe"
-              required
-            />
           </div>
+        </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="your@email.com"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
-              minLength={6}
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-2">
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full px-4 py-3 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? 'Creating account...' : 'Register'}
-          </button>
-        </form>
-
-        <p className="text-center text-muted-foreground mt-6">
-          Already have an account?{' '}
-          <Link href="/login" className="text-primary hover:underline">
-            Sign In
-          </Link>
-        </p>
       </div>
     </div>
   )

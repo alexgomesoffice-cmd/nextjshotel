@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,149 +49,132 @@ export default function LoginPage() {
   }
 
   return (
-  <div className="min-h-screen w-full flex bg-background">
-    {/* Left Image */}
-    <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
+    <div className="relative min-h-screen w-full">
+
+      {/* Background Image */}
       <img
         src="/loginImg.jpg"
-        alt="Luxury Hotel"
-        className="absolute inset-0 w-full h-full object-cover"
+        alt="Hotel"
+        className="absolute inset-0 h-full w-full object-cover"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/20 to-transparent" />
+      {/* Dark overlay */}
+      <div className="absolute inset-0 bg-black/60" />
 
-      <div className="absolute top-8 left-8 z-10">
-        <Link
-          href="/"
-          className="inline-flex items-center px-5 py-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white font-semibold text-lg hover:bg-white/20 transition"
-        >
-          GhuriBangla
-        </Link>
-      </div>
+      {/* MAIN LAYOUT */}
+      <div className="relative z-10 min-h-screen flex flex-col lg:flex-row">
 
-      <div className="absolute bottom-16 left-12 text-white max-w-lg">
-        <h2 className="text-5xl font-bold leading-tight">
-          Find your perfect stay.
-        </h2>
-
-        <p className="mt-4 text-lg text-white/80">
-          Book luxury hotels and unforgettable experiences around the world.
-        </p>
-      </div>
-    </div>
-
-    {/* Right Side */}
-    <div className="w-full lg:w-1/2 flex items-center justify-center p-6 bg-background">
-
-      <div className="w-full max-w-md">
-
-        <div className="mb-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Home
-          </Link>
-        </div>
-
-        <div className="rounded-3xl border border-border bg-card shadow-2xl p-8">
-
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold">
-              Welcome Back
+        {/* LEFT TEXT */}
+        <div className="hidden lg:flex lg:w-1/2 items-center px-16">
+          <div className="text-white max-w-xl">
+            <h1 className="text-5xl font-bold leading-tight">
+              Find your perfect stay.
             </h1>
-
-            <p className="text-muted-foreground mt-2">
-              Sign in to your account
+            <p className="mt-6 text-lg text-white/80">
+              Discover luxury hotels, unique stays, and unforgettable experiences around the world.
+              Book effortlessly and travel with confidence.
             </p>
           </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-
-            {error && (
-              <div className="p-3 rounded-lg border border-red-500/20 bg-red-500/10 text-red-500 text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Email */}
-
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium mb-2"
-              >
-                Email
-              </label>
-
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                className="w-full rounded-xl border border-input bg-background px-4 py-3 outline-none transition focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            {/* Password */}
-
-            <div>
-
-              <div className="flex justify-between items-center mb-2">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium"
-                >
-                  Password
-                </label>
-
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-primary hover:underline"
-                >
-                  Forgot Password?
-                </Link>
-              </div>
-
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full rounded-xl border border-input bg-background px-4 py-3 outline-none transition focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground transition hover:bg-primary/90 disabled:opacity-50"
-            >
-              {loading ? "Signing in..." : "Sign In"}
-            </button>
-
-          </form>
-
-          <p className="mt-8 text-center text-sm text-muted-foreground">
-            Dont have an account?{" "}
-            <Link
-              href="/register"
-              className="text-primary font-medium hover:underline"
-            >
-              Register
-            </Link>
+        {/* MOBILE HEADER */}
+        <div className="lg:hidden text-center text-white px-6 pt-20 pb-10">
+          <h1 className="text-3xl font-bold">
+            Find your perfect stay
+          </h1>
+          <p className="mt-3 text-white/80 text-sm">
+            Book luxury hotels and experiences anywhere in the world
           </p>
+        </div>
 
+        {/* FORM SIDE */}
+        <div className="flex-1 flex items-center justify-center px-6 pb-12 lg:pb-0">
+
+          <div className="w-full max-w-md">
+
+            <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-2xl shadow-2xl p-8">
+
+              {/* Header */}
+              <div className="text-center mb-8">
+                <h2 className="text-3xl font-bold text-white">
+                  Welcome Back
+                </h2>
+                <p className="text-white/70 mt-2">
+                  Sign in to continue
+                </p>
+              </div>
+
+              {/* Error */}
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-red-500/20 border border-red-500/30 text-red-200 text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* FORM */}
+              <form onSubmit={handleSubmit} className="space-y-5">
+
+                {/* Email */}
+                <div>
+                  <label className="text-sm text-white/80">Email</label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
+                  />
+                </div>
+
+                {/* Password */}
+                <div>
+                  <div className="flex justify-between items-center">
+                    <label className="text-sm text-white/80">Password</label>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-xs text-white/70 hover:text-white"
+                    >
+                      {showPassword ? 'Hide' : 'Show'}
+                    </button>
+                  </div>
+
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
+                  />
+                </div>
+
+                {/* BUTTON */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-xl py-3 font-semibold bg-white text-black hover:bg-white/90 transition disabled:opacity-50"
+                >
+                  {loading ? 'Signing in...' : 'Sign In'}
+                </button>
+
+              </form>
+
+              {/* FOOTER */}
+              <p className="text-center text-white/70 text-sm mt-6">
+                Don&apos;t have an account?{' '}
+                <Link href="/register" className="text-white underline">
+                  Register
+                </Link>
+              </p>
+
+            </div>
+          </div>
         </div>
 
       </div>
-
     </div>
-  </div>
-);
+  )
 }

@@ -105,19 +105,20 @@ export default function RoomSelector({
     setQuantities(prev => ({ ...prev, [variantId]: qty }));
   };
 
-  // When sidebarGuests changes, drop any selected variants whose room type
-  // max_occupancy is less than the requested guests, and notify the user.
-  useEffect(() => {
-    if (!sidebarGuests) return;
+  const handleSidebarGuestsChange = (newGuests: number) => {
+    setSidebarGuests(newGuests);
+
+    if (!newGuests) return;
+
     const dropped: { variantId: number; roomTypeName: string; max: number }[] = [];
     const newQuantities = { ...quantities };
+
     for (const [vidStr, qty] of Object.entries(quantities)) {
-      const vid = parseInt(vidStr);
+      const vid = parseInt(vidStr, 10);
       if (!qty || qty <= 0) continue;
       const parent = roomTypes.find(rt => rt.room_variants.some(v => v.id === vid));
       if (!parent) continue;
-      if (parent.max_occupancy < sidebarGuests) {
-        // remove selection
+      if (parent.max_occupancy < newGuests) {
         delete newQuantities[vid];
         dropped.push({ variantId: vid, roomTypeName: parent.name, max: parent.max_occupancy });
       }
@@ -126,12 +127,17 @@ export default function RoomSelector({
     if (dropped.length > 0) {
       setQuantities(newQuantities);
       const first = dropped[0];
-      setGuestWarning(`${first.roomTypeName} fits up to ${first.max} guest${first.max !== 1 ? 's' : ''}. Your search needs ${sidebarGuests}.`);
-      // clear notice after a short timeout
+      setGuestWarning(`${first.roomTypeName} fits up to ${first.max} guest${first.max !== 1 ? 's' : ''}. Your search needs ${newGuests}.`);
       const t = setTimeout(() => setGuestWarning(null), 6000);
       return () => clearTimeout(t);
     }
-  }, [sidebarGuests, quantities, roomTypes]);
+  };
+
+  useEffect(() => {
+    if (!guestWarning) return;
+    const t = window.setTimeout(() => setGuestWarning(null), 6000);
+    return () => clearTimeout(t);
+  }, [guestWarning]);
 
   const filteredRoomTypes = useMemo(() => {
     if (acFilter === "all") return roomTypes;
@@ -226,7 +232,7 @@ export default function RoomSelector({
             quantities={quantities}
             onQuantityChange={handleQuantityChange}
             guests={sidebarGuests}
-            highlightedRoomTypeId={highlightedRoomTypeId}
+            highlightedRoomTypeId={highlightedRoomTypeId ?? undefined}
             onClearHighlight={() => setHighlightedRoomTypeId(null)}
           />
           {filteredRoomTypes.length === 0 && (
@@ -246,7 +252,7 @@ export default function RoomSelector({
             initialGuests={guests}
             displayPrice={lowestPrice}
             onDatesChange={handleDatesChange}
-            onGuestsChange={setSidebarGuests}
+            onGuestsChange={handleSidebarGuestsChange}
             guestWarning={guestWarning}
           />
         </div>

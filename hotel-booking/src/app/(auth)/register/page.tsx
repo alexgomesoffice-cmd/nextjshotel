@@ -118,7 +118,7 @@ export default function RegisterPage() {
         {/* FORM SIDE */}
         <div className="flex-1 flex items-center justify-center px-6 pb-12 lg:pb-0">
 
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-lg">
 
             <div className="rounded-3xl border border-white/20 bg-white/10 backdrop-blur-2xl shadow-2xl p-8">
 
@@ -142,33 +142,37 @@ export default function RegisterPage() {
               {/* FORM */}
               <form onSubmit={handleSubmit} className="space-y-5">
 
-                {/* NAME */}
-                <div>
+
+                {/* NAME & EMAIL */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Full Name */}
+                <div className="flex-1">
                   <label className="text-sm text-white/80">Full Name</label>
-                  <input
-                    name="name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="John Doe"
-                    required
-                    className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
-                  />
+                    <input
+                      name="name"
+                      type="text"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="John Doe"
+                      required
+                      className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
+                      />
                 </div>
 
-                {/* EMAIL */}
-                <div>
-                  <label className="text-sm text-white/80">Email</label>
-                  <input
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="you@example.com"
-                    required
-                    className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
-                  />
-                </div>
+                {/* Email */}
+                <div className="flex-1">
+                <label className="text-sm text-white/80">Email</label>
+                <input
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@example.com"
+                required
+                className="mt-1 w-full rounded-xl px-4 py-3 bg-white/10 border border-white/20 text-white placeholder:text-white/50 outline-none focus:ring-2 focus:ring-white/40"
+              />
+            </div>
+          </div>
 
                 {/* PASSWORD */}
                 <div>

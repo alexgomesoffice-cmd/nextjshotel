@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-middleware";
+import { reserveBookingSchema } from "@/lib/validations/booking";
 import crypto from "crypto";
 
 export async function POST(req: NextRequest) {
@@ -9,40 +10,47 @@ export async function POST(req: NextRequest) {
     if (error) return error;
 
     const body = await req.json();
+    const parsedBody = reserveBookingSchema.safeParse({
+      hotel_id: Number(body.hotel_id),
+      check_in: body.check_in,
+      check_out: body.check_out,
+      guests: Number(body.guests),
+      room_selections: Array.isArray(body.room_selections)
+        ? body.room_selections.map((selection: any) => ({
+            room_type_id: Number(selection?.room_type_id ?? selection?.roomTypeId),
+            variant_id: Number(selection?.variant_id ?? selection?.variantId),
+            quantity: Number(selection?.quantity),
+          }))
+        : body.room_type_id !== undefined && body.quantity !== undefined
+        ? [
+            {
+              room_type_id: Number(body.room_type_id),
+              variant_id: Number(body.variant_id ?? 0),
+              quantity: Number(body.quantity),
+            },
+          ]
+        : [],
+      special_request: body.special_request,
+    });
+
+    if (!parsedBody.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: parsedBody.error.issues[0]?.message || "Invalid booking payload",
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       hotel_id,
-      room_type_id,
       room_selections,
       check_in,
       check_out,
       guests,
-      quantity,
       special_request,
-    } = body;
-
-    const selections = Array.isArray(room_selections)
-      ? room_selections.map((selection: any) => ({
-          room_type_id: Number(selection?.room_type_id ?? selection?.roomTypeId),
-          quantity: Number(selection?.quantity),
-        }))
-      : room_type_id !== undefined && quantity !== undefined
-      ? [{ room_type_id: Number(room_type_id), quantity: Number(quantity) }]
-      : [];
-
-    // Basic Validation
-    if (
-      !hotel_id ||
-      !check_in ||
-      !check_out ||
-      !guests ||
-      selections.length === 0 ||
-      selections.some(sel => !sel.room_type_id || sel.quantity < 1)
-    ) {
-      return NextResponse.json(
-        { success: false, message: "Missing required booking parameters" },
-        { status: 400 }
-      );
-    }
+    } = parsedBody.data;
 
     const checkInDate = new Date(check_in);
     const checkOutDate = new Date(check_out);
@@ -90,17 +98,8 @@ export async function POST(req: NextRequest) {
       (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    const groupedSelections = selections.reduce<Record<number, { room_type_id: number; quantity: number }>>((acc, selection) => {
-      if (!acc[selection.room_type_id]) {
-        acc[selection.room_type_id] = { ...selection };
-      } else {
-        acc[selection.room_type_id].quantity += selection.quantity;
-      }
-      return acc;
-    }, {});
-
-    const normalizedSelections = Object.values(groupedSelections);
-    const roomTypeIds = normalizedSelections.map((selection) => selection.room_type_id);
+    const normalizedSelections = room_selections;
+    const roomTypeIds = [...new Set(normalizedSelections.map((selection) => selection.room_type_id))];
 
     const roomTypes = await prisma.room_types.findMany({
       where: { id: { in: roomTypeIds } },
@@ -134,16 +133,28 @@ export async function POST(req: NextRequest) {
           throw new Error("Invalid room type or hotel");
         }
 
+        const variantRoom = await tx.room_details.findUnique({
+          where: { id: selection.variant_id },
+        });
+
+        if (!variantRoom || variantRoom.room_type_id !== selection.room_type_id) {
+          throw new Error("Invalid room variant");
+        }
+
         const physicalRooms = await tx.room_details.findMany({
           where: {
             room_type_id: roomType.id,
             status: "AVAILABLE",
             deleted_at: null,
+            price: variantRoom.price,
+            ac: variantRoom.ac,
+            smoking_allowed: variantRoom.smoking_allowed,
+            pet_allowed: variantRoom.pet_allowed,
           },
         });
 
         if (physicalRooms.length < selection.quantity) {
-          throw new Error("Not enough physical rooms configured for one of the selected room types");
+          throw new Error(`Not enough physical rooms configured for the selected variant of ${roomType.name}`);
         }
 
         const bookedRooms = await tx.room_trackers.findMany({

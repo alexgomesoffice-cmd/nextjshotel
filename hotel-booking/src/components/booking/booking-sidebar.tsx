@@ -93,23 +93,16 @@ export default function BookingSidebar({
   const handleReserve = () => {
     if (!hasSelections || !date?.from || !date?.to) return;
 
-    const selectionsByRoomType = selectedVariants.reduce<Record<number, number>>(
-      (acc, variant) => {
-        acc[variant.roomTypeId] = (acc[variant.roomTypeId] || 0) + variant.quantity;
-        return acc;
-      },
-      {}
-    );
-
     const params = new URLSearchParams();
     params.set("hotel", hotelSlug);
     params.set("check_in", format(date.from, "yyyy-MM-dd"));
     params.set("check_out", format(date.to, "yyyy-MM-dd"));
     params.set("guests", guests.toString());
 
-    Object.entries(selectionsByRoomType).forEach(([roomTypeId, qty]) => {
-      params.append("room_type_ids[]", roomTypeId);
-      params.append("quantities[]", qty.toString());
+    selectedVariants.forEach((variant) => {
+      params.append("room_type_ids[]", String(variant.roomTypeId));
+      params.append("variant_ids[]", String(variant.variantId));
+      params.append("quantities[]", String(variant.quantity));
     });
 
     router.push(`/bookings/new?${params.toString()}`);

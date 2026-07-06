@@ -28,12 +28,15 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
   const quantities = parseArrayParam(params["quantities[]"]).length
     ? parseArrayParam(params["quantities[]"])
     : parseArrayParam(params.quantity);
+  const variantIds = parseArrayParam(params["variant_ids[]"]);
 
   if (
     !params.hotel ||
     roomTypeIds.length === 0 ||
     quantities.length === 0 ||
+    variantIds.length === 0 ||
     roomTypeIds.length !== quantities.length ||
+    roomTypeIds.length !== variantIds.length ||
     !params.check_in ||
     !params.check_out ||
     !params.guests
@@ -54,11 +57,13 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
 
   const roomTypeIdsNum = roomTypeIds.map(id => Number(id));
   const quantitiesNum = quantities.map(qty => Number(qty));
+  const variantIdsNum = variantIds.map(id => Number(id));
   const guests = Number(params.guests);
 
   if (
     roomTypeIdsNum.some(isNaN) ||
     quantitiesNum.some(isNaN) ||
+    variantIdsNum.some(isNaN) ||
     quantitiesNum.some(qty => qty < 1) ||
     isNaN(guests) ||
     guests < 1
@@ -109,6 +114,7 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
     if (!roomType) redirect("/");
     return {
       roomType,
+      variantId: variantIdsNum[index],
       quantity: quantitiesNum[index],
     };
   });
@@ -138,6 +144,7 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
               hotelId: hotel.id,
               roomSelections: roomSelections.map(selection => ({
                 roomTypeId: selection.roomType.id,
+                variantId: selection.variantId,
                 quantity: selection.quantity,
               })),
               checkIn: params.check_in as string,

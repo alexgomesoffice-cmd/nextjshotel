@@ -32,22 +32,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-function buildRoomDetailWhere(checkIn?: string, checkOut?: string) {
-  const where: Record<string, unknown> = { status: 'AVAILABLE', deleted_at: null };
-  if (checkIn && checkOut) {
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
-    if (!isNaN(checkInDate.getTime()) && !isNaN(checkOutDate.getTime())) {
-      where.room_trackers = {
-        none: {
-          status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
-          check_in: { lt: checkOutDate },
-          check_out: { gt: checkInDate },
-        }
-      };
-    }
-  }
-  return where;
+function buildRoomDetailWhere() {
+  return { status: 'AVAILABLE' as const, deleted_at: null };
 }
 
 function formatTime12(time?: string | null) {
@@ -113,11 +99,27 @@ export default async function HotelDetailPage({
         where: { is_active: true },
         include: {
           room_details: {
-            where: buildRoomDetailWhere(search.check_in, search.check_out),
+            where: buildRoomDetailWhere(),
             include: {
               room_images: {
                 orderBy: { sort_order: 'asc' }
-              }
+              },
+              room_trackers: {
+                where: {
+                  status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
+                  ...(search.check_in && search.check_out
+                    ? {
+                        check_in: { lt: new Date(search.check_out) },
+                        check_out: { gt: new Date(search.check_in) },
+                      }
+                    : {}),
+                },
+                select: {
+                  status: true,
+                  check_in: true,
+                  check_out: true,
+                },
+              },
             }
           },
 
@@ -205,20 +207,24 @@ export default async function HotelDetailPage({
           {hotel.room_types && hotel.room_types.length > 0 ? (
             <RoomSelector
               roomTypes={hotel.room_types.map((room) => {
-                const room_variants = groupRoomVariants(room.room_details)
-                return {
-                  id: room.id,
-                  name: room.name,
-                  description: room.description,
-                  base_price: Number(room.base_price),
-                  max_occupancy: room.max_occupancy,
-                  room_size: room.room_size,
-                  type_images: room.type_images,
-                  room_bed_types: room.room_bed_types,
-                  room_properties: room.room_properties,
-                  available_rooms_count: room.room_details.length,
-                  room_variants,
-                }
+                const room_variants = groupRoomVariants(room.room_details, {
+                checkIn: search.check_in,
+                checkOut: search.check_out,
+              })
+              const available_rooms_count = room_variants.reduce((sum, variant) => sum + variant.available_count, 0)
+              return {
+                id: room.id,
+                name: room.name,
+                description: room.description,
+                base_price: Number(room.base_price),
+                max_occupancy: room.max_occupancy,
+                room_size: room.room_size,
+                type_images: room.type_images,
+                room_bed_types: room.room_bed_types,
+                room_properties: room.room_properties,
+                available_rooms_count,
+                room_variants,
+              }
               })}
               hotelSlug={hotel.slug}
               checkIn={search.check_in}

@@ -75,6 +75,7 @@ function VariantRow({
   const images = variant.room_images.length > 0 ? variant.room_images : typeImages;
   const [imgIdx, setImgIdx] = useState(0);
   const isSelected = quantity > 0;
+  const isUnavailable = available <= 0;
 
   const bedLabel = bedTypes.map(b => b.bed_type.name).join(", ");
   const title = bedLabel ? `${roomName} • ${bedLabel}` : roomName;
@@ -82,7 +83,8 @@ function VariantRow({
   return (
     <div className={cn(
       "flex min-h-32.5 border-t border-border/20 transition-colors",
-      isSelected ? "bg-primary/5" : "bg-transparent"
+      isSelected ? "bg-primary/5" : "bg-transparent",
+      isUnavailable && "opacity-60 bg-muted/30"
     )}>
       {/* ── Image ── */}
       <div
@@ -134,9 +136,15 @@ function VariantRow({
           {/* Title + available badge */}
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold text-sm text-foreground">{title}</span>
-            <span className="text-xs text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
-              {available} available
-            </span>
+            {available > 0 ? (
+              <span className="text-xs text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
+                {available} available
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground bg-secondary/60 rounded-md px-2 py-0.5 border border-border/30 shrink-0">
+                Unavailable for selected dates
+              </span>
+            )}
           </div>
 
           {/* Guest / smoking / pet / AC flags */}
@@ -196,10 +204,10 @@ function VariantRow({
             <div className="flex items-center gap-2.5">
               <button
                 onClick={() => onQtyChange(Math.max(0, quantity - 1))}
-                disabled={quantity === 0}
+                disabled={quantity === 0 || isUnavailable}
                 className={cn(
                   "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                  quantity > 0
+                  quantity > 0 && !isUnavailable
                     ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
                     : "border-border/20 text-border/30 cursor-not-allowed"
                 )}
@@ -209,10 +217,10 @@ function VariantRow({
               <span className="w-5 text-center text-sm font-semibold tabular-nums">{quantity}</span>
               <button
                 onClick={() => onQtyChange(Math.min(available, quantity + 1))}
-                disabled={quantity >= available}
+                disabled={quantity >= available || isUnavailable}
                 className={cn(
                   "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                  quantity < available
+                  quantity < available && !isUnavailable
                     ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
                     : "border-border/20 text-border/30 cursor-not-allowed"
                 )}

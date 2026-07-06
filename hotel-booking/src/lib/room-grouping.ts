@@ -3,6 +3,12 @@ type RawRoomImage = {
   image_url: string
 }
 
+type RawRoomTracker = {
+  status: string
+  check_in?: string | Date | null
+  check_out?: string | Date | null
+}
+
 type RawRoomDetail = {
   id: number
   room_number: string
@@ -12,6 +18,7 @@ type RawRoomDetail = {
   pet_allowed: boolean
   notes: string | null
   room_images: RawRoomImage[]
+  room_trackers?: RawRoomTracker[] | null
 }
 
 export type GroupedRoomVariant = {
@@ -33,18 +40,43 @@ function normalizePrice(price: number | string | { toNumber: () => number }): nu
   return Number(price)
 }
 
-export function groupRoomVariants(roomDetails: RawRoomDetail[]): GroupedRoomVariant[] {
+function normalizeDate(value?: string | Date | null): Date | null {
+  if (!value) return null
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+export function groupRoomVariants(
+  roomDetails: RawRoomDetail[],
+  options?: { checkIn?: string | Date | null; checkOut?: string | Date | null }
+): GroupedRoomVariant[] {
   const grouped = new Map<string, GroupedRoomVariant>()
+  const checkInDate = normalizeDate(options?.checkIn)
+  const checkOutDate = normalizeDate(options?.checkOut)
+  const hasDateRange = Boolean(
+    checkInDate && checkOutDate && !Number.isNaN(checkInDate.getTime()) && !Number.isNaN(checkOutDate.getTime())
+  )
 
   for (const room of roomDetails) {
     const price = normalizePrice(room.price)
-    const imageUrl = room.room_images?.[0]?.image_url ?? ''
     // Group key based on ATTRIBUTES only, not image URLs (to group same room specs)
     const key = `${price}|${room.ac ? 1 : 0}|${room.smoking_allowed ? 1 : 0}|${room.pet_allowed ? 1 : 0}`
 
+    const isAvailableForDate = !hasDateRange || !room.room_trackers?.some((tracker) => {
+      const trackerCheckIn = normalizeDate(tracker.check_in)
+      const trackerCheckOut = normalizeDate(tracker.check_out)
+      return (
+        tracker.status && ['RESERVED', 'BOOKED', 'CHECKED_IN'].includes(tracker.status) &&
+        trackerCheckIn &&
+        trackerCheckOut &&
+        trackerCheckIn < checkOutDate &&
+        trackerCheckOut > checkInDate
+      )
+    })
+
     const existing = grouped.get(key)
     if (existing) {
-      existing.available_count += 1
+      existing.available_count += isAvailableForDate ? 1 : 0
       continue
     }
 
@@ -57,9 +89,9 @@ export function groupRoomVariants(roomDetails: RawRoomDetail[]): GroupedRoomVari
       pet_allowed: room.pet_allowed,
       notes: room.notes,
       room_images: room.room_images,
-      available_count: 1,
+      available_count: isAvailableForDate ? 1 : 0,
     })
   }
 
-  return Array.from(grouped.values())
+  return Array.from(grouped.values()).filter((variant) => variant.available_count > 0 || hasDateRange)
 }

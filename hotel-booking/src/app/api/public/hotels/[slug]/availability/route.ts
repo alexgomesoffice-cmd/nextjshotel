@@ -40,22 +40,8 @@ export async function GET(
     }
 
     // Build room detail where clause for availability filtering
-    const buildRoomDetailWhere = (checkIn?: string | null, checkOut?: string | null) => {
-      const where: Record<string, unknown> = { status: 'AVAILABLE', deleted_at: null };
-      if (checkIn && checkOut) {
-        const checkInDate = new Date(checkIn);
-        const checkOutDate = new Date(checkOut);
-        if (!isNaN(checkInDate.getTime()) && !isNaN(checkOutDate.getTime())) {
-          where.room_trackers = {
-            none: {
-              status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
-              check_in: { lt: checkOutDate },
-              check_out: { gt: checkInDate },
-            }
-          };
-        }
-      }
-      return where;
+    const buildRoomDetailWhere = () => {
+      return { status: 'AVAILABLE' as const, deleted_at: null };
     };
 
     const hotel = await prisma.hotels.findUnique({
@@ -69,11 +55,27 @@ export async function GET(
           where: { is_active: true },
           include: {
             room_details: {
-              where: buildRoomDetailWhere(checkIn, checkOut),
+              where: buildRoomDetailWhere(),
               include: {
                 room_images: {
                   orderBy: { sort_order: 'asc' }
-                }
+                },
+                room_trackers: {
+                  where: {
+                    status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
+                    ...(checkIn && checkOut
+                      ? {
+                          check_in: { lt: new Date(checkOut) },
+                          check_out: { gt: new Date(checkIn) },
+                        }
+                      : {}),
+                  },
+                  select: {
+                    status: true,
+                    check_in: true,
+                    check_out: true,
+                  },
+                },
               }
             },
             type_images: {
@@ -103,7 +105,8 @@ export async function GET(
 
     // Transform the data to match the expected format
     const roomTypes = hotel.room_types.map((room) => {
-      const room_variants = groupRoomVariants(room.room_details)
+      const room_variants = groupRoomVariants(room.room_details, { checkIn, checkOut })
+      const available_rooms_count = room_variants.reduce((sum, variant) => sum + variant.available_count, 0)
       return {
         id: room.id,
         name: room.name,
@@ -114,7 +117,7 @@ export async function GET(
         type_images: room.type_images,
         room_bed_types: room.room_bed_types,
         room_properties: room.room_properties,
-        available_rooms_count: room.room_details.length,
+        available_rooms_count,
         room_variants,
       }
     });

@@ -12,6 +12,7 @@ interface BookingClientProps {
     hotelId: number;
     roomSelections: {
       roomTypeId: number;
+      variantId: number;
       quantity: number;
     }[];
     checkIn: string;
@@ -71,6 +72,7 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
           hotel_id: bookingData.hotelId,
           room_selections: bookingData.roomSelections.map(selection => ({
             room_type_id: selection.roomTypeId,
+            variant_id: selection.variantId,
             quantity: selection.quantity,
           })),
           check_in: bookingData.checkIn,

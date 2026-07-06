@@ -232,12 +232,12 @@ export default function RoomSelector({
           {filteredRoomTypes.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border border-border/30 rounded-2xl">
               <p className="font-medium">No {acFilter === "ac" ? "AC" : acFilter === "non-ac" ? "non-AC" : ""} rooms available{sidebarGuests > 1 ? ` for ${sidebarGuests} guests` : ""}</p>
-              <button onClick={() => setAcFilter("all")} className="text-primary text-sm mt-1 hover:underline">Show all rooms</button>
+              <button onClick={() => setAcFilter("all")} className="text-primary text-sm mt-1 hover:underline">Discover all rooms</button>
             </div>
           )}
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 sticky top-24">
           <BookingSidebar
             hotelSlug={hotelSlug}
             selectedVariants={selectedVariants}

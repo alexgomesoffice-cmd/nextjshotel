@@ -237,7 +237,7 @@ const SearchBar = ({ showFilters = true }: SearchBarProps) => {
                         <label className="text-xs font-medium text-muted-foreground mb-1.5 block pl-1">Guests & Rooms</label>
                         <Popover open={isGuestOpen} onOpenChange={setIsGuestOpen}>
                             <PopoverTrigger asChild>
-                                <button type="button" className="flex items-center justify-between w-full h-12 rounded-xl border border-input bg-background px-4 text-sm">
+                                <button type="button" className="flex items-center justify-between w-full h-12 rounded-xl border border-input bg-transparent px-4 text-sm">
                                     <div className="flex items-center gap-2">
                                         <Users className="h-4 w-4 text-muted-foreground" />
                                         <span>{guests} Guest{guests > 1 && "s"} · {rooms} Room{rooms > 1 && "s"}</span>
@@ -321,7 +321,7 @@ const SearchBar = ({ showFilters = true }: SearchBarProps) => {
             {/* ── Slide-down filter panel ── */}
             {showFilters && (
                 <div className={cn(
-                    "overflow-hidden transition-all duration-300 ease-in-out",
+                    "overflow-hidden transition-all duration-300 ease-in-out rounded-2xl",
                     isFilterOpen ? "max-h-[600px] opacity-100 mt-2" : "max-h-0 opacity-0 mt-0"
                 )}>
                     <div className="rounded-2xl border border-border/40 bg-background/95 backdrop-blur-xl shadow-2xl p-6 space-y-6">

@@ -36,7 +36,7 @@ const Footer = () => {
   //]
 
   return (
-    <footer className="relative pt-20 border-t border-border bg-card/50">
+    <footer className="relative pt-20 border-t border-border bg-card/50 pb-2">
       {/* Gradient line */}
       <div className="absolute top-0 left-0 right-0 h-px bg-linear-to-r from-transparent via-primary/50 to-transparent" />
 

@@ -4,7 +4,9 @@ import { blacklistToken } from '@/lib/token-blacklist'
 
 export async function POST(req: NextRequest) {
   try {
-    const token = req.cookies.get('token')?.value
+    const token = req.cookies.get('token_user')?.value
+      ?? req.cookies.get('token_hotel_admin')?.value
+      ?? req.cookies.get('token_system_admin')?.value
 
     if (token) {
       try {
@@ -20,8 +22,20 @@ export async function POST(req: NextRequest) {
       message: 'Logged out successfully',
     })
 
-    // Clear the cookie
-    response.cookies.set('token', '', {
+    // Clear the cookies
+    response.cookies.set('token_user', '', {
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      maxAge: 0,
+    })
+    response.cookies.set('token_hotel_admin', '', {
+      httpOnly: true,
+      path: '/',
+      sameSite: 'lax',
+      maxAge: 0,
+    })
+    response.cookies.set('token_system_admin', '', {
       httpOnly: true,
       path: '/',
       sameSite: 'lax',

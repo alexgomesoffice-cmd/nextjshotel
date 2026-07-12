@@ -2,8 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Building2, Bed, Calendar, LogOut, Menu, X } from 'lucide-react'
+import { useSocket } from '@/hooks/useSocket'
+import { useToast } from '@/hooks/use-toast'
 
 const subAdminLinks = [
   { name: 'Overview', href: '/dashboard/sub', icon: Building2 },
@@ -18,7 +20,9 @@ export default function HotelSubAdminLayout({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null)
+  const { toast } = useToast()
+  const socket = useSocket()
+  const [user, setUser] = useState<{ id: number; name: string; email: string } | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
@@ -26,7 +30,7 @@ export default function HotelSubAdminLayout({
       .then((r) => r.json())
       .then((data) => {
         if (data.success && data.data.actor_type === 'HOTEL_SUB_ADMIN') {
-          setUser({ name: data.data.name, email: data.data.email })
+          setUser({ id: data.data.actor_id, name: data.data.name, email: data.data.email })
         } else {
           router.push('/hotel-login')
         }
@@ -34,14 +38,32 @@ export default function HotelSubAdminLayout({
       .catch(() => router.push('/hotel-login'))
   }, [router])
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async (forcedMessage?: string) => {
     try {
       await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+      if (forcedMessage) {
+        toast({ title: 'Session Ended', description: forcedMessage, variant: 'destructive' })
+      }
     } catch {
       // ignore
     }
     router.push('/hotel-login')
-  }
+  }, [router, toast])
+
+  useEffect(() => {
+    if (!socket || !user) return
+
+    const onBlocked = () => handleLogout('Your account has been blocked by an administrator.')
+    const onDeleted = () => handleLogout('Your account has been removed by an administrator.')
+
+    socket.on('staff:blocked', onBlocked)
+    socket.on('staff:deleted', onDeleted)
+
+    return () => {
+      socket.off('staff:blocked', onBlocked)
+      socket.off('staff:deleted', onDeleted)
+    }
+  }, [socket, user, handleLogout])
 
   return (
     <div className="min-h-screen bg-background">

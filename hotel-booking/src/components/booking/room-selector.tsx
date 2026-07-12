@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
 import RoomsSectionClient, { type RoomType } from "@/components/room/rooms-section-client";
 import BookingSidebar, { type SelectedVariant } from "./booking-sidebar";
+import { useHotelAvailability } from "@/hooks/use-hotel-availability";
 
 type AcFilter = "all" | "ac" | "non-ac";
 
@@ -25,7 +26,6 @@ export default function RoomSelector({
   guests = 1,
   focusRoomTypeId,
 }: RoomSelectorProps) {
-  const [roomTypes, setRoomTypes] = useState(initialRoomTypes);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [acFilter, setAcFilter] = useState<AcFilter>("all");
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
@@ -82,7 +82,7 @@ export default function RoomSelector({
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setRoomTypes(data.data);
+          setInternalRoomTypes(data.data);
           if (hasAnySelection) {
             setQuantities({});
           }
@@ -100,6 +100,27 @@ export default function RoomSelector({
     setSidebarCheckOut(newCheckOut);
     fetchAvailability(newCheckIn, newCheckOut);
   };
+
+  // Wire up the socket hook to auto-refresh when someone else changes availability
+  // (e.g. they booked the last room, or admin changed the price)
+  const [internalRoomTypes, setInternalRoomTypes] = useState(initialRoomTypes);
+  
+  useEffect(() => {
+    setInternalRoomTypes(initialRoomTypes);
+  }, [initialRoomTypes]);
+
+  const onRefreshNeeded = useCallback(() => {
+    // Only refresh if we have dates selected
+    if (sidebarCheckIn && sidebarCheckOut) {
+      fetchAvailability(sidebarCheckIn, sidebarCheckOut);
+    }
+  }, [sidebarCheckIn, sidebarCheckOut, fetchAvailability]);
+
+  // Extract hotelId from the first room type (since they all belong to the same hotel)
+  const hotelIdNum = internalRoomTypes.length > 0 ? internalRoomTypes[0].hotel_id : 0;
+  
+  // Replace the old useState `roomTypes` with the live-synced one
+  const roomTypes = useHotelAvailability(hotelIdNum, internalRoomTypes, onRefreshNeeded);
 
   const handleQuantityChange = (variantId: number, qty: number) => {
     setQuantities(prev => ({ ...prev, [variantId]: qty }));

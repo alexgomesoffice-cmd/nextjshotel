@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-middleware";
 import { reserveBookingSchema } from "@/lib/validations/booking";
 import crypto from "crypto";
+import { emitToRoom } from "@/lib/socket-emit";
 
 export async function POST(req: NextRequest) {
   try {
@@ -244,6 +245,33 @@ export async function POST(req: NextRequest) {
       return booking;
     });
 
+    // ── Live updates (fire-and-forget, non-blocking) ──────────────────────
+    void emitToRoom(
+      `hotel:${hotel_id}:availability`,
+      "room:availability_changed",
+      { hotel_id }
+    );
+    void emitToRoom(
+      `hotel-admin:${hotel_id}`,
+      "booking:created",
+      {
+        reference: bookingResult.booking_reference,
+        hotel_id,
+        status: "RESERVED",
+        reserved_until: bookingResult.reserved_until,
+      }
+    );
+    void emitToRoom(
+      "hotel-admin:all",
+      "booking:created",
+      {
+        reference: bookingResult.booking_reference,
+        hotel_id,
+        status: "RESERVED",
+        reserved_until: bookingResult.reserved_until,
+      }
+    );
+
     return NextResponse.json({
       success: true,
       message: "Reservation successful",
@@ -263,3 +291,4 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+

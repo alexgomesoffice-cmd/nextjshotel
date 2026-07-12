@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    response.cookies.set('token', token, {
+    response.cookies.set('token_user', token, {
       httpOnly: true,
       path: '/',
       sameSite: 'lax',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, ComponentType } from 'react'
+import { useState, useEffect, useCallback, ComponentType } from 'react'
 import {
   Users,
   Calendar,
@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import Link from 'next/link'
+import { useHotelAdminFeed } from '@/hooks/use-hotel-admin-feed'
 
 interface DashboardStats {
   hotel: {
@@ -130,6 +131,20 @@ export default function HotelDashboardPage() {
     }
     fetchDashboard()
   }, [toast])
+
+  const refreshDashboard = useCallback(async () => {
+    try {
+      const res = await fetch('/api/hotel-admin/overview', { credentials: 'include' })
+      const data = await res.json()
+      if (data.success) {
+        setStats(data.data)
+      }
+    } catch {
+      // ignore silent fetch
+    }
+  }, [])
+
+  useHotelAdminFeed(stats?.hotel.id, refreshDashboard, refreshDashboard)
 
   return (
     <div className="space-y-8 max-w-(--breakpoint-2xl) mx-auto">

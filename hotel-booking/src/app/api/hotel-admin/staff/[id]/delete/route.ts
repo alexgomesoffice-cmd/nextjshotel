@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
+import { emitToRoom } from '@/lib/socket-emit'
 
 type Params = { params: { id: string } }
 
@@ -28,6 +29,8 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       where: { id: staffId },
       data:  { deleted_at: new Date() },
     })
+
+    void emitToRoom(`user:${staffId}`, 'staff:deleted', { actor_id: staffId })
 
     return NextResponse.json({
       success: true,

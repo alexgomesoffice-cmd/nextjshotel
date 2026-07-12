@@ -1,6 +1,8 @@
 import { Toaster } from 'sonner'
 import "@/app/globals.css"
 import SmoothScroll from '@/components/ui/SmoothScroll'
+import Script from 'next/script'
+import { SocketProvider } from '@/hooks/useSocket'
 
 export default function RootLayout({
   children,
@@ -11,6 +13,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <script
+          id="theme-script"
+          suppressHydrationWarning
           dangerouslySetInnerHTML={{
             __html: `
               try {
@@ -25,21 +29,22 @@ export default function RootLayout({
                   document.documentElement.classList.add('dark');
                 }
               } catch (e) {}
-
             `,
           }}
         />
       </head>
       <body>
-        <SmoothScroll>
-        {children}
-        </SmoothScroll>
-        <Toaster
-          position="bottom-right"
-          theme="dark"
-          richColors
-          closeButton
-        />
+        <SocketProvider>
+          <SmoothScroll>
+          {children}
+          </SmoothScroll>
+          <Toaster
+            position="bottom-right"
+            theme="dark"
+            richColors
+            closeButton
+          />
+        </SocketProvider>
       </body>
     </html>
 

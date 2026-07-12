@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-middleware';
+import { emitToRoom } from '@/lib/socket-emit';
 
 type Params = { params: Promise<{ reference: string }> };
 
@@ -70,6 +71,22 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         data: { status: 'BOOKED' },
       }),
     ]);
+
+    // ── Live updates ──────────────────────────────────────────────────────────
+    // 1. Notify hotel admin
+    void emitToRoom(`hotel-admin:${booking.hotel_id}`, "booking:status_changed", {
+      reference,
+      status: "BOOKED",
+      hotel_id: booking.hotel_id,
+    });
+
+    // 2. Notify end user
+    if (booking.end_user_id) {
+      void emitToRoom(`user:${booking.end_user_id}`, "booking:status_changed", {
+        reference,
+        status: "BOOKED",
+      });
+    }
 
     return NextResponse.json({ success: true, message: 'Booking confirmed' });
   } catch (error: unknown) {

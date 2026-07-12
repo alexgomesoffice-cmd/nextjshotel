@@ -144,7 +144,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    response.cookies.set('token', token, {
+    response.cookies.set('token_hotel_admin', token, {
       httpOnly: true,
       path: '/',
       sameSite: 'lax',

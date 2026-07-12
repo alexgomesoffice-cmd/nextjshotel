@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { cancelBookingSchema } from '@/lib/validations/booking'
+import { emitToRoom } from '@/lib/socket-emit'
 
 type Params = { params: Promise<{ reference: string }> }
 
@@ -78,6 +79,23 @@ export async function POST(req: NextRequest, { params }: Params) {
       prisma.room_trackers.deleteMany({ where: { booking_id: booking.id } }),
     ])
 
+    // ── Live updates ─────────────────────────────────────────────────────────
+    void emitToRoom(`hotel-admin:${booking.hotel_id}`, 'booking:status_changed', {
+      reference,
+      status: 'CANCELLED',
+      hotel_id: booking.hotel_id,
+    });
+
+    if (booking.end_user_id) {
+      void emitToRoom(`user:${booking.end_user_id}`, "booking:status_changed", {
+        reference,
+        status: "CANCELLED",
+      });
+    }
+
+    void emitToRoom(`hotel:${booking.hotel_id}:availability`, 'room:availability_changed', {
+      hotel_id: booking.hotel_id,
+    });
     return NextResponse.json({ success: true, message: 'Booking cancelled' })
   } catch (error: unknown) {
     console.error('cancel booking error:', error)

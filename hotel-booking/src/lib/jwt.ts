@@ -1,6 +1,10 @@
 import type { JwtPayload } from '@/types'
 
-const SECRET = process.env.JWT_SECRET!
+function normalizeSecret(secret: string): string {
+  return secret.replace(/^"(.+)"$/, '$1')
+}
+
+const SECRET = normalizeSecret(process.env.JWT_SECRET!)
 const ALGORITHM = 'HS256'
 
 // ========== Web Crypto API Helpers ==========

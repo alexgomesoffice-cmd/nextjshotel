@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { emitToRoom } from '@/lib/socket-emit';
 
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get('authorization');
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
         status: 'RESERVED',
         reserved_until: { lt: now },
       },
-      select: { id: true, booking_reference: true },
+      select: { id: true, booking_reference: true, hotel_id: true, end_user_id: true },
     });
 
     if (expiredBookings.length === 0) {
@@ -46,6 +47,45 @@ export async function GET(req: NextRequest) {
     ]);
 
     console.log(`[Cron] Expired ${expiredBookings.length} bookings:`, expiredBookings.map(b => b.booking_reference));
+
+    // ── Live updates ─────────────────────────────────────────────────────────
+    // For each expired booking, notify the booking channel and the hotel admin.
+    // Also fire a generic availability update so the hotel page refreshes counts.
+    const uniqueHotelIds = [...new Set(expiredBookings.map(b => b.hotel_id).filter(Boolean))];
+
+    for (const b of expiredBookings) {
+      void emitToRoom(`booking:${b.booking_reference}`, 'booking:status_changed', {
+        reference: b.booking_reference,
+        status: 'EXPIRED',
+      });
+      if (b.hotel_id) {
+        void emitToRoom(`hotel-admin:${b.hotel_id}`, "booking:status_changed", {
+          reference: b.booking_reference,
+          status: "EXPIRED",
+          hotel_id: b.hotel_id,
+        });
+        void emitToRoom("hotel-admin:all", "booking:status_changed", {
+          reference: b.booking_reference,
+          status: "EXPIRED",
+          hotel_id: b.hotel_id,
+        });
+      }
+
+      // Emit to end user
+      if (b.end_user_id) {
+        void emitToRoom(`user:${b.end_user_id}`, "booking:status_changed", {
+          reference: b.booking_reference,
+          status: "EXPIRED",
+        });
+      }
+    }
+    
+    // ── Emitting room availability updates ──────────────────────────────────
+    for (const hotelId of uniqueHotelIds) {
+      if (hotelId) {
+        void emitToRoom(`hotel:${hotelId}:availability`, 'room:availability_changed', { hotel_id: hotelId });
+      }
+    }
 
     return NextResponse.json({
       success: true,

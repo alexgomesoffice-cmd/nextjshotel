@@ -21,7 +21,9 @@ export async function middleware(req: NextRequest) {
   if (!matched) return NextResponse.next()
 
   const [, allowedRoles] = matched
-  const token = req.cookies.get('token')?.value
+  const token = req.cookies.get('token_user')?.value
+    ?? req.cookies.get('token_hotel_admin')?.value
+    ?? req.cookies.get('token_system_admin')?.value
 
   if (!token) {
     const loginMap: Record<string, string> = {

@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    response.cookies.set('token', token, {
+    response.cookies.set('token_system_admin', token, {
       httpOnly: true,
       path: '/',
       sameSite: 'lax',

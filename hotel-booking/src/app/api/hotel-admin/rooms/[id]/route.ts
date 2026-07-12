@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { updateRoomSchema } from '@/lib/validations/room'
+import { emitToRoom } from '@/lib/socket-emit'
 
 /**
  * PATCH /api/hotel-admin/rooms/[id]
@@ -98,6 +99,8 @@ export async function PATCH(
       }
     })
 
+    void emitToRoom(`hotel:${hotelId}:availability`, 'room:updated', { hotel_id: hotelId })
+
     return NextResponse.json({ success: true, data: updatedRoom })
   } catch (error) {
     console.error('Failed to update room:', error)
@@ -142,6 +145,8 @@ export async function DELETE(
       where: { id: roomId },
       data: { deleted_at: new Date() }
     })
+
+    void emitToRoom(`hotel:${hotelId}:availability`, 'room:updated', { hotel_id: hotelId })
 
     return NextResponse.json({ success: true, message: 'Room deleted successfully' })
   } catch (error) {

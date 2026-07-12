@@ -1,23 +1,68 @@
 import { Server, Socket } from "socket.io";
 
-// Initialize all event handlers for a connected socket
+/**
+ * Registers all Socket.IO event handlers for a connected, authenticated socket.
+ *
+ * Room auto-joining by role happens in server.ts (on connection).
+ * This file handles explicit joins requested by the client (e.g. joining a
+ * hotel page or a specific booking's channel) and any other client-driven events.
+ */
 export function initSocketHandlers(io: Server, socket: Socket) {
-  // Example: join a room for a particular hotel
-  socket.on("hotel:join", (hotelId: string) => {
-    socket.join(`hotel-${hotelId}`);
-    console.log(`User ${socket.user.name} joined hotel-${hotelId}`);
+  const user = (socket as any).data?.user;
+  if (!user) {
+    console.warn(`[socket] Missing authenticated user on socket ${socket.id}`);
+    return;
+  }
+  const { actor_id, actor_type, hotel_id } = user;
+
+  console.log(
+    `[socket] Connected: actor_id=${actor_id} type=${actor_type} hotel_id=${hotel_id ?? "—"} socket=${socket.id}`
+  );
+
+  // ── Client-initiated room joins ──────────────────────────────────────────
+
+  /**
+   * join:hotel — called by any browser tab showing a hotel detail page.
+   * Adds this socket to `hotel:{hotelId}:availability` so it receives
+   * `room:availability_changed`, `room:updated`, and `room_type:updated` events.
+   */
+  socket.on("join:hotel", (hotelId: number) => {
+    if (typeof hotelId !== "number" || isNaN(hotelId)) return;
+    socket.join(`hotel:${hotelId}:availability`);
+    console.log(`[socket] ${actor_id} joined hotel:${hotelId}:availability`);
   });
 
-  // Example: handle a booking request from client
-  socket.on("booking:create", async (data: { roomId: number }) => {
-    console.log(`Create booking from user ${socket.user.userId} for room ${data.roomId}`);
-    // TODO: validate input, update DB, etc.
-    const bookingId = Math.floor(Math.random()*100000); // placeholder
-    // Emit success back to this user
-    socket.emit("booking:success", { bookingId, roomId: data.roomId });
-    // Broadcast room availability update to all in this hotel's room
-    io.to(`hotel-${data.roomId}`).emit("room-updated", { roomId: data.roomId, status: "booked" });
+  /**
+   * join:hotel-admin — called by hotel admin dashboards and bookings pages.
+   * Adds this socket to `hotel-admin:{hotelId}` so it receives
+   * reservation and booking lifecycle events for that hotel.
+   */
+  socket.on("join:hotel-admin", (hotelId: number | "all") => {
+    if (hotelId === "all") {
+      socket.join("hotel-admin:all");
+      console.log(`[socket] ${actor_id} joined hotel-admin:all`);
+      return;
+    }
+
+    if (typeof hotelId !== "number" || isNaN(hotelId)) return;
+    socket.join(`hotel-admin:${hotelId}`);
+    socket.join("hotel-admin:all");
+    console.log(`[socket] ${actor_id} joined hotel-admin:${hotelId}`);
   });
 
-  // More handlers (e.g. chat, notifications) go here.
+  /**
+   * join:booking — called by reservation/booking detail pages.
+   * Adds this socket to `booking:{reference}` so it receives
+   * `booking:status_changed` events for that specific booking.
+   */
+  socket.on("join:booking", (reference: string) => {
+    if (typeof reference !== "string" || !reference.trim()) return;
+    socket.join(`booking:${reference}`);
+    console.log(`[socket] ${actor_id} joined booking:${reference}`);
+  });
+
+  // ── Disconnect ────────────────────────────────────────────────────────────
+  socket.on("disconnect", (reason) => {
+    console.log(`[socket] Disconnected: actor_id=${actor_id} reason=${reason}`);
+  });
 }

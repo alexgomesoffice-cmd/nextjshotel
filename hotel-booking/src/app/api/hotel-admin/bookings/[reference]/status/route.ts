@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
+import { emitToRoom } from '@/lib/socket-emit'
 
 const ACTION_TO_STATUS = {
   check_in: 'CHECKED_IN',
@@ -81,6 +82,37 @@ export async function PATCH(
             data: { status: newStatus as any },
           }),
     ])
+
+    // ── Live updates ─────────────────────────────────────────────────────────
+    void emitToRoom(`booking:${booking.booking_reference}`, 'booking:status_changed', {
+      reference: booking.booking_reference,
+      status: newStatus,
+    })
+    void emitToRoom(`hotel-admin:${booking.hotel_id}`, 'booking:status_changed', {
+      reference: booking.booking_reference,
+      status: newStatus,
+      hotel_id: booking.hotel_id,
+    })
+    void emitToRoom('hotel-admin:all', 'booking:status_changed', {
+      reference: booking.booking_reference,
+      status: newStatus,
+      hotel_id: booking.hotel_id,
+    })
+
+    // Notify end user
+    if (booking.end_user_id) {
+      void emitToRoom(`user:${booking.end_user_id}`, 'booking:status_changed', {
+        reference: booking.booking_reference,
+        status: newStatus,
+      })
+    }
+
+    // Terminal actions free rooms — tell the hotel page to refresh availability
+    if (isTerminal) {
+      void emitToRoom(`hotel:${booking.hotel_id}:availability`, 'room:availability_changed', {
+        hotel_id: booking.hotel_id,
+      })
+    }
 
     return NextResponse.json({
       success: true,

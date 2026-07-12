@@ -7,6 +7,7 @@ import {
   XCircle, AlertCircle, BedDouble, Search, Filter,
 } from 'lucide-react'
 import ReservationTimer from '@/components/booking/reservation-timer'
+import { useSocket } from '@/hooks/useSocket'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -92,6 +93,20 @@ export default function MyBookingsPage() {
   }, [pagination.page, statusFilter, toast])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
+
+  const socket = useSocket()
+
+  useEffect(() => {
+    if (!socket) return
+    const onStatusChanged = () => {
+      // Refresh the list silently when ANY of the user's bookings change
+      fetchBookings()
+    }
+    socket.on("booking:status_changed", onStatusChanged)
+    return () => {
+      socket.off("booking:status_changed", onStatusChanged)
+    }
+  }, [socket, fetchBookings])
 
   const nights = (checkIn: string, checkOut: string) => {
     const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime()
@@ -205,7 +220,7 @@ export default function MyBookingsPage() {
 
                       {booking.status === 'RESERVED' && booking.reserved_until && new Date(booking.reserved_until) > new Date() && (
                         <div className="mt-3">
-                          <ReservationTimer reservedUntil={booking.reserved_until} />
+                          <ReservationTimer reservedUntil={booking.reserved_until} reference={booking.booking_reference} />
                         </div>
                       )}
 

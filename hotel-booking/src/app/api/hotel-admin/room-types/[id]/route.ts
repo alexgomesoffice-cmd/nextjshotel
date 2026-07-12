@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { z } from 'zod'
+import { emitToRoom } from '@/lib/socket-emit'
 
 const updateSchema = z.object({
   name: z.string().min(2).max(150).optional(),
@@ -130,6 +131,8 @@ export async function PATCH(
       }
     })
 
+    void emitToRoom(`hotel:${hotelId}:availability`, 'room_type:updated', { hotel_id: hotelId })
+
     return NextResponse.json({ success: true, message: 'Room type updated successfully' })
   } catch (error) {
     console.error('Update room type error:', error)
@@ -161,6 +164,8 @@ export async function DELETE(
       where: { id: roomTypeId },
       data: { is_active: false }
     })
+
+    void emitToRoom(`hotel:${hotelId}:availability`, 'room_type:updated', { hotel_id: hotelId })
 
     return NextResponse.json({ success: true, message: 'Room type deleted' })
   } catch (error) {

@@ -6,6 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-middleware';
+import { emitToRoom } from '@/lib/socket-emit';
 
 type Params = { params: Promise<{ reference: string }> };
 
@@ -18,7 +19,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     const booking = await prisma.user_bookings.findUnique({
       where: { booking_reference: reference },
-      select: { id: true, status: true, end_user_id: true, reserved_until: true },
+      select: { id: true, status: true, end_user_id: true, hotel_id: true, reserved_until: true },
     });
 
     if (!booking) {
@@ -39,11 +40,39 @@ export async function POST(req: NextRequest, { params }: Params) {
     await prisma.$transaction([
       prisma.user_bookings.update({
         where: { id: booking.id },
-        data: { status: 'EXPIRED' },
+        data: { status: 'EXPIRED', reserved_until: null },
       }),
       // DELETE trackers to free the room dates for future reservations
       prisma.room_trackers.deleteMany({ where: { booking_id: booking.id } }),
     ]);
+
+    void emitToRoom(`booking:${reference}`, 'booking:status_changed', {
+      reference,
+      status: 'EXPIRED',
+    });
+
+    if (booking.hotel_id) {
+      void emitToRoom(`hotel-admin:${booking.hotel_id}`, 'booking:status_changed', {
+        reference,
+        status: 'EXPIRED',
+        hotel_id: booking.hotel_id,
+      });
+      void emitToRoom('hotel-admin:all', 'booking:status_changed', {
+        reference,
+        status: 'EXPIRED',
+        hotel_id: booking.hotel_id,
+      });
+      void emitToRoom(`hotel:${booking.hotel_id}:availability`, 'room:availability_changed', {
+        hotel_id: booking.hotel_id,
+      });
+    }
+
+    if (booking.end_user_id) {
+      void emitToRoom(`user:${booking.end_user_id}`, 'booking:status_changed', {
+        reference,
+        status: 'EXPIRED',
+      });
+    }
 
     return NextResponse.json({ success: true, message: 'Booking expired' });
   } catch (error: any) {

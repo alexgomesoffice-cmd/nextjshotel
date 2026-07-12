@@ -7,6 +7,7 @@ import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
 import sharp from 'sharp'
 import { RoomStatus } from '@prisma/client'
+import { emitToRoom } from '@/lib/socket-emit'
 
 const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'rooms')
 
@@ -214,6 +215,8 @@ export async function POST(req: NextRequest) {
         }
       })
 
+      void emitToRoom(`hotel:${hotelId}:availability`, 'room:updated', { hotel_id: hotelId })
+
       return NextResponse.json({ success: true, message: `${roomsToCreate.length} rooms created successfully` }, { status: 201 })
     }
 
@@ -260,6 +263,8 @@ export async function POST(req: NextRequest) {
         }
       }
     })
+
+    void emitToRoom(`hotel:${hotelId}:availability`, 'room:updated', { hotel_id: hotelId })
 
     return NextResponse.json({ success: true, data: room }, { status: 201 })
   } catch (error) {

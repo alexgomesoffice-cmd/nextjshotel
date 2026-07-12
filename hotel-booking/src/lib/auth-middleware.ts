@@ -11,7 +11,9 @@ export async function requireAuth(
   req: NextRequest,
   allowedRoles: JwtPayload['actor_type'][]
 ): Promise<AuthResult> {
-  const token = req.cookies.get('token')?.value
+  const token = req.cookies.get('token_user')?.value
+    ?? req.cookies.get('token_hotel_admin')?.value
+    ?? req.cookies.get('token_system_admin')?.value
 
   if (!token) {
     return { payload: null, error: NextResponse.json({ success: false, message: 'Unauthenticated' }, { status: 401 }) }

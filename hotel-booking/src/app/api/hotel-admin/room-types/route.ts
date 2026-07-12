@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { z } from 'zod'
+import { emitToRoom } from '@/lib/socket-emit'
 
 const createSchema = z.object({
   name: z.string().min(2).max(150),
@@ -128,6 +129,8 @@ export async function POST(req: NextRequest) {
 
       return roomType
     })
+
+    void emitToRoom(`hotel:${hotelId}:availability`, 'room_type:updated', { hotel_id: hotelId })
 
     return NextResponse.json({ 
       success: true, 

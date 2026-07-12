@@ -1,19 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Clock, AlertTriangle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Clock, AlertTriangle, CheckCircle } from "lucide-react";
+import { useBookingStatus } from "@/hooks/use-booking-status";
 
 interface ReservationTimerProps {
   reservedUntil: string; // ISO datetime string
+  reference: string;     // The booking reference code
 }
 
-export default function ReservationTimer({ reservedUntil }: ReservationTimerProps) {
+export default function ReservationTimer({ reservedUntil, reference }: ReservationTimerProps) {
   const [secondsLeft, setSecondsLeft] = useState(() => {
     const diff = Math.floor((new Date(reservedUntil).getTime() - Date.now()) / 1000);
     return Math.max(0, diff);
   });
+  const expiryRequestedRef = useRef(false);
 
-  const isExpired = secondsLeft <= 0;
+  const liveStatus = useBookingStatus(reference, "RESERVED");
+
+  // Force expired if socket says it's expired or cancelled, or local timer hits 0
+  const isExpired = secondsLeft <= 0 || liveStatus === "EXPIRED" || liveStatus === "CANCELLED";
+  const isConfirmed = liveStatus === "BOOKED";
+
+  useEffect(() => {
+    expiryRequestedRef.current = false;
+  }, [reference, reservedUntil]);
 
   useEffect(() => {
     if (isExpired) return;
@@ -31,6 +42,20 @@ export default function ReservationTimer({ reservedUntil }: ReservationTimerProp
     return () => clearInterval(interval);
   }, [reservedUntil, isExpired]);
 
+  useEffect(() => {
+    if (secondsLeft > 0 || expiryRequestedRef.current) return;
+    if (liveStatus !== "RESERVED") return;
+
+    expiryRequestedRef.current = true;
+
+    void fetch(`/api/bookings/${reference}/expire`, {
+      method: "POST",
+      credentials: "include",
+    }).catch((error) => {
+      console.error("Failed to expire reservation", error);
+    });
+  }, [secondsLeft, liveStatus, reference]);
+
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
   const timeStr = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
@@ -43,6 +68,18 @@ export default function ReservationTimer({ reservedUntil }: ReservationTimerProp
         <div>
           <p className="font-semibold text-destructive">Your reservation has expired</p>
           <p className="text-destructive/80 mt-0.5">The rooms have been released. Please make a new reservation.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isConfirmed) {
+    return (
+      <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/30 rounded-xl px-5 py-4 text-sm">
+        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 shrink-0" />
+        <div>
+          <p className="font-semibold text-green-700 dark:text-green-400">Reservation Confirmed</p>
+          <p className="text-green-600/80 dark:text-green-400/80 mt-0.5">Your booking is secured.</p>
         </div>
       </div>
     );

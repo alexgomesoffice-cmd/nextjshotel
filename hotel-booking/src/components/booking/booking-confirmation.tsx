@@ -58,12 +58,15 @@ interface BookingConfirmationProps {
 }
 
 export default function BookingConfirmation({ booking }: BookingConfirmationProps) {
-  const sc = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.EXPIRED;
+  const effectiveStatus = booking.status === "RESERVED" && booking.reserved_until && new Date(booking.reserved_until) <= new Date()
+    ? "EXPIRED"
+    : booking.status;
+  const sc = STATUS_CONFIG[effectiveStatus] ?? STATUS_CONFIG.EXPIRED;
   const StatusIcon = sc.icon;
   const nightCount = Math.round(
     (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24)
   );
-  const isReserved = booking.status === "RESERVED";
+  const isReserved = effectiveStatus === "RESERVED";
   const reservedUntilFuture = isReserved && booking.reserved_until && new Date(booking.reserved_until) > new Date();
   const roomTypes = [...new Set(booking.room_bookings.map((r) => r.room_type.name))];
 
@@ -87,7 +90,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
       </div>
 
       {reservedUntilFuture && (
-        <ReservationTimer reservedUntil={booking.reserved_until!} />
+        <ReservationTimer reservedUntil={booking.reserved_until!} reference={booking.booking_reference} />
       )}
 
       <Card className="overflow-hidden">

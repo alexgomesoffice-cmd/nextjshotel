@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { useHotelAdminFeed } from '@/hooks/use-hotel-admin-feed'
 
 type BookingStatus = 'RESERVED' | 'BOOKED' | 'EXPIRED' | 'CANCELLED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW'
 
@@ -73,6 +74,7 @@ export default function HotelAdminBookingsPage() {
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 15, total: 0, totalPages: 0 })
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [hotelId, setHotelId] = useState<number | null>(null)
 
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
@@ -108,7 +110,27 @@ export default function HotelAdminBookingsPage() {
   useEffect(() => {
     void (async () => { await fetchBookings() })()
   }, [fetchBookings])
+
+  useEffect(() => {
+    const loadHotelId = async () => {
+      try {
+        const res = await fetch('/api/hotel-admin/overview', { credentials: 'include' })
+        const data = await res.json()
+        if (data.success) {
+          setHotelId(data.data.hotel.id)
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    void loadHotelId()
+  }, [])
+  
   const resetPage = () => setPagination(p => ({ ...p, page: 1 }))
+
+  // Listen for live updates and refresh the list silently
+  useHotelAdminFeed(hotelId ?? undefined, fetchBookings, fetchBookings)
 
   async function performAction(reference: string, action: string) {
     const labels: Record<string, string> = { check_in: 'Check in', check_out: 'Check out', cancel: 'Cancel', no_show: 'No Show' }

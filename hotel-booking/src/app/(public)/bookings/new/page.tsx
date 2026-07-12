@@ -44,6 +44,8 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
     redirect("/"); // Missing required params, back to home
   }
 
+  const roomTypeIdsUnique = [...new Set(roomTypeIds.map((id) => Number(id)))];
+
   const checkIn = new Date(params.check_in as string);
   const checkOut = new Date(params.check_out as string);
 
@@ -87,7 +89,7 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
 
   const roomTypes = await prisma.room_types.findMany({
     where: {
-      id: { in: roomTypeIdsNum },
+      id: { in: roomTypeIdsUnique },
       hotel_id: hotel.id,
     },
     include: {
@@ -106,7 +108,7 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
     },
   });
 
-  if (roomTypes.length !== roomTypeIdsNum.length) redirect("/");
+  if (roomTypes.length !== roomTypeIdsUnique.length) redirect("/");
 
   const roomTypeMap = new Map(roomTypes.map(rt => [rt.id, rt]));
   const roomSelections = roomTypeIdsNum.map((roomTypeId, index) => {
@@ -197,8 +199,8 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
               <div className="py-6 border-b border-border/50">
                 <h3 className="font-semibold mb-4">Price details</h3>
                 <div className="space-y-3 text-sm">
-                  {roomSelections.map(selection => (
-                    <div key={selection.roomType.id} className="flex justify-between">
+                  {roomSelections.map((selection, index) => (
+                    <div key={`${selection.roomType.id}-${selection.variantId}-${index}`} className="flex justify-between">
                       <span>
                         {selection.roomType.name} · TK {Number(selection.roomType.base_price).toLocaleString()} × {nights} night{nights !== 1 ? "s" : ""} × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
                       </span>

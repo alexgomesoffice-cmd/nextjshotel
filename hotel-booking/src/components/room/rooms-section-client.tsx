@@ -17,6 +17,7 @@ interface RoomProperty { amenity: { name: string; icon: string | null }; }
 
 export interface RoomType {
   id: number;
+  hotel_id: number;
   name: string;
   description: string | null;
   base_price: number;

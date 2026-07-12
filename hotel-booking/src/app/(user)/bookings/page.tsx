@@ -69,7 +69,20 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [now, setNow] = useState(Date.now())
   const { toast } = useToast()
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const getEffectiveStatus = (booking: Booking) => {
+    if (booking.status === 'RESERVED' && booking.reserved_until) {
+      return new Date(booking.reserved_until).getTime() <= now ? 'EXPIRED' : 'RESERVED'
+    }
+    return booking.status
+  }
 
   const fetchBookings = useCallback(async () => {
     try {
@@ -182,7 +195,8 @@ export default function MyBookingsPage() {
           </Card>
         ) : (
           filtered.map((booking) => {
-            const sc = STATUS_CONFIG[booking.status] ?? STATUS_CONFIG.EXPIRED
+            const effectiveStatus = getEffectiveStatus(booking)
+            const sc = STATUS_CONFIG[effectiveStatus] ?? STATUS_CONFIG.EXPIRED
             const StatusIcon = sc.icon
             const nightCount = nights(booking.check_in, booking.check_out)
             const roomTypes = [...new Set(booking.room_bookings.map((r) => r.room_type.name))]
@@ -192,9 +206,9 @@ export default function MyBookingsPage() {
                 <CardContent className="p-0">
                   <div className="flex flex-col sm:flex-row">
                     {/* Left accent bar */}
-                    <div className={`w-full sm:w-1.5 h-1.5 sm:h-auto rounded-t-lg sm:rounded-l-lg sm:rounded-t-none ${booking.status === 'BOOKED' ? 'bg-green-500' :
-                        booking.status === 'RESERVED' ? 'bg-amber-500' :
-                          booking.status === 'CHECKED_IN' ? 'bg-blue-500' :
+                    <div className={`w-full sm:w-1.5 h-1.5 sm:h-auto rounded-t-lg sm:rounded-l-lg sm:rounded-t-none ${effectiveStatus === 'BOOKED' ? 'bg-green-500' :
+                        effectiveStatus === 'RESERVED' ? 'bg-amber-500' :
+                          effectiveStatus === 'CHECKED_IN' ? 'bg-blue-500' :
                             'bg-gray-400'
                       }`} />
 
@@ -218,7 +232,7 @@ export default function MyBookingsPage() {
                         </div>
                       </div>
 
-                      {booking.status === 'RESERVED' && booking.reserved_until && new Date(booking.reserved_until) > new Date() && (
+                      {effectiveStatus === 'RESERVED' && booking.reserved_until && new Date(booking.reserved_until).getTime() > now && (
                         <div className="mt-3">
                           <ReservationTimer reservedUntil={booking.reserved_until} reference={booking.booking_reference} />
                         </div>

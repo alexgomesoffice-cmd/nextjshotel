@@ -109,6 +109,7 @@ export async function GET(
       const available_rooms_count = room_variants.reduce((sum, variant) => sum + variant.available_count, 0)
       return {
         id: room.id,
+        hotel_id: hotel.id,
         name: room.name,
         description: room.description,
         base_price: Number(room.base_price),

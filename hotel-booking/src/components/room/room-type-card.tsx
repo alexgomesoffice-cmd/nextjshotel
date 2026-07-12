@@ -202,12 +202,12 @@ function VariantRow({
             </div>
           ) : (
             <div className="flex items-center gap-2.5">
-              <button
+                  <button
                 onClick={() => onQtyChange(Math.max(0, quantity - 1))}
-                disabled={quantity === 0 || isUnavailable}
+                disabled={quantity === 0}
                 className={cn(
                   "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                  quantity > 0 && !isUnavailable
+                  quantity > 0
                     ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
                     : "border-border/20 text-border/30 cursor-not-allowed"
                 )}
@@ -217,10 +217,10 @@ function VariantRow({
               <span className="w-5 text-center text-sm font-semibold tabular-nums">{quantity}</span>
               <button
                 onClick={() => onQtyChange(Math.min(available, quantity + 1))}
-                disabled={quantity >= available || isUnavailable}
+                disabled={quantity >= available}
                 className={cn(
                   "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                  quantity < available && !isUnavailable
+                  quantity < available
                     ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
                     : "border-border/20 text-border/30 cursor-not-allowed"
                 )}
@@ -247,7 +247,7 @@ const RoomTypeCard = ({
   const [isExpanded, setIsExpanded] = useState(forceExpanded);
   const coverImage = type_images?.[0]?.image_url || null;
   const totalSelected = Object.values(selectedQuantities).reduce((a, b) => a + b, 0);
-  const isUnavailable = available_rooms_count === 0 && room_variants.length === 0;
+  const isUnavailable = available_rooms_count === 0;
   const isDisabled = isGuestMismatch || isUnavailable;
   const shouldExpand = forceExpanded || isExpanded;
 

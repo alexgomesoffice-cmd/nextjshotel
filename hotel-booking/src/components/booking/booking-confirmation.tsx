@@ -5,7 +5,8 @@ import {
   Hotel, Clock, BedDouble,
   CheckCircle2, XCircle, AlertCircle,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useBookingStatus } from "@/hooks/use-booking-status";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatBDT } from "@/lib/utils";
@@ -58,17 +59,27 @@ interface BookingConfirmationProps {
 }
 
 export default function BookingConfirmation({ booking }: BookingConfirmationProps) {
-  const effectiveStatus = booking.status === "RESERVED" && booking.reserved_until && new Date(booking.reserved_until) <= new Date()
-    ? "EXPIRED"
-    : booking.status;
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const liveStatus = useBookingStatus(booking.booking_reference, booking.status);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const effectiveStatus = liveStatus === "RESERVED"
+    ? booking.reserved_until && new Date(booking.reserved_until).getTime() <= currentTime
+      ? "EXPIRED"
+      : "RESERVED"
+    : liveStatus;
+
   const sc = STATUS_CONFIG[effectiveStatus] ?? STATUS_CONFIG.EXPIRED;
   const StatusIcon = sc.icon;
   const nightCount = Math.round(
     (new Date(booking.check_out).getTime() - new Date(booking.check_in).getTime()) / (1000 * 60 * 60 * 24)
   );
   const isReserved = effectiveStatus === "RESERVED";
-  const reservedUntilFuture = isReserved && booking.reserved_until && new Date(booking.reserved_until) > new Date();
-  const roomTypes = [...new Set(booking.room_bookings.map((r) => r.room_type.name))];
+  const reservedUntilFuture = isReserved && booking.reserved_until && new Date(booking.reserved_until).getTime() > currentTime;
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10 space-y-6">

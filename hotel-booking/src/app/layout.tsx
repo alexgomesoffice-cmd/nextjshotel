@@ -35,7 +35,7 @@ export default function RootLayout({
       </head>
       <body>
         <SocketProvider>
-          <SmoothScroll>
+          <SmoothScroll> 
           {children}
           </SmoothScroll>
           <Toaster

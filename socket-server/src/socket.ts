@@ -1,4 +1,7 @@
 import { Server, Socket } from "socket.io";
+import { SOCKET_EVENTS, buildBookingRoom, buildHotelAdminRoom, buildHotelAvailabilityRoom } from "./lib/socket-constants.js";
+import { joinBookingSchema, joinHotelAdminSchema, joinHotelSchema } from "./lib/socket-schemas.js";
+import type { AuthenticatedUser } from "./types/socket.js";
 
 /**
  * Registers all Socket.IO event handlers for a connected, authenticated socket.
@@ -7,13 +10,38 @@ import { Server, Socket } from "socket.io";
  * This file handles explicit joins requested by the client (e.g. joining a
  * hotel page or a specific booking's channel) and any other client-driven events.
  */
+const rateLimitWindowMs = 15_000;
+const rateLimitMaxEvents = 20;
+
+function isRateLimited(socket: Socket, eventName: string): boolean {
+  const limiterKey = `${socket.id}:${eventName}`;
+  const now = Date.now();
+  const existing = (socket as Socket & { __rateLimit?: Record<string, { count: number; resetAt: number }> }).__rateLimit?.[limiterKey];
+
+  if (!existing || existing.resetAt <= now) {
+    const next = { count: 1, resetAt: now + rateLimitWindowMs };
+    (socket as Socket & { __rateLimit?: Record<string, { count: number; resetAt: number }> }).__rateLimit = {
+      ...(socket as Socket & { __rateLimit?: Record<string, { count: number; resetAt: number }> }).__rateLimit,
+      [limiterKey]: next,
+    };
+    return false;
+  }
+
+  if (existing.count >= rateLimitMaxEvents) {
+    return true;
+  }
+
+  existing.count += 1;
+  return false;
+}
+
 export function initSocketHandlers(io: Server, socket: Socket) {
-  const user = (socket as any).data?.user;
+  const user = socket.data?.user as AuthenticatedUser | undefined;
   if (!user) {
     console.warn(`[socket] Missing authenticated user on socket ${socket.id}`);
     return;
   }
-  const { actor_id, actor_type, hotel_id } = user;
+  const { userId, actor_id, actor_type, hotel_id } = user;
 
   console.log(
     `[socket] Connected: actor_id=${actor_id} type=${actor_type} hotel_id=${hotel_id ?? "—"} socket=${socket.id}`
@@ -26,10 +54,15 @@ export function initSocketHandlers(io: Server, socket: Socket) {
    * Adds this socket to `hotel:{hotelId}:availability` so it receives
    * `room:availability_changed`, `room:updated`, and `room_type:updated` events.
    */
-  socket.on("join:hotel", (hotelId: number) => {
-    if (typeof hotelId !== "number" || isNaN(hotelId)) return;
-    socket.join(`hotel:${hotelId}:availability`);
-    console.log(`[socket] ${actor_id} joined hotel:${hotelId}:availability`);
+  socket.on(SOCKET_EVENTS.joinHotel, (rawHotelId: unknown) => {
+    if (isRateLimited(socket, SOCKET_EVENTS.joinHotel)) return;
+
+    const parsed = joinHotelSchema.safeParse({ hotelId: rawHotelId });
+    if (!parsed.success) return;
+
+    const { hotelId } = parsed.data;
+    socket.join(buildHotelAvailabilityRoom(hotelId));
+    console.log(`[socket] ${userId} joined ${buildHotelAvailabilityRoom(hotelId)}`);
   });
 
   /**
@@ -37,17 +70,32 @@ export function initSocketHandlers(io: Server, socket: Socket) {
    * Adds this socket to `hotel-admin:{hotelId}` so it receives
    * reservation and booking lifecycle events for that hotel.
    */
-  socket.on("join:hotel-admin", (hotelId: number | "all") => {
-    if (hotelId === "all") {
-      socket.join("hotel-admin:all");
-      console.log(`[socket] ${actor_id} joined hotel-admin:all`);
+  socket.on(SOCKET_EVENTS.joinHotelAdmin, (rawHotelId: unknown) => {
+    if (isRateLimited(socket, SOCKET_EVENTS.joinHotelAdmin)) return;
+
+    const parsed = joinHotelAdminSchema.safeParse({ hotelId: rawHotelId });
+    if (!parsed.success) return;
+
+    const { hotelId } = parsed.data;
+
+    const isPrivileged = ["SYSTEM_ADMIN", "HOTEL_ADMIN", "HOTEL_SUB_ADMIN"].includes(actor_type);
+    if (!isPrivileged) {
       return;
     }
 
-    if (typeof hotelId !== "number" || isNaN(hotelId)) return;
-    socket.join(`hotel-admin:${hotelId}`);
+    if (hotelId === "all") {
+      socket.join("hotel-admin:all");
+      console.log(`[socket] ${userId} joined hotel-admin:all`);
+      return;
+    }
+
+    if (hotel_id && hotelId !== hotel_id) {
+      return;
+    }
+
+    socket.join(buildHotelAdminRoom(hotelId));
     socket.join("hotel-admin:all");
-    console.log(`[socket] ${actor_id} joined hotel-admin:${hotelId}`);
+    console.log(`[socket] ${userId} joined ${buildHotelAdminRoom(hotelId)}`);
   });
 
   /**
@@ -55,10 +103,15 @@ export function initSocketHandlers(io: Server, socket: Socket) {
    * Adds this socket to `booking:{reference}` so it receives
    * `booking:status_changed` events for that specific booking.
    */
-  socket.on("join:booking", (reference: string) => {
-    if (typeof reference !== "string" || !reference.trim()) return;
-    socket.join(`booking:${reference}`);
-    console.log(`[socket] ${actor_id} joined booking:${reference}`);
+  socket.on(SOCKET_EVENTS.joinBooking, (rawReference: unknown) => {
+    if (isRateLimited(socket, SOCKET_EVENTS.joinBooking)) return;
+
+    const parsed = joinBookingSchema.safeParse({ reference: rawReference });
+    if (!parsed.success) return;
+
+    const { reference } = parsed.data;
+    socket.join(buildBookingRoom(reference));
+    console.log(`[socket] ${userId} joined ${buildBookingRoom(reference)}`);
   });
 
   // ── Disconnect ────────────────────────────────────────────────────────────

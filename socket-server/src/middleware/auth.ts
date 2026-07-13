@@ -1,10 +1,10 @@
 import { verifyToken } from "../lib/jwt.js";
+import type { AuthenticatedUser } from "../types/socket.js";
 
 /**
  * Socket.IO middleware — runs during the connection lifecycle.
- * Reads the JWT from the same cookie the Next.js app sets (`token` by default)
- * or from an Authorization header, and only allows the connection if the token
- * is present and valid.
+ * Reads the JWT from the same cookie the Next.js app sets and only allows
+ * the connection if the token is present and valid.
  */
 export async function verifySocketAuth(
   socket: any,
@@ -13,31 +13,22 @@ export async function verifySocketAuth(
   try {
     const req = socket.request as any;
     const cookie = req.headers.cookie ?? "";
-    let token = socket.handshake?.auth?.token ?? null;
-
-    if (!token) {
-      token = parseCookie(cookie, "token_user")
-        ?? parseCookie(cookie, "token_hotel_admin")
-        ?? parseCookie(cookie, "token_system_admin");
-    }
-
-    if (!token) {
-      const authHeader = req.headers.authorization;
-      if (authHeader?.startsWith("Bearer ")) {
-        token = authHeader.slice(7).trim();
-      }
-    }
+    const token = parseCookie(cookie, "token_user")
+      ?? parseCookie(cookie, "token_hotel_admin")
+      ?? parseCookie(cookie, "token_system_admin")
+      ?? parseCookie(cookie, "token");
 
     if (!token) {
       return next(new Error("Authentication error: No token"));
     }
 
-    const payload = await verifyToken(token);
-    socket.data.user = payload;
-    console.log(`[socket-auth] token valid: actor_id=${payload.actor_id} actor_type=${payload.actor_type} hotel_id=${payload.hotel_id ?? '—'}`);
+    const payload = (await verifyToken(token)) as AuthenticatedUser;
+    socket.data.user = {
+      ...payload,
+      userId: payload.actor_id,
+    };
     return next();
   } catch (err: any) {
-    console.log(`[socket-auth] token verification failed: ${err?.message ?? String(err)}`);
     return next(new Error("Authentication error: Invalid or expired token"));
   }
 }

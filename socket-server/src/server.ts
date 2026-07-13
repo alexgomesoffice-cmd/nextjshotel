@@ -2,6 +2,8 @@ import http from "http";
 import { Server } from "socket.io";
 import { env } from "./config/env.js";
 import { verifySocketAuth } from "./middleware/auth.js";
+import { buildHotelAdminRoom, buildHotelAvailabilityRoom, buildUserRoom } from "./lib/socket-constants.js";
+import { broadcastBodySchema } from "./lib/socket-schemas.js";
 import { initSocketHandlers } from "./socket.js";
 
 // ── HTTP server ───────────────────────────────────────────────────────────────
@@ -29,17 +31,15 @@ const httpServer = http.createServer((req, res) => {
     req.on("data", (chunk) => { body += chunk; });
     req.on("end", () => {
       try {
-        const { room, event, payload } = JSON.parse(body) as {
-          room: string;
-          event: string;
-          payload: unknown;
-        };
+        const parsedBody = broadcastBodySchema.safeParse(JSON.parse(body));
 
-        if (!room || !event) {
+        if (!parsedBody.success) {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Missing room or event" }));
+          res.end(JSON.stringify({ error: "Invalid broadcast payload" }));
           return;
         }
+
+        const { room, event, payload } = parsedBody.data;
 
         io.to(room).emit(event, payload);
         console.log(`[broadcast] room="${room}" event="${event}"`);
@@ -79,18 +79,19 @@ const io = new Server(httpServer, {
 io.use(verifySocketAuth);
 
 io.on("connection", (socket) => {
-  const user = (socket as any).data?.user ?? {
-    actor_id: null,
-    actor_type: "GUEST",
-    hotel_id: null,
-  };
+  const user = socket.data?.user;
+  if (!user) {
+    socket.disconnect(true);
+    return;
+  }
+
   const { actor_id, actor_type, hotel_id } = user;
 
-  console.log(`[socket-server] client connected socket=${socket.id} actor_id=${actor_id} type=${actor_type} hotel_id=${hotel_id ?? '—'}`);
+  console.log(`[socket-server] client connected socket=${socket.id} actor_id=${actor_id} type=${actor_type} hotel_id=${hotel_id ?? "—"}`);
 
   // ── Auto-join role-based rooms ────────────────────────────────────────────
   // Personal channel — everyone gets one (used for staff:blocked, session:revoked, etc.)
-  socket.join(`user:${actor_id}`);
+  socket.join(buildUserRoom(actor_id));
 
   if (actor_type === "SYSTEM_ADMIN") {
     socket.join("system-admin:global");
@@ -99,7 +100,7 @@ io.on("connection", (socket) => {
   if (actor_type === "HOTEL_ADMIN" || actor_type === "HOTEL_SUB_ADMIN") {
     socket.join("hotel-admin:all");
     if (hotel_id) {
-      socket.join(`hotel-admin:${hotel_id}`);
+      socket.join(buildHotelAdminRoom(hotel_id));
     }
   }
 

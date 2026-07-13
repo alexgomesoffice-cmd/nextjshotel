@@ -26,23 +26,9 @@ export function SocketProvider({ children }: SocketProviderProps) {
   useEffect(() => {
     let active = true;
     let client: Socket | null = null;
-    let retryTimer: ReturnType<typeof setTimeout> | null = null;
 
     async function connectSocket() {
       try {
-        const response = await fetch("/api/socket-auth", {
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          // Retry after a delay (user may log in without a full page refresh)
-          if (active) {
-            retryTimer = setTimeout(() => void connectSocket(), 3000);
-          }
-          return;
-        }
-
-        const { token } = await response.json();
         const url = process.env.NEXT_PUBLIC_SOCKET_URL ?? "http://localhost:4001";
 
         client = io(url, {
@@ -51,9 +37,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
           reconnection: true,
           reconnectionAttempts: 5,
           reconnectionDelay: 1000,
-          auth: {
-            token,
-          },
         });
 
         if (active && client) {
@@ -71,7 +54,6 @@ export function SocketProvider({ children }: SocketProviderProps) {
       if (client) {
         client.disconnect();
       }
-      if (retryTimer) clearTimeout(retryTimer);
     };
   }, []);
 

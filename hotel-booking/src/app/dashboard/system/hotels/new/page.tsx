@@ -335,7 +335,7 @@ export default function CreateHotelPage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section 1: Hotel Information */}
         <Card className="glass-strong">
-          <CardHeader className="bg-linear-to-r from-primary/10 to-accent/10">
+          <CardHeader >
             <CardTitle>Hotel Information</CardTitle>
             <CardDescription>Basic details about the hotel</CardDescription>
           </CardHeader>
@@ -566,7 +566,7 @@ export default function CreateHotelPage() {
 
         {/* Section 2: Hotel Policies & Details */}
         <Card className="glass-strong">
-          <CardHeader className="bg-linear-to-r from-blue-500/10 to-cyan-500/10">
+          <CardHeader >
             <CardTitle>Policies & Details</CardTitle>
             <CardDescription>Check-in, cancellation, and house policies</CardDescription>
           </CardHeader>
@@ -707,7 +707,7 @@ export default function CreateHotelPage() {
 
         {/* Section 3: Admin Account */}
         <Card className="glass-strong">
-          <CardHeader className="bg-linear-to-r from-green-500/10 to-emerald-500/10">
+          <CardHeader >
             <CardTitle>Hotel Admin Account</CardTitle>
             <CardDescription>Credentials for the hotel administrator</CardDescription>
           </CardHeader>

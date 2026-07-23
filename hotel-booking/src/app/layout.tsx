@@ -41,7 +41,7 @@ export default function RootLayout({
           <Toaster
             position="bottom-right"
             theme="dark"
-            richColors
+            
             closeButton
           />
         </SocketProvider>

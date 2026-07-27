@@ -7,7 +7,7 @@ import { createAmenitySchema } from '@/lib/validations/metadata'
 // Amenities are fully global now (no is_default/hotel_id) — this simply
 // lists everything, optionally filtered by context (HOTEL/ROOM) and search.
 // Includes a usage count (hotel_amenities + room_type_amenities) per row so
-// the catalog page can show how widely each amenity is actually in use.
+// the catalog page can show how widely each amenity is actually in use. {new one}
 export async function GET(req: NextRequest) {
   try {
     const auth = await requireAuth(req, ['SYSTEM_ADMIN'])

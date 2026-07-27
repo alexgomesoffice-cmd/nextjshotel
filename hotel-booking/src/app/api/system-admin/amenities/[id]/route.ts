@@ -8,7 +8,7 @@ type Params = { params: Promise<{ id: string }> }
 // ─── PATCH /api/system-admin/amenities/[id] ───────────────────────────────
 // Amenities are fully global now — every row is editable by System Admin,
 // there's no more "is this a hotel-specific one" check needed. If name or
-// context changes, re-checks the [name, context] uniqueness constraint.
+// context changes, re-checks the [name, context] uniqueness constraint. {new one}
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const auth = await requireAuth(req, ['SYSTEM_ADMIN'])

@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export interface AmenityRecord {
   id: number
@@ -25,7 +26,7 @@ export interface AmenityRecord {
 
 export function AmenityIcon({ name, className }: { name?: string | null; className?: string }) {
   if (!name) return <LucideIcons.Sparkles className={className} />
-  const Icon = (LucideIcons as any)[name] as React.ElementType | undefined
+  const Icon = (LucideIcons as any)[name] as React.ElementType 
   return Icon ? <Icon className={className} /> : <LucideIcons.Sparkles className={className} />
 }
 
@@ -47,15 +48,17 @@ export function AmenityFormDialog({
   const [iconQuery, setIconQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [amenityContext, setAmenityContext] = useState<'HOTEL' | 'ROOM'>(context)
 
   useEffect(() => {
-    if (open) {
-      setName(editing?.name ?? '')
-      setIcon(editing?.icon ?? 'Sparkles')
-      setIconQuery('')
-      setError(null)
-    }
-  }, [open, editing])
+  if (open) {
+    setName(editing?.name ?? '')
+    setIcon(editing?.icon ?? 'Sparkles')
+    setAmenityContext(editing?.context ?? context)
+    setIconQuery('')
+    setError(null)
+  }
+}, [open, editing, context])
 
   const filteredIcons = AMENITY_ICON_NAMES.filter((n) =>
     n.toLowerCase().includes(iconQuery.toLowerCase()),
@@ -75,7 +78,7 @@ export function AmenityFormDialog({
         method,
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), icon, context, is_active: true }),
+        body: JSON.stringify({ name: name.trim(), icon, context: amenityContext, is_active: true }),
       })
       const data = await res.json()
       if (!res.ok || !data.success) {
@@ -97,6 +100,30 @@ export function AmenityFormDialog({
         <DialogHeader>
           <DialogTitle>{editing ? 'Edit Amenity' : 'New Amenity'}</DialogTitle>
         </DialogHeader>
+        <div className="space-y-1.5">
+  <Label>Context</Label>
+  <Tabs
+    value={amenityContext}
+    onValueChange={(value) =>
+      setAmenityContext(value as 'HOTEL' | 'ROOM')
+    }
+  >
+    <TabsList className="rounded-md border border-border/70 bg-background p-1 shadow-sm">
+            <TabsTrigger
+              value="HOTEL"
+              className="rounded-sm px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Hotel
+            </TabsTrigger>
+            <TabsTrigger
+              value="ROOM"
+              className="rounded-sm px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Room
+            </TabsTrigger>
+          </TabsList>
+  </Tabs>
+</div>
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
@@ -124,7 +151,10 @@ export function AmenityFormDialog({
                 className="h-8 w-full rounded-sm border border-border/60 bg-secondary/40 pl-7 pr-2 text-xs outline-none focus:border-primary/60"
               />
             </div>
-            <div className="grid max-h-40 grid-cols-8 gap-1 overflow-y-auto rounded-md border border-border/40 p-1.5">
+            <div className="grid max-h-40 grid-cols-8 gap-1 overflow-y-auto rounded-md border border-border/40 p-1.5 custom-scrollbar"
+                                    data-lenis-prevent="true"
+                  data-lenis-prevent-wheel="true"
+                  data-lenis-prevent-touch="true">
               {filteredIcons.map((n) => {
                 const Icon = (LucideIcons as any)[n] as React.ElementType
                 return (

@@ -8,7 +8,7 @@ import { prisma } from '@/lib/prisma'
  * Query params:
  *   context? = 'HOTEL' | 'ROOM'  → filter to one context only
  *   flat?    = '1'               → return flat array instead of grouped object
- * Used by: hotel detail pages, room type detail pages, hotel creation form amenity checklist
+ * Used by: hotel detail pages, room type detail pages, hotel creation form amenity checklist {new one}
  */
 export async function GET(req: NextRequest) {
   try {

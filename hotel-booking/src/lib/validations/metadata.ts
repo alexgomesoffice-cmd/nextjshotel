@@ -27,3 +27,10 @@ export const createAmenitySchema = z.object({
 })
 
 export const updateAmenitySchema = createAmenitySchema.partial()
+
+export const createBedTypeSchema = z.object({
+  name: z.string().min(1, 'Bed type name is required'),
+  is_active: z.boolean().default(true),
+})
+
+export const updateBedTypeSchema = createBedTypeSchema.partial()

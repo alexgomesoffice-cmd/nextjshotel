@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma'
 
 /**
  * GET /api/public/amenities
- * No auth. Returns all global default amenities grouped by context.
+ * No auth. Returns all active amenities grouped by context — every amenity
+ * is global now (System-Admin-owned), so no is_default/hotel_id filter needed.
  * Query params:
  *   context? = 'HOTEL' | 'ROOM'  → filter to one context only
  *   flat?    = '1'               → return flat array instead of grouped object
@@ -15,14 +16,7 @@ export async function GET(req: NextRequest) {
     const contextFilter = searchParams.get('context') as 'HOTEL' | 'ROOM' | null
     const flat = searchParams.get('flat') === '1'
 
-    const where: {
-      is_default: boolean
-      hotel_id: null
-      is_active: boolean
-      context?: 'HOTEL' | 'ROOM'
-    } = {
-      is_default: true,
-      hotel_id: null,
+    const where: { is_active: boolean; context?: 'HOTEL' | 'ROOM' } = {
       is_active: true,
     }
 

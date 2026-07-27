@@ -148,14 +148,10 @@ CREATE TABLE `hotels` (
     `address` TEXT NULL,
     `city_id` INTEGER NULL,
     `hotel_type_id` INTEGER NULL,
-    `emergency_contact1` VARCHAR(100) NULL,
-    `emergency_contact2` VARCHAR(100) NULL,
-    `owner_name` VARCHAR(150) NULL,
     `zip_code` VARCHAR(20) NULL,
-    `latitude` DOUBLE NULL,
-    `longitude` DOUBLE NULL,
+    `map_location` VARCHAR(500) NULL,
     `created_by` INTEGER NOT NULL,
-    `approval_status` ENUM('DRAFT', 'PUBLISHED', 'SUSPENDED') NOT NULL DEFAULT 'DRAFT',
+    `approval_status` ENUM('UNPUBLISHED', 'PUBLISHED', 'SUSPENDED') NOT NULL DEFAULT 'UNPUBLISHED',
     `published_at` DATETIME(3) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
@@ -174,7 +170,6 @@ CREATE TABLE `hotel_details` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `hotel_id` INTEGER NOT NULL,
     `description` TEXT NULL,
-    `short_description` VARCHAR(500) NULL,
     `reception_no1` VARCHAR(32) NULL,
     `reception_no2` VARCHAR(32) NULL,
     `star_rating` DECIMAL(2, 1) NULL,
@@ -183,9 +178,11 @@ CREATE TABLE `hotel_details` (
     `check_in_time` VARCHAR(5) NOT NULL DEFAULT '14:00',
     `check_out_time` VARCHAR(5) NOT NULL DEFAULT '12:00',
     `advance_deposit_percent` INTEGER NOT NULL DEFAULT 0,
-    `cancellation_policy` ENUM('FLEXIBLE', 'MODERATE', 'STRICT', 'CUSTOM') NOT NULL DEFAULT 'FLEXIBLE',
-    `cancellation_hours` INTEGER NULL,
-    `refund_percent` INTEGER NULL,
+    `emergency_contact_name` VARCHAR(150) NULL,
+    `emergency_contact_designation` VARCHAR(100) NULL,
+    `emergency_contact_phone1` VARCHAR(32) NULL,
+    `emergency_contact_phone2` VARCHAR(32) NULL,
+    `emergency_contact_email` VARCHAR(150) NULL,
     `updated_at` DATETIME(3) NOT NULL,
 
     UNIQUE INDEX `hotel_details_hotel_id_key`(`hotel_id`),
@@ -355,48 +352,84 @@ CREATE TABLE `hotel_amenities` (
 CREATE TABLE `bed_types` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(100) NOT NULL,
-    `is_default` BOOLEAN NOT NULL DEFAULT false,
-    `hotel_id` INTEGER NULL,
     `is_active` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    INDEX `bed_types_hotel_id_idx`(`hotel_id`),
-    UNIQUE INDEX `bed_types_name_hotel_id_key`(`name`, `hotel_id`),
+    UNIQUE INDEX `bed_types_name_key`(`name`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
 CREATE TABLE `room_types` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `hotel_id` INTEGER NOT NULL,
+    `hotel_id` INTEGER NULL,
+    `is_default` BOOLEAN NOT NULL DEFAULT false,
     `name` VARCHAR(150) NOT NULL,
     `description` TEXT NULL,
-    `base_price` DECIMAL(12, 2) NOT NULL,
-    `room_size` VARCHAR(50) NULL,
-    `max_occupancy` INTEGER NOT NULL DEFAULT 2,
-    `cancellation_policy` ENUM('FLEXIBLE', 'MODERATE', 'STRICT', 'CUSTOM') NOT NULL DEFAULT 'FLEXIBLE',
-    `cancellation_hours` INTEGER NULL,
-    `refund_percent` INTEGER NULL,
-    `check_in_time` VARCHAR(5) NULL,
-    `check_out_time` VARCHAR(5) NULL,
     `is_active` BOOLEAN NOT NULL DEFAULT true,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
     INDEX `room_types_hotel_id_idx`(`hotel_id`),
     INDEX `room_types_is_active_idx`(`is_active`),
+    INDEX `room_types_is_default_idx`(`is_default`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `room_bed_types` (
+CREATE TABLE `room_facilities` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `room_type_id` INTEGER NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `is_default` BOOLEAN NOT NULL DEFAULT false,
+    `hotel_id` INTEGER NULL,
+    `is_active` BOOLEAN NOT NULL DEFAULT true,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `room_facilities_hotel_id_idx`(`hotel_id`),
+    UNIQUE INDEX `room_facilities_name_hotel_id_key`(`name`, `hotel_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `room_detail_facilities` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `room_detail_id` INTEGER NOT NULL,
+    `facility_id` INTEGER NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `room_detail_facilities_room_detail_id_idx`(`room_detail_id`),
+    UNIQUE INDEX `room_detail_facilities_room_detail_id_facility_id_key`(`room_detail_id`, `facility_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `room_detail_bed_types` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `room_detail_id` INTEGER NOT NULL,
     `bed_type_id` INTEGER NOT NULL,
     `count` INTEGER NOT NULL DEFAULT 1,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    INDEX `room_bed_types_room_type_id_idx`(`room_type_id`),
-    UNIQUE INDEX `room_bed_types_room_type_id_bed_type_id_key`(`room_type_id`, `bed_type_id`),
+    INDEX `room_detail_bed_types_room_detail_id_idx`(`room_detail_id`),
+    UNIQUE INDEX `room_detail_bed_types_room_detail_id_bed_type_id_key`(`room_detail_id`, `bed_type_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `master_data_requests` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `hotel_id` INTEGER NOT NULL,
+    `requested_by` INTEGER NOT NULL,
+    `category` ENUM('AMENITY', 'BED_TYPE', 'ROOM_TYPE', 'ROOM_FACILITY') NOT NULL,
+    `note` TEXT NOT NULL,
+    `status` ENUM('PENDING', 'FULFILLED', 'DISMISSED') NOT NULL DEFAULT 'PENDING',
+    `resolved_by` INTEGER NULL,
+    `resolved_at` DATETIME(3) NULL,
+    `created_entity_id` INTEGER NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `master_data_requests_hotel_id_idx`(`hotel_id`),
+    INDEX `master_data_requests_status_idx`(`status`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -420,10 +453,8 @@ CREATE TABLE `room_details` (
     `floor` INTEGER NULL,
     `price` DECIMAL(12, 2) NOT NULL,
     `room_size` VARCHAR(50) NULL,
-    `ac` BOOLEAN NOT NULL DEFAULT false,
-    `smoking_allowed` BOOLEAN NOT NULL DEFAULT false,
-    `pet_allowed` BOOLEAN NOT NULL DEFAULT false,
-    `status` ENUM('AVAILABLE', 'UNAVAILABLE', 'MAINTENANCE') NOT NULL DEFAULT 'AVAILABLE',
+    `max_occupancy` INTEGER NULL,
+    `status` ENUM('AVAILABLE', 'BOOKED', 'CHECKED_IN', 'CHECKED_OUT', 'MAINTENANCE') NOT NULL DEFAULT 'AVAILABLE',
     `notes` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
@@ -431,10 +462,7 @@ CREATE TABLE `room_details` (
 
     INDEX `room_details_room_type_id_idx`(`room_type_id`),
     INDEX `room_details_status_idx`(`status`),
-    INDEX `room_details_ac_idx`(`ac`),
-    INDEX `room_details_smoking_allowed_idx`(`smoking_allowed`),
-    INDEX `room_details_pet_allowed_idx`(`pet_allowed`),
-    UNIQUE INDEX `room_details_room_type_id_room_number_key`(`room_type_id`, `room_number`),
+    UNIQUE INDEX `room_details_room_type_id_room_number_deleted_at_key`(`room_type_id`, `room_number`, `deleted_at`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -456,14 +484,14 @@ CREATE TABLE `room_images` (
 -- CreateTable
 CREATE TABLE `pricing_rules` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `room_type_id` INTEGER NOT NULL,
+    `room_detail_id` INTEGER NOT NULL,
     `name` VARCHAR(150) NULL,
     `start_date` DATE NOT NULL,
     `end_date` DATE NOT NULL,
-    `price` DECIMAL(12, 2) NOT NULL,
+    `discounted_price` DECIMAL(12, 2) NOT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    INDEX `pricing_rules_room_type_id_idx`(`room_type_id`),
+    INDEX `pricing_rules_room_detail_id_idx`(`room_detail_id`),
     INDEX `pricing_rules_start_date_end_date_idx`(`start_date`, `end_date`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -482,10 +510,6 @@ CREATE TABLE `user_bookings` (
     `status` ENUM('RESERVED', 'BOOKED', 'EXPIRED', 'CANCELLED', 'CHECKED_IN', 'CHECKED_OUT', 'NO_SHOW') NOT NULL DEFAULT 'RESERVED',
     `reserved_until` DATETIME(3) NULL,
     `total_price` DECIMAL(12, 2) NOT NULL,
-    `advance_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0,
-    `payment_method` VARCHAR(50) NULL,
-    `transaction_id` VARCHAR(191) NULL,
-    `paid_at` DATETIME(3) NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
@@ -529,7 +553,7 @@ CREATE TABLE `room_trackers` (
     INDEX `room_trackers_booking_id_idx`(`booking_id`),
     INDEX `room_trackers_status_idx`(`status`),
     INDEX `room_trackers_check_in_idx`(`check_in`),
-    UNIQUE INDEX `room_trackers_room_detail_id_check_in_check_out_key`(`room_detail_id`, `check_in`, `check_out`),
+    UNIQUE INDEX `room_trackers_room_detail_id_check_in_check_out_status_key`(`room_detail_id`, `check_in`, `check_out`, `status`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -546,6 +570,210 @@ CREATE TABLE `blacklisted_tokens` (
     INDEX `blacklisted_tokens_token_hash_idx`(`token_hash`),
     INDEX `blacklisted_tokens_expires_at_idx`(`expires_at`),
     INDEX `blacklisted_tokens_actor_id_actor_type_idx`(`actor_id`, `actor_type`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `policies` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `hotel_id` INTEGER NOT NULL,
+    `name` VARCHAR(150) NOT NULL,
+    `description` TEXT NOT NULL,
+    `is_active` BOOLEAN NOT NULL DEFAULT true,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+    `deleted_at` DATETIME(3) NULL,
+
+    INDEX `policies_hotel_id_idx`(`hotel_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `hotel_owner_details` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `hotel_id` INTEGER NOT NULL,
+    `full_name` VARCHAR(150) NOT NULL,
+    `dob` DATE NOT NULL,
+    `nid_no` VARCHAR(50) NOT NULL,
+    `passport` VARCHAR(50) NULL,
+    `email` VARCHAR(150) NOT NULL,
+    `phone` VARCHAR(32) NOT NULL,
+    `address` TEXT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    UNIQUE INDEX `hotel_owner_details_hotel_id_key`(`hotel_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `hotel_owner_images` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `hotel_owner_detail_id` INTEGER NOT NULL,
+    `image_url` VARCHAR(500) NOT NULL,
+    `is_active` BOOLEAN NOT NULL DEFAULT true,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `hotel_owner_images_hotel_owner_detail_id_idx`(`hotel_owner_detail_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `hotel_documents` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `hotel_id` INTEGER NOT NULL,
+    `document_type` ENUM('TRADE_LICENSE', 'TAX_CERTIFICATE', 'TIN_CERTIFICATE', 'VAT_CERTIFICATE', 'BUSINESS_DOCUMENT', 'OWNER_DOCUMENT', 'ADMIN_DOCUMENT') NOT NULL,
+    `file_url` VARCHAR(500) NOT NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    INDEX `hotel_documents_hotel_id_idx`(`hotel_id`),
+    INDEX `hotel_documents_document_type_idx`(`document_type`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `cases` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `hotel_id` INTEGER NOT NULL,
+    `submitted_by` INTEGER NOT NULL,
+    `status` ENUM('DRAFTING', 'PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    `summary` TEXT NULL,
+    `submitted_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `decided_by` INTEGER NULL,
+    `decided_at` DATETIME(3) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updated_at` DATETIME(3) NOT NULL,
+
+    INDEX `cases_hotel_id_idx`(`hotel_id`),
+    INDEX `cases_status_idx`(`status`),
+    INDEX `cases_submitted_by_idx`(`submitted_by`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `case_field_changes` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `case_id` INTEGER NOT NULL,
+    `entity_type` ENUM('HOTEL', 'HOTEL_OWNER', 'HOTEL_ADMIN', 'HOTEL_IMAGE', 'HOTEL_DOCUMENT', 'AMENITY', 'POLICY', 'ROOM_TYPE', 'ROOM_TYPE_IMAGE', 'ROOM_FACILITY') NOT NULL,
+    `entity_id` INTEGER NULL,
+    `field_name` VARCHAR(100) NULL,
+    `previous_value` TEXT NULL,
+    `proposed_value` TEXT NOT NULL,
+    `status` ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'PENDING',
+    `rejection_reason` TEXT NULL,
+    `decided_at` DATETIME(3) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `case_field_changes_case_id_idx`(`case_id`),
+    INDEX `case_field_changes_status_idx`(`status`),
+    INDEX `case_field_changes_entity_type_entity_id_idx`(`entity_type`, `entity_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `system_admin_activity_logs` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `actor_id` INTEGER NOT NULL,
+    `action` VARCHAR(150) NOT NULL,
+    `entity_type` VARCHAR(100) NOT NULL,
+    `entity_id` INTEGER NULL,
+    `metadata` JSON NULL,
+    `ip_address` VARCHAR(64) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `system_admin_activity_logs_actor_id_idx`(`actor_id`),
+    INDEX `system_admin_activity_logs_entity_type_entity_id_idx`(`entity_type`, `entity_id`),
+    INDEX `system_admin_activity_logs_created_at_idx`(`created_at`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `hotel_admin_activity_logs` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `hotel_id` INTEGER NOT NULL,
+    `actor_id` INTEGER NOT NULL,
+    `actor_type` ENUM('SYSTEM_ADMIN', 'HOTEL_ADMIN', 'HOTEL_SUB_ADMIN', 'END_USER') NOT NULL,
+    `action` VARCHAR(150) NOT NULL,
+    `entity_type` VARCHAR(100) NOT NULL,
+    `entity_id` INTEGER NULL,
+    `metadata` JSON NULL,
+    `ip_address` VARCHAR(64) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `hotel_admin_activity_logs_hotel_id_idx`(`hotel_id`),
+    INDEX `hotel_admin_activity_logs_actor_id_actor_type_idx`(`actor_id`, `actor_type`),
+    INDEX `hotel_admin_activity_logs_entity_type_entity_id_idx`(`entity_type`, `entity_id`),
+    INDEX `hotel_admin_activity_logs_created_at_idx`(`created_at`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `end_user_activity_logs` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `actor_id` INTEGER NOT NULL,
+    `action` VARCHAR(150) NOT NULL,
+    `entity_type` VARCHAR(100) NOT NULL,
+    `entity_id` INTEGER NULL,
+    `metadata` JSON NULL,
+    `ip_address` VARCHAR(64) NULL,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `end_user_activity_logs_actor_id_idx`(`actor_id`),
+    INDEX `end_user_activity_logs_entity_type_entity_id_idx`(`entity_type`, `entity_id`),
+    INDEX `end_user_activity_logs_created_at_idx`(`created_at`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `system_admin_notifications` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `recipient_id` INTEGER NOT NULL,
+    `type` ENUM('CASE_SUBMITTED', 'CASE_APPROVED', 'CASE_REJECTED', 'FIELD_REJECTED', 'NEW_BOOKING', 'BOOKING_CANCELLED', 'NEW_REVIEW', 'DOCUMENT_EXPIRING', 'ACCOUNT_BLOCKED', 'GENERAL') NOT NULL,
+    `title` VARCHAR(200) NOT NULL,
+    `message` TEXT NOT NULL,
+    `related_entity_type` VARCHAR(100) NULL,
+    `related_entity_id` INTEGER NULL,
+    `is_read` BOOLEAN NOT NULL DEFAULT false,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `system_admin_notifications_recipient_id_is_read_idx`(`recipient_id`, `is_read`),
+    INDEX `system_admin_notifications_created_at_idx`(`created_at`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `hotel_admin_notifications` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `recipient_id` INTEGER NOT NULL,
+    `recipient_type` ENUM('SYSTEM_ADMIN', 'HOTEL_ADMIN', 'HOTEL_SUB_ADMIN', 'END_USER') NOT NULL,
+    `type` ENUM('CASE_SUBMITTED', 'CASE_APPROVED', 'CASE_REJECTED', 'FIELD_REJECTED', 'NEW_BOOKING', 'BOOKING_CANCELLED', 'NEW_REVIEW', 'DOCUMENT_EXPIRING', 'ACCOUNT_BLOCKED', 'GENERAL') NOT NULL,
+    `title` VARCHAR(200) NOT NULL,
+    `message` TEXT NOT NULL,
+    `related_entity_type` VARCHAR(100) NULL,
+    `related_entity_id` INTEGER NULL,
+    `is_read` BOOLEAN NOT NULL DEFAULT false,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `hotel_admin_notifications_recipient_id_recipient_type_is_rea_idx`(`recipient_id`, `recipient_type`, `is_read`),
+    INDEX `hotel_admin_notifications_created_at_idx`(`created_at`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `end_user_notifications` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `recipient_id` INTEGER NOT NULL,
+    `type` ENUM('CASE_SUBMITTED', 'CASE_APPROVED', 'CASE_REJECTED', 'FIELD_REJECTED', 'NEW_BOOKING', 'BOOKING_CANCELLED', 'NEW_REVIEW', 'DOCUMENT_EXPIRING', 'ACCOUNT_BLOCKED', 'GENERAL') NOT NULL,
+    `title` VARCHAR(200) NOT NULL,
+    `message` TEXT NOT NULL,
+    `related_entity_type` VARCHAR(100) NULL,
+    `related_entity_id` INTEGER NULL,
+    `is_read` BOOLEAN NOT NULL DEFAULT false,
+    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    INDEX `end_user_notifications_recipient_id_is_read_idx`(`recipient_id`, `is_read`),
+    INDEX `end_user_notifications_created_at_idx`(`created_at`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -619,16 +847,25 @@ ALTER TABLE `hotel_amenities` ADD CONSTRAINT `hotel_amenities_hotel_id_fkey` FOR
 ALTER TABLE `hotel_amenities` ADD CONSTRAINT `hotel_amenities_amenity_id_fkey` FOREIGN KEY (`amenity_id`) REFERENCES `amenities`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `bed_types` ADD CONSTRAINT `bed_types_hotel_id_fkey` FOREIGN KEY (`hotel_id`) REFERENCES `hotels`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `room_types` ADD CONSTRAINT `room_types_hotel_id_fkey` FOREIGN KEY (`hotel_id`) REFERENCES `hotels`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `room_bed_types` ADD CONSTRAINT `room_bed_types_room_type_id_fkey` FOREIGN KEY (`room_type_id`) REFERENCES `room_types`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `room_facilities` ADD CONSTRAINT `room_facilities_hotel_id_fkey` FOREIGN KEY (`hotel_id`) REFERENCES `hotels`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `room_bed_types` ADD CONSTRAINT `room_bed_types_bed_type_id_fkey` FOREIGN KEY (`bed_type_id`) REFERENCES `bed_types`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `room_detail_facilities` ADD CONSTRAINT `room_detail_facilities_room_detail_id_fkey` FOREIGN KEY (`room_detail_id`) REFERENCES `room_details`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `room_detail_facilities` ADD CONSTRAINT `room_detail_facilities_facility_id_fkey` FOREIGN KEY (`facility_id`) REFERENCES `room_facilities`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `room_detail_bed_types` ADD CONSTRAINT `room_detail_bed_types_room_detail_id_fkey` FOREIGN KEY (`room_detail_id`) REFERENCES `room_details`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `room_detail_bed_types` ADD CONSTRAINT `room_detail_bed_types_bed_type_id_fkey` FOREIGN KEY (`bed_type_id`) REFERENCES `bed_types`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `master_data_requests` ADD CONSTRAINT `master_data_requests_hotel_id_fkey` FOREIGN KEY (`hotel_id`) REFERENCES `hotels`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `room_properties` ADD CONSTRAINT `room_properties_room_type_id_fkey` FOREIGN KEY (`room_type_id`) REFERENCES `room_types`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -646,7 +883,7 @@ ALTER TABLE `room_images` ADD CONSTRAINT `room_images_room_type_id_fkey` FOREIGN
 ALTER TABLE `room_images` ADD CONSTRAINT `room_images_room_detail_id_fkey` FOREIGN KEY (`room_detail_id`) REFERENCES `room_details`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `pricing_rules` ADD CONSTRAINT `pricing_rules_room_type_id_fkey` FOREIGN KEY (`room_type_id`) REFERENCES `room_types`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE `pricing_rules` ADD CONSTRAINT `pricing_rules_room_detail_id_fkey` FOREIGN KEY (`room_detail_id`) REFERENCES `room_details`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `user_bookings` ADD CONSTRAINT `user_bookings_end_user_id_fkey` FOREIGN KEY (`end_user_id`) REFERENCES `end_users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
@@ -668,3 +905,27 @@ ALTER TABLE `room_trackers` ADD CONSTRAINT `room_trackers_booking_id_fkey` FOREI
 
 -- AddForeignKey
 ALTER TABLE `room_trackers` ADD CONSTRAINT `room_trackers_room_detail_id_fkey` FOREIGN KEY (`room_detail_id`) REFERENCES `room_details`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `policies` ADD CONSTRAINT `policies_hotel_id_fkey` FOREIGN KEY (`hotel_id`) REFERENCES `hotels`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `hotel_owner_details` ADD CONSTRAINT `hotel_owner_details_hotel_id_fkey` FOREIGN KEY (`hotel_id`) REFERENCES `hotels`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `hotel_owner_images` ADD CONSTRAINT `hotel_owner_images_hotel_owner_detail_id_fkey` FOREIGN KEY (`hotel_owner_detail_id`) REFERENCES `hotel_owner_details`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `hotel_documents` ADD CONSTRAINT `hotel_documents_hotel_id_fkey` FOREIGN KEY (`hotel_id`) REFERENCES `hotels`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `cases` ADD CONSTRAINT `cases_hotel_id_fkey` FOREIGN KEY (`hotel_id`) REFERENCES `hotels`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `cases` ADD CONSTRAINT `cases_submitted_by_fkey` FOREIGN KEY (`submitted_by`) REFERENCES `hotel_admins`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `cases` ADD CONSTRAINT `cases_decided_by_fkey` FOREIGN KEY (`decided_by`) REFERENCES `system_admins`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `case_field_changes` ADD CONSTRAINT `case_field_changes_case_id_fkey` FOREIGN KEY (`case_id`) REFERENCES `cases`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;

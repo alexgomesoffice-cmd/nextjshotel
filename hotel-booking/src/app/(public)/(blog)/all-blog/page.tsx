@@ -318,7 +318,7 @@ const Blog = () => {
         <div className="max-w-7xl container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mb-12 animate-fade-in-up">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 text-primary text-sm font-medium mb-4">
-              <BookOpen className="h-4 w-4" /> StayVista Journal
+              <BookOpen className="h-4 w-4" /> GhuriBangla Journal
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold mb-4">
               Travel <span className="text-gradient">Stories</span> & Guides

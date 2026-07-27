@@ -14,283 +14,50 @@ const adapter = new PrismaMariaDb({
 
 const prisma = new PrismaClient({ adapter })
 
+
+
 async function main() {
-  console.log('🌱 Starting seed...')
+  console.log("🌱 Seeding System Admin...");
 
-  // 1. Seed roles
-  console.log('📦 Seeding roles...')
-  await prisma.roles.upsert({
-    where: { id: 1 },
-    update: {},
-    create: { role_name: 'HOTEL_ADMIN' },
-  })
-  await prisma.roles.upsert({
-    where: { id: 2 },
-    update: {},
-    create: { role_name: 'HOTEL_SUB_ADMIN' },
-  })
-  console.log('✅ Roles seeded')
+  const email = process.env.SEED_ADMIN_EMAIL!;
+  const password = process.env.SEED_ADMIN_PASSWORD!;
+  const name = process.env.SEED_ADMIN_NAME!;
 
-  // 2. Seed hotel types
-  console.log('📦 Seeding hotel_types...')
-  const hotelTypes = [
-    'Hotel',
-    'Resort',
-    'Boutique',
-    'Hostel',
-    'Guest House',
-    'Serviced Apartment',
-  ]
-  for (const name of hotelTypes) {
-    await prisma.hotel_types.upsert({
-      where: { name },
-      update: {},
-      create: { name },
-    })
+  const existing = await prisma.system_admins.findUnique({
+    where: {
+      email,
+    },
+  });
+
+  if (existing) {
+    console.log("✅ System admin already exists.");
+    return;
   }
-  console.log('✅ Hotel types seeded')
 
-  // 3. Seed cities (major BD cities)
-  console.log('📦 Seeding cities...')
-  const cities = [
-    {
-      name: "Dhaka",
-      image_url:
-        "https://images.unsplash.com/photo-1590579491624-f98f36d4c763?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Chittagong",
-      image_url:
-        "https://images.unsplash.com/photo-1578894381163-e72c17f2d45f?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Sylhet",
-      image_url:
-        "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Cox's Bazar",
-      image_url:
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Khulna",
-      image_url:
-        "https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Barisal",
-      image_url:
-        "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Rangpur",
-      image_url:
-        "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Mymensingh",
-      image_url:
-        "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Tangail",
-      image_url:
-        "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Bogura",
-      image_url:
-        "https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Jessore",
-      image_url:
-        "https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Comilla",
-      image_url:
-        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Narayanganj",
-      image_url:
-        "https://images.unsplash.com/photo-1482192505345-5655af888cc4?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Savar",
-      image_url:
-        "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      name: "Mirpur",
-      image_url:
-        "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=800&q=80",
-    },
-  ]
-  for (const city of cities) {
-    await prisma.cities.upsert({
-      where: { name: city.name },
-      update: { image_url: city.image_url },
-      create: city,
-    })
-  }
-  console.log('✅ Cities seeded')
+  const hashedPassword = await bcrypt.hash(password, 12);
 
-  // 4. Seed amenities (global defaults)
-  console.log('📦 Seeding amenities...')
-  
-  // Hotel-level amenities
-  const hotelAmenities = [
-    { name: 'Free WiFi', icon: 'wifi', context: 'HOTEL' as const },
-    { name: 'Parking', icon: 'parking', context: 'HOTEL' as const },
-    { name: 'Restaurant', icon: 'utensils', context: 'HOTEL' as const },
-    { name: 'Room Service', icon: 'bell', context: 'HOTEL' as const },
-    { name: 'Fitness Center', icon: 'dumbbell', context: 'HOTEL' as const },
-    { name: 'Swimming Pool', icon: 'waves', context: 'HOTEL' as const },
-    { name: 'Spa', icon: 'sparkles', context: 'HOTEL' as const },
-    { name: 'Airport Transfer', icon: 'car', context: 'HOTEL' as const },
-    { name: 'Laundry', icon: 'shirt', context: 'HOTEL' as const },
-    { name: '24/7 Front Desk', icon: 'clock', context: 'HOTEL' as const },
-    { name: 'Conference Room', icon: 'users', context: 'HOTEL' as const },
-    { name: 'Business Center', icon: 'briefcase', context: 'HOTEL' as const },
-  ]
-  
-  // Room-level amenities
-  const roomAmenities = [
-    { name: 'Air Conditioning', icon: 'wind', context: 'ROOM' as const },
-    { name: 'TV', icon: 'tv', context: 'ROOM' as const },
-    { name: 'Hot Water', icon: 'flame', context: 'ROOM' as const },
-    { name: 'Mini Bar', icon: 'wine', context: 'ROOM' as const },
-    { name: 'Safe', icon: 'lock', context: 'ROOM' as const },
-    { name: 'Balcony', icon: 'sun', context: 'ROOM' as const },
-    { name: 'City View', icon: 'building', context: 'ROOM' as const },
-    { name: 'Sea View', icon: 'waves', context: 'ROOM' as const },
-    { name: 'Room Service', icon: 'bell', context: 'ROOM' as const },
-    { name: 'Coffee Maker', icon: 'coffee', context: 'ROOM' as const },
-  ]
-
-  for (const amenity of [...hotelAmenities, ...roomAmenities]) {
-    // Check if exists first
-    const existing = await prisma.amenities.findFirst({
-      where: { name: amenity.name, hotel_id: null },
-    })
-    if (!existing) {
-      await prisma.amenities.create({
-        data: {
-          name: amenity.name,
-          icon: amenity.icon,
-          context: amenity.context,
-          is_default: true,
-          hotel_id: null,
-        },
-      })
-    }
-  }
-  console.log('✅ Amenities seeded')
-
-  // 5. Seed bed types
-  console.log('📦 Seeding bed_types...')
-  const bedTypes = [
-    'Single Bed',
-    'Double Bed',
-    'Twin Bed',
-    'King Bed',
-    'Queen Bed',
-    'Super King Bed',
-    'Bunk Bed',
-  ]
-  for (const name of bedTypes) {
-    const existing = await prisma.bed_types.findFirst({
-      where: { name, hotel_id: null },
-    })
-    if (!existing) {
-      await prisma.bed_types.create({
-        data: { name, is_default: true, hotel_id: null },
-      })
-    }
-  }
-  console.log('✅ Bed types seeded')
-
-  // 6. Seed system admin
-  console.log('📦 Seeding system admin...')
-  const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@system.com'
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'changeme123'
-  const adminName = process.env.SEED_ADMIN_NAME || 'Super Admin'
-
-  const hashedPassword = await bcrypt.hash(adminPassword, 10)
-
-  await prisma.system_admins.upsert({
-    where: { email: adminEmail },
-    update: {},
-    create: {
-      name: adminName,
-      email: adminEmail,
+  await prisma.system_admins.create({
+    data: {
+      name,
+      email,
       password: hashedPassword,
       is_active: true,
       is_blocked: false,
     },
-  })
-  console.log('✅ System admin seeded')
-  console.log(`   Email: ${adminEmail}`)
-  console.log(`   Password: ${adminPassword}`)
+  });
 
-  // 7. Seed Hotel and Hotel Admin
-  console.log('📦 Seeding hotel and hotel admin...')
-  const sysAdmin = await prisma.system_admins.findUnique({
-    where: { email: adminEmail }
-  })
-  
-  if (sysAdmin) {
-    const city = await prisma.cities.findUnique({ where: { name: 'Dhaka' } })
-    const hotelType = await prisma.hotel_types.findUnique({ where: { name: 'Hotel' } })
-
-    const hotel = await prisma.hotels.upsert({
-      where: { slug: 'grand-dhaka-hotel' },
-      update: {},
-      create: {
-        name: 'Grand Dhaka Hotel',
-        slug: 'grand-dhaka-hotel',
-        email: 'info@granddhaka.com',
-        address: '123 Main Street, Dhaka',
-        city_id: city?.id,
-        hotel_type_id: hotelType?.id,
-        created_by: sysAdmin.id,
-        approval_status: 'PUBLISHED',
-      }
-    })
-
-    const hotelAdminEmail = 'hotel@dhaka.com'
-    const hotelAdminPassword = 'hotel123'
-    const hashedHotelAdminPassword = await bcrypt.hash(hotelAdminPassword, 10)
-
-    await prisma.hotel_admins.upsert({
-      where: { email: hotelAdminEmail },
-      update: {},
-      create: {
-        name: 'Grand Dhaka Admin',
-        email: hotelAdminEmail,
-        password: hashedHotelAdminPassword,
-        hotel_id: hotel.id,
-        created_by: sysAdmin.id,
-        role_id: 1,
-        is_active: true,
-      }
-    })
-    console.log('   Hotel and Hotel Admin seeded')
-    console.log(`   Hotel Admin Email: ${hotelAdminEmail}`)
-    console.log(`   Hotel Admin Password: ${hotelAdminPassword}`)
-  }
-
-  console.log('🎉 Seed completed!')
+  console.log("==================================");
+  console.log("✅ System Admin Created");
+  console.log("Email:", email);
+  console.log("Password:", password);
+  console.log("==================================");
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Seed failed:', e)
-    process.exit(1)
+    console.error(e);
+    process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect()
-  })
+    await prisma.$disconnect();
+  });

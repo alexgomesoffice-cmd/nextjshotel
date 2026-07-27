@@ -1,8 +1,11 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
 generator client {
   provider = "prisma-client-js"
+
 }
 
 datasource db {
@@ -32,9 +35,9 @@ enum ApprovalStatus {
 }
 
 enum BookingStatus {
-  RESERVED     // 5-min hold; awaiting confirmation
-  BOOKED       // booking confirmed
-  EXPIRED      // 5-min window passed without confirmation
+  RESERVED     // 10-min hold; awaiting payment
+  BOOKED       // payment confirmed
+  EXPIRED      // 10-min window passed without payment
   CANCELLED    // cancelled by user or hotel staff
   CHECKED_IN   // set manually by hotel staff on guest arrival
   CHECKED_OUT  // set manually by hotel staff on departure
@@ -87,16 +90,18 @@ enum DocumentType {
 enum CaseEntityType {
   HOTEL              // hotels + hotel_details fields
   HOTEL_OWNER        // hotel_owner_details
-  HOTEL_ADMIN        // hotel_admin_details identity fields (name/phone/dob/nid/passport/address/photo)
+  HOTEL_ADMIN        // hotel_admin_details identity fields (name/phone/dob/nid/passport/address/photo). NOT email (immutable, no change path exists) or password (immediate, no review).
   HOTEL_IMAGE        // hotel_images (gallery)
   HOTEL_DOCUMENT     // hotel_documents
-  AMENITY            // hotel's amenity selection
+  AMENITY            // a hotel's or room type's amenity SELECTION only — amenities themselves are fully global/System-Admin-owned now, same as bed types, so there's no "creating a new custom amenity" case anymore
   POLICY             // policies
-  ROOM_TYPE          // room_types (name, description only)
+  ROOM_TYPE          // room_types — always hotel-owned; creating (name+description+amenity selection bundled together) or editing one is fully reviewed content, no operational fields on it at all
   ROOM_TYPE_IMAGE    // room_images tied to a room_type
-  ROOM_FACILITY      // a physical room's facility selection (room_detail_facilities)
-  BED_TYPE           // bed types for room allocation
-  ROOM_DETAIL        // physical room instances (room_details)
+  ROOM_FACILITY      // a physical room's facility selection (room_detail_facilities) — entity_id = the room_details.id
+  // BED_TYPE removed — bed types are now fully global/System-Admin-owned (no
+  // hotel-custom creation path at all), so there's nothing left for Hotel
+  // Admin to propose here. Bed selection on a room is just part of that
+  // room's own ROOM_DETAIL creation proposal.
 }
 
 enum NotificationType {
@@ -111,6 +116,10 @@ enum NotificationType {
   ACCOUNT_BLOCKED
   GENERAL
 }
+
+// CancellationPolicy enum removed — cancellation policy fields were dropped
+// from both hotel_details and room_types per your instruction; nothing
+// references this enum anymore.
 
 // ═══════════════════════════════════════════════════════
 // ROLES
@@ -289,8 +298,8 @@ model hotel_types {
 // ═══════════════════════════════════════════════════════
 // HOTELS
 // Created by system admin alongside the hotel admin account (single form).
-// System admin edits hotel-level info.
-// Hotel admin edits hotel-level info AND owns room/room type management via cases.
+// System admin edits hotel-level info (NOT rooms or room types).
+// Hotel admin edits hotel-level info AND owns all room/room type management.
 // city_id is a FK — no free-text city. Always chosen from cities dropdown.
 // ═══════════════════════════════════════════════════════
 
@@ -303,7 +312,7 @@ model hotels {
   city_id            Int?
   hotel_type_id      Int?
   zip_code           String?        @db.VarChar(20)
-  map_location       String?        @db.VarChar(500)  // Google Maps embed URL
+  map_location       String?        @db.VarChar(500)  // plain string, e.g. Google Maps embed URL — confirmed
   created_by         Int
   approval_status    ApprovalStatus @default(UNPUBLISHED)
   published_at       DateTime?
@@ -311,23 +320,21 @@ model hotels {
   updated_at         DateTime       @updatedAt
   deleted_at         DateTime?
 
-  city                   cities?                  @relation(fields: [city_id], references: [id])
-  hotel_type             hotel_types?             @relation(fields: [hotel_type_id], references: [id])
-  creator                system_admins            @relation("HotelCreatedBy", fields: [created_by], references: [id])
-  hotel_admin            hotel_admins?
-  detail                 hotel_details?
-  images                 hotel_images[]
-  hotel_amenities        hotel_amenities[]
-  hotel_sub_admins       hotel_sub_admins[]
-  room_types             room_types[]
-  bookings               user_bookings[]
-  custom_amenities       amenities[]              @relation("HotelCustomAmenities")
-  custom_bed_types       bed_types[]              @relation("HotelCustomBedTypes")
-  owner_detail           hotel_owner_details?
-  documents              hotel_documents[]
-  policies               policies[]
-  cases                  cases[]
-  master_data_requests   master_data_requests[]
+  city             cities?            @relation(fields: [city_id], references: [id])
+  hotel_type       hotel_types?       @relation(fields: [hotel_type_id], references: [id])
+  creator          system_admins      @relation("HotelCreatedBy", fields: [created_by], references: [id])
+  hotel_admin      hotel_admins?
+  detail           hotel_details?
+  images           hotel_images[]
+  hotel_amenities  hotel_amenities[]
+  hotel_sub_admins hotel_sub_admins[]
+  room_types       room_types[]
+  bookings         user_bookings[]
+  owner_detail     hotel_owner_details?
+  documents        hotel_documents[]
+  policies         policies[]
+  cases            cases[]
+  master_data_requests master_data_requests[]
 
   @@index([approval_status])
   @@index([city_id])
@@ -337,23 +344,26 @@ model hotels {
 }
 
 model hotel_details {
-  id                            Int      @id @default(autoincrement())
-  hotel_id                      Int      @unique
-  description                   String?  @db.Text
-  reception_no1                 String?  @db.VarChar(32)
-  reception_no2                 String?  @db.VarChar(32)
-  star_rating                   Decimal? @db.Decimal(2, 1)
-  guest_rating                  Decimal  @default(0.00) @db.Decimal(3, 2)
-  website                       String?  @db.VarChar(255)
-  check_in_time                 String   @default("14:00") @db.VarChar(5)
-  check_out_time                String   @default("12:00") @db.VarChar(5)
-  emergency_contact_name        String?  @db.VarChar(150)
-  emergency_contact_designation String?  @db.VarChar(100)
-  emergency_contact_phone1      String?  @db.VarChar(32)
-  emergency_contact_phone2      String?  @db.VarChar(32)
-  emergency_contact_email       String?  @db.VarChar(150)
-  updated_at                    DateTime @updatedAt
-  hotel                         hotels   @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  id                      Int                @id @default(autoincrement())
+  hotel_id                Int                @unique
+  description             String?            @db.Text
+  reception_no1           String?            @db.VarChar(32)
+  reception_no2           String?            @db.VarChar(32)
+  star_rating             Decimal?           @db.Decimal(2, 1)
+  guest_rating            Decimal            @default(0.00) @db.Decimal(3, 2)
+  website                 String?            @db.VarChar(255)
+  check_in_time           String             @default("14:00") @db.VarChar(5)
+  check_out_time          String             @default("12:00") @db.VarChar(5)
+  advance_deposit_percent Int                @default(0)
+  // Emergency contact — property-level point of contact for critical incidents.
+  // Distinct from hotel_admin_details.emergency_contact1/2, which is the admin's own personal contact.
+  emergency_contact_name        String?      @db.VarChar(150)
+  emergency_contact_designation String?      @db.VarChar(100)
+  emergency_contact_phone1      String?      @db.VarChar(32)
+  emergency_contact_phone2      String?      @db.VarChar(32)
+  emergency_contact_email       String?      @db.VarChar(150)
+  updated_at              DateTime           @updatedAt
+  hotel                   hotels             @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
 
   @@map("hotel_details")
 }
@@ -443,8 +453,11 @@ model hotel_admin_images {
 // ═══════════════════════════════════════════════════════
 // HOTEL SUB ADMINS
 // Created by hotel admin for their own hotel.
-// Permissions: handle booking & room status ONLY.
-// Cannot: create case requests or alter hotel configurations.
+// Permissions: room availability/status updates, handle bookings ONLY.
+// Cannot: create/delete rooms, manage room types, manage amenities/bed types,
+// manage staff, set pricing, or submit anything to the case system.
+// created_by -> hotel_admins.id (FK with onDelete: SetNull)
+// Soft delete via deleted_at — hard delete never used.
 // ═══════════════════════════════════════════════════════
 
 model hotel_sub_admins {
@@ -508,9 +521,13 @@ model hotel_sub_admin_images {
 
 // ═══════════════════════════════════════════════════════
 // AMENITIES
-// is_default=true + hotel_id=null  -> global default (seeded)
-// is_default=false + hotel_id=X   -> hotel-specific custom
-// context: HOTEL = hotel-level features, ROOM = room-level features
+// Fully global, System-Admin-owned — no hotel_id, no is_default. Hotel Admin
+// only selects from this list (at the hotel level via hotel_amenities, or at
+// the room-type level via room_type_amenities); if what they need doesn't
+// exist, they submit a master_data_requests entry (category: AMENITY)
+// instead of creating their own. Same pattern as bed_types/room_facilities.
+// context: HOTEL = hotel-level features, ROOM = room-level features.
+// icon = a lucide-react icon name (e.g. "Wifi", "Car"), not a slug.
 // ═══════════════════════════════════════════════════════
 
 model amenities {
@@ -518,18 +535,13 @@ model amenities {
   name       String         @db.VarChar(150)
   icon       String?        @db.VarChar(100)
   context    AmenityContext
-  is_default Boolean        @default(false)
-  hotel_id   Int?
   is_active  Boolean        @default(true)
   created_at DateTime       @default(now())
 
-  hotel           hotels?           @relation("HotelCustomAmenities", fields: [hotel_id], references: [id], onDelete: Cascade)
-  hotel_amenities hotel_amenities[]
-  room_properties room_properties[]
+  hotel_amenities     hotel_amenities[]
+  room_type_amenities room_type_amenities[]
 
-  @@unique([name, hotel_id])
-  @@index([hotel_id])
-  @@index([is_default])
+  @@unique([name, context])
   @@index([context])
   @@map("amenities")
 }
@@ -550,74 +562,76 @@ model hotel_amenities {
 
 // ═══════════════════════════════════════════════════════
 // BED TYPES
-// is_default=true + hotel_id=null  -> global default (seeded)
-// is_default=false + hotel_id=X   -> hotel-specific custom
+// Fully global, System-Admin-owned — no hotel_id, no is_default. Bed types
+// (King/Queen/Single/etc.) are universal; hotel-specific duplicates of the
+// same concept added no value. Hotel Admin selects from this list when
+// building a room; if what they need doesn't exist, they submit a
+// master_data_requests entry (category: BED_TYPE) instead of creating their
+// own — same pattern as room_facilities.
 // ═══════════════════════════════════════════════════════
 
 model bed_types {
-  id             Int              @id @default(autoincrement())
-  name           String           @db.VarChar(100)
-  is_default     Boolean          @default(false)
-  hotel_id       Int?
-  is_active      Boolean          @default(true)
-  created_at     DateTime         @default(now())
+  id                    Int                     @id @default(autoincrement())
+  name                  String                  @unique @db.VarChar(100)
+  is_active             Boolean                 @default(true)
+  created_at            DateTime                @default(now())
 
-  hotel          hotels?          @relation("HotelCustomBedTypes", fields: [hotel_id], references: [id], onDelete: Cascade)
-  room_bed_types room_bed_types[]
+  room_detail_bed_types room_detail_bed_types[]
 
-  @@unique([name, hotel_id])
-  @@index([hotel_id])
   @@map("bed_types")
 }
 
 // ═══════════════════════════════════════════════════════
 // ROOM TYPES
-// is_default=true + hotel_id=null  -> global reference entry, System-Admin-authored
-// is_default=false + hotel_id=X    -> the hotel's own named room-type
-// Room type is purely a name/description classification.
+// Always hotel-owned now (hotel_id required) — there is no more System-Admin
+// global template concept. A room type is real content specific to one
+// hotel, unlike amenities/bed_types/room_facilities which are genuine
+// reusable master data. Creating one is a whole-new-record case proposal
+// bundling name + description + room-level amenity selection
+// (room_type_amenities, using amenities with context: ROOM — e.g. mini bar,
+// safe, hair dryer) all together; editing one later is reviewed the same way.
+// System Admin never authors a room type directly, but can see every hotel's
+// room types (read-only, via the case system / hotel workspace).
+// Does NOT carry bed configuration (physical room level), pricing, occupancy,
+// or facilities (all physical room level) — a room type is purely a name/
+// description/amenities classification.
 // ═══════════════════════════════════════════════════════
 
 model room_types {
   id          Int      @id @default(autoincrement())
-  hotel_id    Int?
-  is_default  Boolean  @default(false)
+  hotel_id    Int
   name        String   @db.VarChar(150)
   description String?  @db.Text
   is_active   Boolean  @default(true)
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  hotel           hotels?           @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
-  room_details    room_details[]
-  type_images     room_images[]     @relation("RoomTypeImages")
-  room_properties room_properties[]
-  room_bed_types  room_bed_types[]
-  room_bookings   room_bookings[]
+  hotel               hotels                @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  room_details        room_details[]
+  type_images         room_images[]         @relation("RoomTypeImages")
+  room_type_amenities room_type_amenities[]
+  room_bookings       room_bookings[]
 
+  @@unique([hotel_id, name])
   @@index([hotel_id])
   @@index([is_active])
-  @@index([is_default])
   @@map("room_types")
 }
 
-model room_bed_types {
-  id           Int        @id @default(autoincrement())
-  room_type_id Int
-  bed_type_id  Int
-  count        Int        @default(1)
-  room_type    room_types @relation(fields: [room_type_id], references: [id], onDelete: Cascade)
-  bed_type     bed_types  @relation(fields: [bed_type_id], references: [id])
-
-  @@unique([room_type_id, bed_type_id])
-  @@index([room_type_id])
-  @@map("room_bed_types")
-}
-
 // ═══════════════════════════════════════════════════════
-// ROOM FACILITIES
-// Global only — System Admin authored, no hotel-custom creation.
-// Hotel Admin picks from this global list or sends a master_data_request.
-// Selected per physical room (room_details) — goes through case review.
+// ROOM FACILITIES  (replaces the old ac/smoking_allowed/pet_allowed booleans)
+// ═══════════════════════════════════════════════════════
+// ROOM FACILITIES  (replaces the old ac/smoking_allowed/pet_allowed booleans)
+// Fully global, System-Admin-owned — no hotel_id, no is_default, same as
+// amenities and bed_types now. Hotel Admin only selects from what's
+// available (per physical room — room_detail_facilities); if nothing fits,
+// they submit a master_data_requests entry (category: ROOM_FACILITY).
+// Structural/physical properties of one specific room (AC, smoking allowed,
+// pet allowed, balcony, etc.), not marketing amenities — that's what
+// distinguishes this from amenities, not who's allowed to create them
+// (nobody but System Admin creates either one now).
+// Confirmed reviewed: selecting facilities on a room goes through the case
+// system, bundled into that room's own creation proposal (see room_details).
 // ═══════════════════════════════════════════════════════
 
 model room_facilities {
@@ -646,8 +660,41 @@ model room_detail_facilities {
 }
 
 // ═══════════════════════════════════════════════════════
+// ROOM DETAIL BED TYPES
+// Bed configuration lives at the PHYSICAL ROOM level, not the room type —
+// a single room can carry multiple beds of the same or different types
+// (e.g. 2 Twin + 1 Queen). count = how many of that bed type in this room.
+// Hotel Admin selects from available bed_types (global + their own custom
+// ones, which they can still propose via case review); if the type they
+// need doesn't exist, they submit a master_data_requests entry instead.
+// ═══════════════════════════════════════════════════════
+
+model room_detail_bed_types {
+  id             Int          @id @default(autoincrement())
+  room_detail_id Int
+  bed_type_id    Int
+  count          Int          @default(1)
+  created_at     DateTime     @default(now())
+
+  room_detail room_details @relation(fields: [room_detail_id], references: [id], onDelete: Cascade)
+  bed_type    bed_types    @relation(fields: [bed_type_id], references: [id])
+
+  @@unique([room_detail_id, bed_type_id])
+  @@index([room_detail_id])
+  @@map("room_detail_bed_types")
+}
+
+// ═══════════════════════════════════════════════════════
 // MASTER DATA REQUESTS
-// Requesting System Admin to expand global amenities, bed types, etc.
+// "Can't find the amenity/bed type/room type/facility you need? Send a request."
+// Hotel Admin flags what's missing; System Admin gets notified. This is NOT
+// the case/review system — it's not proposing a change to THIS hotel's
+// content, it's asking System Admin to make something new available.
+// REVISED: fulfilling a request does NOT auto-generate a row from the note
+// text. System Admin is taken to the real creation page for that category
+// (Amenities/Bed Types/Room Types/Room Facilities) and builds the entry
+// properly there; that creation action is what sets created_entity_id and
+// flips this row to FULFILLED, rather than a standalone atomic "fulfill" step.
 // ═══════════════════════════════════════════════════════
 
 model master_data_requests {
@@ -659,7 +706,7 @@ model master_data_requests {
   status            MasterDataRequestStatus @default(PENDING)
   resolved_by       Int?                    // system_admins.id
   resolved_at       DateTime?
-  created_entity_id Int?                    // id of created entity
+  created_entity_id Int?                    // id of the row created via the normal creation page when this request is fulfilled — not auto-generated. No DB-level FK since it's polymorphic across three tables (amenities/bed_types/room_facilities).
   created_at        DateTime                @default(now())
 
   hotel hotels @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
@@ -672,8 +719,9 @@ model master_data_requests {
 enum MasterDataCategory {
   AMENITY
   BED_TYPE
-  ROOM_TYPE
   ROOM_FACILITY
+  // ROOM_TYPE removed — Hotel Admin creates their own room type directly
+  // (via case review), there's no global template to request anymore.
 }
 
 enum MasterDataRequestStatus {
@@ -682,7 +730,7 @@ enum MasterDataRequestStatus {
   DISMISSED
 }
 
-model room_properties {
+model room_type_amenities {
   id           Int        @id @default(autoincrement())
   room_type_id Int
   amenity_id   Int
@@ -692,14 +740,22 @@ model room_properties {
 
   @@unique([room_type_id, amenity_id])
   @@index([room_type_id])
-  @@map("room_properties")
+  @@map("room_type_amenities")
 }
 
 // ═══════════════════════════════════════════════════════
 // ROOM DETAILS  (physical room instances)
-// Created by hotel admin via case system.
-// price = base nightly rate for THIS specific room.
-// max_occupancy = guest capacity for THIS physical room.
+// Creation is reviewed (case system, entity_type ROOM_DETAIL) — Hotel Admin
+// only; Hotel Sub-Admin lost room creation, keeps only status updates.
+// Room type must be selected from a dropdown of existing room types.
+// price = base nightly rate for THIS specific room. pricing_rules can
+// override it with a discounted_price for a limited window (see below).
+// max_occupancy = guest count for THIS physical room (moved down from
+// room_types — a room type is a name/description classification only now).
+// Bed configuration (room_detail_bed_types) and facility selection
+// (room_detail_facilities) both live here too — a room can have multiple
+// beds of the same or different types, and its own facility selection,
+// distinct from the room type's own amenities (room_type_amenities).
 // ═══════════════════════════════════════════════════════
 
 model room_details {
@@ -716,12 +772,13 @@ model room_details {
   updated_at      DateTime   @updatedAt
   deleted_at      DateTime?
 
-  room_type           room_types               @relation(fields: [room_type_id], references: [id], onDelete: Cascade)
-  room_images         room_images[]            @relation("RoomDetailImages")
-  room_trackers       room_trackers[]
-  room_bookings       room_bookings[]
-  pricing_rules       pricing_rules[]
-  room_facility_links room_detail_facilities[]
+  room_type            room_types                @relation(fields: [room_type_id], references: [id], onDelete: Cascade)
+  room_images          room_images[]             @relation("RoomDetailImages")
+  room_trackers        room_trackers[]
+  room_bookings        room_bookings[]
+  pricing_rules        pricing_rules[]
+  room_facility_links  room_detail_facilities[]
+  room_bed_type_links  room_detail_bed_types[]
 
   @@unique([room_type_id, room_number, deleted_at])
   @@index([room_type_id])
@@ -731,7 +788,9 @@ model room_details {
 
 // ═══════════════════════════════════════════════════════
 // ROOM IMAGES
-// Exactly ONE of room_type_id or room_detail_id must be set.
+// Exactly ONE of room_type_id or room_detail_id must be set:
+//   room_type_id   → shared image for all rooms of that type
+//   room_detail_id → image for one specific physical room
 // ═══════════════════════════════════════════════════════
 
 model room_images {
@@ -753,6 +812,12 @@ model room_images {
 
 // ═══════════════════════════════════════════════════════
 // PRICING RULES  (temporary discount on a specific physical room)
+// room_details.price is the room's base price. A pricing_rules row is an
+// active discount override for that room, valid until end_date — after
+// which it reverts to room_details.price automatically (no row deletion
+// needed; the API just checks end_date >= today when resolving current price).
+// Confirmed: keep both start_date and end_date (a discount can be scheduled
+// ahead and expires on its own).
 // ═══════════════════════════════════════════════════════
 
 model pricing_rules {
@@ -773,7 +838,10 @@ model pricing_rules {
 // ═══════════════════════════════════════════════════════
 // USER BOOKINGS
 // One booking = one hotel, one check-in/out window.
-// reserved_until = now + 5 min (race-condition hold).
+// Can hold multiple rooms (one room_bookings row per physical room).
+// booking_reference generated at RESERVATION time.
+// reserved_until = now + 10 min. Cleared after payment.
+// No children — guests (adults) + rooms count only.
 // ═══════════════════════════════════════════════════════
 
 model user_bookings {
@@ -826,6 +894,9 @@ model room_bookings {
 
 // ═══════════════════════════════════════════════════════
 // ROOM TRACKERS  (availability lock)
+// One row per physical room per date range.
+// @@unique([room_detail_id, check_in, check_out]) prevents double-booking at DB level.
+// On EXPIRED/CANCELLED: status updated, row kept for history.
 // ═══════════════════════════════════════════════════════
 
 model room_trackers {
@@ -851,6 +922,8 @@ model room_trackers {
 
 // ═══════════════════════════════════════════════════════
 // BLACKLISTED TOKENS
+// JWT invalidation on logout or block.
+// Cron purges rows where expires_at < NOW().
 // ═══════════════════════════════════════════════════════
 
 model blacklisted_tokens {
@@ -869,6 +942,10 @@ model blacklisted_tokens {
 
 // ═══════════════════════════════════════════════════════
 // POLICIES
+// Always hotel-owned — no global/default rows (unlike amenities/bed_types).
+// Hotel admin authors free-form policies; system admin has read visibility
+// only (via the case review flow when a policy is added/changed), no separate
+// authoring or approval path of their own.
 // ═══════════════════════════════════════════════════════
 
 model policies {
@@ -889,6 +966,8 @@ model policies {
 
 // ═══════════════════════════════════════════════════════
 // HOTEL OWNER DETAILS
+// 1:1 with hotels. Owner never logs in — this is identity/legal info only,
+// captured by system admin on the Add Hotel form.
 // ═══════════════════════════════════════════════════════
 
 model hotel_owner_details {
@@ -911,11 +990,11 @@ model hotel_owner_details {
 }
 
 model hotel_owner_images {
-  id                    Int                 @id @default(autoincrement())
+  id                  Int                 @id @default(autoincrement())
   hotel_owner_detail_id Int
-  image_url             String              @db.VarChar(500)
-  is_active             Boolean             @default(true)
-  created_at            DateTime            @default(now())
+  image_url           String              @db.VarChar(500)
+  is_active            Boolean             @default(true)
+  created_at           DateTime            @default(now())
 
   hotel_owner_detail hotel_owner_details @relation(fields: [hotel_owner_detail_id], references: [id], onDelete: Cascade)
 
@@ -925,6 +1004,9 @@ model hotel_owner_images {
 
 // ═══════════════════════════════════════════════════════
 // HOTEL DOCUMENTS
+// Pure file uploads (PDF/JPEG) — no structured metadata fields. One row per
+// uploaded document. Every document_type is just a file, including Trade
+// License / TIN / VAT / Tax Certificate — no number/date/issuer fields.
 // ═══════════════════════════════════════════════════════
 
 model hotel_documents {
@@ -944,23 +1026,28 @@ model hotel_documents {
 
 // ═══════════════════════════════════════════════════════
 // CASES  (the review/draft pipeline)
+// One row per submission event. Only one OPEN (status=PENDING) case per
+// hotel is allowed at a time — enforced at the application layer, not by
+// a DB constraint, so history of past decided cases is preserved.
+// Draft Center unlocks the moment status != PENDING (approved or rejected),
+// not on a fixed timer.
 // ═══════════════════════════════════════════════════════
 
 model cases {
-  id           Int         @id @default(autoincrement())
-  hotel_id     Int
-  submitted_by Int         // hotel_admins.id
-  status       CaseStatus  @default(PENDING)
-  summary      String?     @db.Text
-  submitted_at DateTime    @default(now())
-  decided_by   Int?        // system_admins.id
-  decided_at   DateTime?
-  created_at   DateTime    @default(now())
-  updated_at   DateTime    @updatedAt
+  id             Int         @id @default(autoincrement())
+  hotel_id       Int
+  submitted_by   Int         // hotel_admins.id
+  status         CaseStatus  @default(PENDING)
+  summary        String?     @db.Text
+  submitted_at   DateTime    @default(now())
+  decided_by     Int?        // system_admins.id
+  decided_at     DateTime?
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
 
-  hotel         hotels             @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
-  submitter     hotel_admins       @relation("CaseSubmittedBy", fields: [submitted_by], references: [id])
-  decider       system_admins?     @relation("CaseDecidedBy", fields: [decided_by], references: [id])
+  hotel         hotels           @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  submitter     hotel_admins     @relation("CaseSubmittedBy", fields: [submitted_by], references: [id])
+  decider       system_admins?   @relation("CaseDecidedBy", fields: [decided_by], references: [id])
   field_changes case_field_changes[]
 
   @@index([hotel_id])
@@ -971,6 +1058,17 @@ model cases {
 
 // ═══════════════════════════════════════════════════════
 // CASE FIELD CHANGES
+// One row per changed field OR per whole new sub-record proposed within a
+// case. field_name = null means "this whole row is a new record" (e.g. a
+// brand new room_type or hotel_document) and proposed_value holds the full
+// JSON payload for it; entity_id = null in that situation since it doesn't
+// exist yet. When field_name is set, entity_id/entity_type point at the
+// existing live row being modified, previous_value is what's live now, and
+// proposed_value is what's being requested.
+// No DB-level FK to the target entity tables (polymorphic across several
+// tables) — validated in the API layer against CaseEntityType.
+// rejection_reason + decided_at are what surfaces on the Hotel Admin's
+// "all my rejections in one place" view.
 // ═══════════════════════════════════════════════════════
 
 model case_field_changes {
@@ -995,7 +1093,11 @@ model case_field_changes {
 }
 
 // ═══════════════════════════════════════════════════════
-// ACTIVITY LOGS
+// ACTIVITY LOGS  (one table per actor sector, per your request)
+// Hotel Sub-Admin actions are folded into hotel_admin_activity_logs,
+// tagged via actor_type, since they only ever act within their hotel's scope.
+// No real FK on actor_id (system_admin / end_user tables are single-actor-
+// type so it's implicit there; hotel table needs actor_type alongside it).
 // ═══════════════════════════════════════════════════════
 
 model system_admin_activity_logs {
@@ -1050,19 +1152,21 @@ model end_user_activity_logs {
 }
 
 // ═══════════════════════════════════════════════════════
-// NOTIFICATIONS
+// NOTIFICATIONS  (one table per recipient sector, per your request)
+// Hotel Sub-Admin notifications fold into hotel_admin_notifications via
+// recipient_type, mirroring the activity log decision.
 // ═══════════════════════════════════════════════════════
 
 model system_admin_notifications {
-  id                  Int              @id @default(autoincrement())
-  recipient_id        Int              // system_admins.id
-  type                NotificationType
-  title               String           @db.VarChar(200)
-  message             String           @db.Text
-  related_entity_type String?          @db.VarChar(100)
-  related_entity_id   Int?
-  is_read             Boolean          @default(false)
-  created_at          DateTime         @default(now())
+  id                 Int              @id @default(autoincrement())
+  recipient_id       Int              // system_admins.id
+  type               NotificationType
+  title              String           @db.VarChar(200)
+  message            String           @db.Text
+  related_entity_type String?        @db.VarChar(100)
+  related_entity_id  Int?
+  is_read            Boolean          @default(false)
+  created_at         DateTime         @default(now())
 
   @@index([recipient_id, is_read])
   @@index([created_at])
@@ -1070,16 +1174,16 @@ model system_admin_notifications {
 }
 
 model hotel_admin_notifications {
-  id                  Int              @id @default(autoincrement())
-  recipient_id        Int              // hotel_admins.id OR hotel_sub_admins.id
-  recipient_type      ActorType        // HOTEL_ADMIN or HOTEL_SUB_ADMIN
-  type                NotificationType
-  title               String           @db.VarChar(200)
-  message             String           @db.Text
-  related_entity_type String?          @db.VarChar(100)
-  related_entity_id   Int?
-  is_read             Boolean          @default(false)
-  created_at          DateTime         @default(now())
+  id                   Int              @id @default(autoincrement())
+  recipient_id         Int              // hotel_admins.id OR hotel_sub_admins.id
+  recipient_type       ActorType        // HOTEL_ADMIN or HOTEL_SUB_ADMIN
+  type                 NotificationType
+  title                String           @db.VarChar(200)
+  message              String           @db.Text
+  related_entity_type  String?          @db.VarChar(100)
+  related_entity_id    Int?
+  is_read              Boolean          @default(false)
+  created_at           DateTime         @default(now())
 
   @@index([recipient_id, recipient_type, is_read])
   @@index([created_at])
@@ -1087,15 +1191,15 @@ model hotel_admin_notifications {
 }
 
 model end_user_notifications {
-  id                  Int              @id @default(autoincrement())
-  recipient_id        Int              // end_users.id
-  type                NotificationType
-  title               String           @db.VarChar(200)
-  message             String           @db.Text
-  related_entity_type String?          @db.VarChar(100)
-  related_entity_id   Int?
-  is_read             Boolean          @default(false)
-  created_at          DateTime         @default(now())
+  id                   Int              @id @default(autoincrement())
+  recipient_id         Int              // end_users.id
+  type                 NotificationType
+  title                String           @db.VarChar(200)
+  message              String           @db.Text
+  related_entity_type  String?          @db.VarChar(100)
+  related_entity_id    Int?
+  is_read              Boolean          @default(false)
+  created_at           DateTime         @default(now())
 
   @@index([recipient_id, is_read])
   @@index([created_at])

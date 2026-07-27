@@ -1,7 +1,6 @@
 import { Toaster } from 'sonner'
 import "@/app/globals.css"
 import SmoothScroll from '@/components/ui/SmoothScroll'
-import Script from 'next/script'
 import { SocketProvider } from '@/hooks/useSocket'
 
 export default function RootLayout({

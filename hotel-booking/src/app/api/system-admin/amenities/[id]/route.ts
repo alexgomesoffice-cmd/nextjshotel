@@ -6,6 +6,9 @@ import { updateAmenitySchema } from '@/lib/validations/metadata'
 type Params = { params: Promise<{ id: string }> }
 
 // ─── PATCH /api/system-admin/amenities/[id] ───────────────────────────────
+// Amenities are fully global now — every row is editable by System Admin,
+// there's no more "is this a hotel-specific one" check needed. If name or
+// context changes, re-checks the [name, context] uniqueness constraint.
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
     const auth = await requireAuth(req, ['SYSTEM_ADMIN'])
@@ -23,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!result.success) {
       return NextResponse.json(
         { success: false, message: 'Validation error', errors: result.error.issues },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -32,12 +35,19 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: false, message: 'Amenity not found' }, { status: 404 })
     }
 
-    // System admins can only edit global default amenities
-    if (!amenityExists.is_default || amenityExists.hotel_id !== null) {
-      return NextResponse.json(
-        { success: false, message: 'Cannot edit hotel-specific amenities' },
-        { status: 403 }
-      )
+    const nextName = result.data.name ?? amenityExists.name
+    const nextContext = result.data.context ?? amenityExists.context
+
+    if (nextName !== amenityExists.name || nextContext !== amenityExists.context) {
+      const duplicate = await prisma.amenities.findFirst({
+        where: { name: { equals: nextName }, context: nextContext, id: { not: amenityId } },
+      })
+      if (duplicate) {
+        return NextResponse.json(
+          { success: false, message: `An amenity named "${nextName}" already exists for ${nextContext.toLowerCase()} context.` },
+          { status: 409 },
+        )
+      }
     }
 
     const updatedAmenity = await prisma.amenities.update({
@@ -53,8 +63,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 }
 
 // ─── DELETE /api/system-admin/amenities/[id] ──────────────────────────────
-// Only global default amenities can be deleted by system admin.
-// Deactivates if in use by hotel_amenities or room_properties; hard deletes otherwise.
+// Deactivates if in use (by hotel_amenities or room_type_amenities);
+// hard deletes otherwise. No more is_default/hotel_id gate — every amenity
+// is System-Admin-owned now, so any of them can be deleted this way.
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
     const auth = await requireAuth(req, ['SYSTEM_ADMIN'])
@@ -69,12 +80,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const amenity = await prisma.amenities.findUnique({
       where: { id: amenityId },
       include: {
-        _count: {
-          select: {
-            hotel_amenities: true,
-            room_properties: true,
-          },
-        },
+        _count: { select: { hotel_amenities: true, room_type_amenities: true } },
       },
     })
 
@@ -82,27 +88,15 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: false, message: 'Amenity not found' }, { status: 404 })
     }
 
-    if (!amenity.is_default || amenity.hotel_id !== null) {
-      return NextResponse.json(
-        { success: false, message: 'Only global default amenities can be deleted via this endpoint' },
-        { status: 403 }
-      )
-    }
-
-    const usageCount = amenity._count.hotel_amenities + amenity._count.room_properties
+    const usageCount = amenity._count.hotel_amenities + amenity._count.room_type_amenities
     if (usageCount > 0) {
-      // In use — deactivate rather than delete to preserve FK integrity
-      await prisma.amenities.update({
-        where: { id: amenityId },
-        data: { is_active: false },
-      })
+      await prisma.amenities.update({ where: { id: amenityId }, data: { is_active: false } })
       return NextResponse.json({
         success: true,
         message: `Amenity deactivated. It is in use by ${usageCount} hotel(s)/room type(s) and cannot be permanently deleted.`,
       })
     }
 
-    // Not in use — hard delete
     await prisma.amenities.delete({ where: { id: amenityId } })
     return NextResponse.json({ success: true, message: 'Amenity deleted permanently' })
   } catch (error) {

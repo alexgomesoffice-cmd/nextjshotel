@@ -66,15 +66,37 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const {
       description,
-      short_description,
       check_in_time,
       check_out_time,
       advance_deposit_percent,
-      cancellation_policy,
-      cancellation_hours,
-      refund_percent,
+      star_rating,
+      website,
+      reception_no1,
+      reception_no2,
+      emergency_contact_name,
+      emergency_contact_designation,
+      emergency_contact_phone1,
+      emergency_contact_phone2,
+      emergency_contact_email,
       ...hotelData
     } = result.data
+
+    const detailsData = {
+      description,
+      check_in_time,
+      check_out_time,
+      advance_deposit_percent,
+      star_rating,
+      website,
+      reception_no1,
+      reception_no2,
+      emergency_contact_name,
+      emergency_contact_designation,
+      emergency_contact_phone1,
+      emergency_contact_phone2,
+      emergency_contact_email,
+    }
+    const hasDetailsUpdate = Object.values(detailsData).some((v) => v !== undefined)
 
     const updatedHotel = await prisma.$transaction(async (tx) => {
       const hotel = await tx.hotels.update({
@@ -82,29 +104,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         data: hotelData,
       })
 
-      // Update details if any detail fields are provided
-      if (
-        description !== undefined ||
-        short_description !== undefined ||
-        check_in_time !== undefined ||
-        check_out_time !== undefined ||
-        advance_deposit_percent !== undefined ||
-        cancellation_policy !== undefined ||
-        cancellation_hours !== undefined ||
-        refund_percent !== undefined
-      ) {
+      if (hasDetailsUpdate) {
         await tx.hotel_details.update({
           where: { hotel_id: hotelId },
-          data: {
-            description,
-            short_description,
-            check_in_time,
-            check_out_time,
-            advance_deposit_percent,
-            cancellation_policy,
-            cancellation_hours,
-            refund_percent,
-          },
+          data: detailsData,
         })
       }
 

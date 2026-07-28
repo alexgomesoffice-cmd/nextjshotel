@@ -2,31 +2,28 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { z } from 'zod'
-import { Prisma } from '@prisma/client'
 
 const updateHotelSchema = z.object({
   name: z.string().min(2).max(150).optional(),
   slug: z.string().max(150).optional(),
   address: z.string().max(500).optional(),
-  latitude: z.number().nullable().optional(),
-  longitude: z.number().nullable().optional(),
+  map_location: z.string().nullable().optional(),
   star_rating: z.number().min(1).max(5).nullable().optional(),
   email: z.string().email().nullable().optional(),
-  emergency_contact1: z.string().max(100).nullable().optional(),
-  emergency_contact2: z.string().max(100).nullable().optional(),
-  
+
   // Details
   description: z.string().nullable().optional(),
-  short_description: z.string().max(500).nullable().optional(),
   reception_no1: z.string().max(32).nullable().optional(),
   reception_no2: z.string().max(32).nullable().optional(),
   check_in_time: z.string().optional(),
   check_out_time: z.string().optional(),
   advance_deposit_percent: z.number().min(0).max(100).optional(),
-  cancellation_policy: z.enum(['FLEXIBLE', 'MODERATE', 'STRICT', 'CUSTOM']).optional(),
-  cancellation_hours: z.number().min(0).nullable().optional(),
-  refund_percent: z.number().min(0).max(100).nullable().optional(),
   website: z.string().max(255).nullable().optional(),
+  emergency_contact_name: z.string().max(150).nullable().optional(),
+  emergency_contact_designation: z.string().max(100).nullable().optional(),
+  emergency_contact_phone1: z.string().max(32).nullable().optional(),
+  emergency_contact_phone2: z.string().max(32).nullable().optional(),
+  emergency_contact_email: z.string().email().nullable().optional(),
 })
 
 export async function GET(req: NextRequest) {
@@ -95,27 +92,25 @@ export async function PATCH(req: NextRequest) {
     if (data.name !== undefined) hotelData.name = data.name
     if (data.slug !== undefined) hotelData.slug = data.slug
     if (data.address !== undefined) hotelData.address = data.address
-    if (data.latitude !== undefined) hotelData.latitude = data.latitude
-    if (data.longitude !== undefined) hotelData.longitude = data.longitude
+    if (data.map_location !== undefined) hotelData.map_location = data.map_location
     if (data.email !== undefined) hotelData.email = data.email
-    if (data.emergency_contact1 !== undefined) hotelData.emergency_contact1 = data.emergency_contact1
-    if (data.emergency_contact2 !== undefined) hotelData.emergency_contact2 = data.emergency_contact2
 
     const detailsData: any = {}
     if (data.star_rating !== undefined) detailsData.star_rating = data.star_rating
     if (data.description !== undefined) detailsData.description = data.description
-    if (data.short_description !== undefined) detailsData.short_description = data.short_description
     if (data.reception_no1 !== undefined) detailsData.reception_no1 = data.reception_no1
     if (data.reception_no2 !== undefined) detailsData.reception_no2 = data.reception_no2
     if (data.check_in_time !== undefined) detailsData.check_in_time = data.check_in_time
     if (data.check_out_time !== undefined) detailsData.check_out_time = data.check_out_time
     if (data.advance_deposit_percent !== undefined) detailsData.advance_deposit_percent = data.advance_deposit_percent
-    if (data.cancellation_policy !== undefined) detailsData.cancellation_policy = data.cancellation_policy
-    if (data.cancellation_hours !== undefined) detailsData.cancellation_hours = data.cancellation_hours
-    if (data.refund_percent !== undefined) detailsData.refund_percent = data.refund_percent
     if (data.website !== undefined) detailsData.website = data.website
+    if (data.emergency_contact_name !== undefined) detailsData.emergency_contact_name = data.emergency_contact_name
+    if (data.emergency_contact_designation !== undefined) detailsData.emergency_contact_designation = data.emergency_contact_designation
+    if (data.emergency_contact_phone1 !== undefined) detailsData.emergency_contact_phone1 = data.emergency_contact_phone1
+    if (data.emergency_contact_phone2 !== undefined) detailsData.emergency_contact_phone2 = data.emergency_contact_phone2
+    if (data.emergency_contact_email !== undefined) detailsData.emergency_contact_email = data.emergency_contact_email
 
-    const updates: Prisma.PrismaPromise<any>[] = []
+    const updates: any[] = []
 
     if (Object.keys(hotelData).length > 0) {
       updates.push(

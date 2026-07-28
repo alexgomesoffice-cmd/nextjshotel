@@ -1,790 +1,414 @@
-// filepath: src/app/dashboard/system/hotels/new/page.tsx
-// Create Hotel + Admin Account
-// Features:
-//   - Dynamic hotel type creation (dropdown with "Create New" button)
-//   - Multi-section form (info, details, admin)
-//   - Full validation and error handling
-
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import {
-  Building2, X, Loader2, AlertCircle, CheckCircle2,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Upload, Check } from 'lucide-react'
+import { OpsSectionHeader } from '@/components/admin/shared/primitives'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Button } from '@/components/ui/button'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import {
-  Card, CardContent, CardHeader, CardTitle, CardDescription,
-} from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useToast } from '@/hooks/use-toast'
-import { cn } from '@/lib/utils'
 
-interface City {
-  id: number
-  name: string
+interface Option { id: number; name: string }
+
+// Reused for owner/admin photo and each document field. Documents restrict
+// the file picker to .pdf/.jpg only (not .jpeg) per instruction, and are
+// re-checked by extension server-side too.
+function UploadField({
+  label, required, accept, url, uploading, onUpload,
+}: {
+  label: string
+  required?: boolean
+  accept: string
+  url: string | null
+  uploading: boolean
+  onUpload: (file: File) => void
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label>{label} {required && <span className="text-red-500">*</span>}</Label>
+      <div className="flex items-center gap-2">
+        <label className="flex h-8 cursor-pointer items-center gap-1.5 rounded-sm border border-border/60 bg-secondary/40 px-2.5 text-xs hover:bg-secondary">
+          <Upload className="h-3.5 w-3.5" />
+          {uploading ? 'Uploading…' : 'Choose file'}
+          <input
+            type="file"
+            accept={accept}
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+          />
+        </label>
+        {url && (
+          <span className="inline-flex items-center gap-1 text-xs text-emerald-600">
+            <Check className="h-3.5 w-3.5" /> Uploaded
+          </span>
+        )}
+      </div>
+    </div>
+  )
 }
 
-interface HotelType {
-  id: number
-  name: string
-}
+const DOC_FIELDS = [
+  { key: 'trade_license_url', label: 'Trade License' },
+  { key: 'tax_certificate_url', label: 'Tax Certificate' },
+  { key: 'tin_certificate_url', label: 'TIN Certificate' },
+  { key: 'vat_certificate_url', label: 'VAT Certificate' },
+  { key: 'business_document_url', label: 'Business Document' },
+] as const
 
-interface FormState {
-  // Hotel info
-  name: string
-  city_id: string
-  hotel_type_id: string
-  email: string
-  address: string
-  zip_code: string
-  owner_name: string
-  star_rating: string
-  emergency_contact1: string
-  emergency_contact2: string
-  latitude: string
-  longitude: string
-
-  // Hotel details
-  description: string
-  short_description: string
-  check_in_time: string
-  check_out_time: string
-  advance_deposit_percent: string
-  cancellation_policy: string
-  cancellation_hours: string
-  refund_percent: string
-  reception_no1: string
-  reception_no2: string
-
-  // Admin
-  admin_name: string
-  admin_email: string
-  admin_password: string
-}
-
-interface FormErrors {
-  [key: string]: string
-}
-
-export default function CreateHotelPage() {
+export default function AddHotelPage() {
   const router = useRouter()
-  const { toast } = useToast()
+  const [cities, setCities] = useState<Option[]>([])
+  const [hotelTypes, setHotelTypes] = useState<Option[]>([])
+  const [uploadingKey, setUploadingKey] = useState<string | null>(null)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  // Data
-  const [cities, setCities] = useState<City[]>([])
-  const [hotelTypes, setHotelTypes] = useState<HotelType[]>([])
-
-  // UI State
-  const [loading, setLoading] = useState(false)
-  const [citiesLoading, setCitiesLoading] = useState(true)
-  const [typesLoading, setTypesLoading] = useState(true)
-  const [errors, setErrors] = useState<FormErrors>({})
-
-  // Hotel type creation
-  const [showCreateType, setShowCreateType] = useState(false)
-  const [newTypeName, setNewTypeName] = useState('')
-  const [typeLoading, setTypeLoading] = useState(false)
-  const typeInputRef = useRef<HTMLInputElement>(null)
-
-  // Form state
-  const [form, setForm] = useState<FormState>({
-    name: '',
-    city_id: '',
-    hotel_type_id: '',
-    email: '',
-    address: '',
-    zip_code: '',
-    owner_name: '',
-    star_rating: '',
-    emergency_contact1: '',
-    emergency_contact2: '',
-    latitude: '',
-    longitude: '',
-    description: '',
-    short_description: '',
-    check_in_time: '14:00',
-    check_out_time: '12:00',
-    advance_deposit_percent: '0',
-    cancellation_policy: 'FLEXIBLE',
-    cancellation_hours: '',
-    refund_percent: '',
-    reception_no1: '',
-    reception_no2: '',
-    admin_name: '',
-    admin_email: '',
-    admin_password: '',
+  const [form, setForm] = useState({
+    hotel: { name: '', email: '', address: '', city_id: '', hotel_type_id: '', zip_code: '', map_location: '' },
+    details: {
+      star_rating: '', website: '', reception_no1: '', reception_no2: '',
+      emergency_contact_name: '', emergency_contact_designation: '',
+      emergency_contact_phone1: '', emergency_contact_phone2: '', emergency_contact_email: '',
+    },
+    owner: { full_name: '', phone: '', address: '', dob: '', nid_no: '', passport: '', email: '', photo_url: '' },
+    admin: {
+      admin_name: '', admin_email: '', admin_phone: '', admin_password: '',
+      emergency_phone: '', dob: '', nid_no: '', passport: '', address: '', photo_url: '',
+    },
+    documents: {
+      trade_license_url: '', tax_certificate_url: '', tin_certificate_url: '',
+      vat_certificate_url: '', business_document_url: '',
+    },
   })
 
-  // Fetch cities and hotel types
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [citiesRes, typesRes] = await Promise.all([
-          fetch('/api/public/cities', { credentials: 'include' }),
-          fetch('/api/system-admin/hotel-types', { credentials: 'include' }),
-        ])
+    fetch('/api/system-admin/cities?limit=200', { credentials: 'include' })
+      .then((r) => r.json()).then((d) => setCities(d?.data?.cities ?? []))
+    fetch('/api/system-admin/hotel-types?limit=200', { credentials: 'include' })
+      .then((r) => r.json()).then((d) => setHotelTypes(d?.data?.hotelTypes ?? d?.data ?? []))
+  }, [])
 
-        const citiesData = await citiesRes.json()
-        const typesData = await typesRes.json()
+  const setSection = (section: keyof typeof form, key: string, value: string) =>
+    setForm((f) => ({ ...f, [section]: { ...f[section], [key]: value } }))
 
-        if (citiesData.success) {
-          setCities(Array.isArray(citiesData.data) ? citiesData.data : [])
-        } else {
-          toast({ title: 'Error', description: 'Failed to load cities', variant: 'destructive' })
-        }
-
-        if (typesData.success) {
-          // hotel-types returns { data: { hotelTypes: [], pagination: {} } }
-          const types = typesData.data?.hotelTypes ?? typesData.data
-          setHotelTypes(Array.isArray(types) ? types : [])
-        } else {
-          toast({ title: 'Error', description: 'Failed to load hotel types', variant: 'destructive' })
-        }
-      } catch (error) {
-        console.error('Failed to fetch data:', error)
-        toast({ title: 'Error', description: 'Failed to load form data', variant: 'destructive' })
-      } finally {
-        setCitiesLoading(false)
-        setTypesLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [toast])
-
-  // Focus on type input when showing
-  useEffect(() => {
-    if (showCreateType && typeInputRef.current) {
-      typeInputRef.current.focus()
-    }
-  }, [showCreateType])
-
-  // Handle form input change
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setForm((prev) => ({ ...prev, [name]: value }))
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors((prev) => {
-        const newErrors = { ...prev }
-        delete newErrors[name]
-        return newErrors
-      })
-    }
-  }
-
-  // Create new hotel type
-  const handleCreateHotelType = async () => {
-    if (!newTypeName.trim()) {
-      toast({ title: 'Error', description: 'Please enter a hotel type name', variant: 'destructive' })
-      return
-    }
-
+  const upload = async (section: keyof typeof form, key: string, file: File) => {
+    setUploadingKey(`${section}.${key}`)
     try {
-      setTypeLoading(true)
-      const res = await fetch('/api/system-admin/hotel-types', {
+      const dataUrl: string = await new Promise((resolve, reject) => {
+        const r = new FileReader()
+        r.onload = () => resolve(r.result as string)
+        r.onerror = reject
+        r.readAsDataURL(file)
+      })
+      const res = await fetch('/api/system-admin/uploads', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newTypeName.trim() }),
+        body: JSON.stringify({ data: dataUrl, filename: file.name, uploadSubDir: 'hotels' }),
       })
-
       const data = await res.json()
-
-      if (data.success) {
-        // Add new type to list
-        setHotelTypes((prev) => [...prev, data.data].sort((a, b) => a.name.localeCompare(b.name)))
-        // Set it as selected
-        setForm((prev) => ({ ...prev, hotel_type_id: data.data.id.toString() }))
-        // Close input
-        setShowCreateType(false)
-        setNewTypeName('')
-        toast({
-          title: 'Success',
-          description: 'Hotel type created successfully',
-          variant: 'success',
-        })
-      } else {
-        toast({
-          title: 'Error',
-          description: data.message || 'Failed to create hotel type',
-          variant: 'destructive',
-        })
-      }
-    } catch (error) {
-      console.error('Failed to create hotel type:', error)
-      toast({ title: 'Error', description: 'Failed to create hotel type', variant: 'destructive' })
+      if (data.success) setSection(section, key, data.url)
     } finally {
-      setTypeLoading(false)
+      setUploadingKey(null)
     }
   }
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setErrors({})
+  // Client-side validation mirroring the server's createHotelSchema exactly
+  // (mandatory/optional split as confirmed).
+  const validate = () => {
+    const e: Record<string, string> = {}
+    if (!form.hotel.name.trim()) e['hotel.name'] = 'Hotel name is required.'
+    if (!/^\S+@\S+\.\S+$/.test(form.hotel.email)) e['hotel.email'] = 'Valid official email required.'
+    if (!form.hotel.address.trim()) e['hotel.address'] = 'Full address is required.'
+    if (!form.hotel.city_id) e['hotel.city_id'] = 'City is required.'
+    if (!form.hotel.hotel_type_id) e['hotel.hotel_type_id'] = 'Hotel type is required.'
+    if (!form.hotel.zip_code.trim()) e['hotel.zip_code'] = 'Zip code is required.'
+    if (!form.details.star_rating) e['details.star_rating'] = 'Star rating is required.'
+    if (!form.details.reception_no1.trim()) e['details.reception_no1'] = 'Reception No. 1 is required.'
+    if (!form.owner.full_name.trim()) e['owner.full_name'] = "Owner's full name is required."
+    if (!form.owner.phone.trim()) e['owner.phone'] = "Owner's phone is required."
+    if (!form.owner.address.trim()) e['owner.address'] = "Owner's address is required."
+    if (!form.admin.admin_name.trim()) e['admin.admin_name'] = 'Admin name is required.'
+    if (!/^\S+@\S+\.\S+$/.test(form.admin.admin_email)) e['admin.admin_email'] = 'Valid admin email required.'
+    if (!form.admin.admin_phone.trim()) e['admin.admin_phone'] = "Admin's phone is required."
+    if (form.admin.admin_password.length < 6) e['admin.admin_password'] = 'Password must be at least 6 characters.'
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
+  const handleSubmit = async () => {
+    setServerError(null)
+    if (!validate()) return
+    setSaving(true)
     try {
-      setLoading(true)
-
-      // Prepare payload
-      const payload = {
-        hotel: {
-          name: form.name,
-          city_id: parseInt(form.city_id),
-          hotel_type_id: parseInt(form.hotel_type_id),
-          email: form.email || undefined,
-          address: form.address || undefined,
-          zip_code: form.zip_code || undefined,
-          owner_name: form.owner_name || undefined,
-          star_rating: form.star_rating ? parseFloat(form.star_rating) : undefined,
-          emergency_contact1: form.emergency_contact1 || undefined,
-          emergency_contact2: form.emergency_contact2 || undefined,
-          latitude: form.latitude ? parseFloat(form.latitude) : undefined,
-          longitude: form.longitude ? parseFloat(form.longitude) : undefined,
-        },
-        details: {
-          description: form.description || undefined,
-          short_description: form.short_description || undefined,
-          check_in_time: form.check_in_time,
-          check_out_time: form.check_out_time,
-          advance_deposit_percent: parseInt(form.advance_deposit_percent) || 0,
-          cancellation_policy: form.cancellation_policy,
-          cancellation_hours: form.cancellation_hours ? parseInt(form.cancellation_hours) : undefined,
-          refund_percent: form.refund_percent ? parseInt(form.refund_percent) : undefined,
-          reception_no1: form.reception_no1 || undefined,
-          reception_no2: form.reception_no2 || undefined,
-        },
-        admin: {
-          admin_name: form.admin_name,
-          admin_email: form.admin_email,
-          admin_password: form.admin_password,
-        },
-      }
-
       const res = await fetch('/api/system-admin/hotels', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          hotel: { ...form.hotel, city_id: Number(form.hotel.city_id), hotel_type_id: Number(form.hotel.hotel_type_id) },
+          details: { ...form.details, star_rating: Number(form.details.star_rating) },
+          owner: form.owner,
+          admin: form.admin,
+          documents: form.documents,
+        }),
       })
-
       const data = await res.json()
-
-      if (data.success) {
-        toast({
-          title: 'Success',
-          description: 'Hotel and admin account created successfully',
-          variant: 'success',
-        })
-        router.push('/dashboard/system/hotels')
-      } else {
-        if (data.errors) {
-          // Handle validation errors
-          const errorMap: FormErrors = {}
-          data.errors.forEach((error: any) => {
-            if (error.path && error.path.length > 0) {
-              errorMap[error.path[error.path.length - 1]] = error.message
-            }
-          })
-          setErrors(errorMap)
-        }
-        toast({
-          title: 'Error',
-          description: data.message || 'Failed to create hotel',
-          variant: 'destructive',
-        })
+      if (!res.ok || !data.success) {
+        setServerError(data.message || 'Something went wrong.')
+        return
       }
-    } catch (error) {
-      console.error('Failed to create hotel:', error)
-      toast({ title: 'Error', description: 'Failed to create hotel', variant: 'destructive' })
+      router.push(`/dashboard/system/hotels/${data.data.hotel_id}`)
+    } catch {
+      setServerError('Network error — please try again.')
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
-  const renderErrorMessage = (fieldName: string) => {
-    if (errors[fieldName]) {
-      return <p className="text-xs text-red-500 mt-1">{errors[fieldName]}</p>
-    }
-    return null
-  }
+  const err = (k: string) => errors[k] && <p className="text-xs text-red-500">{errors[k]}</p>
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <Building2 className="h-8 w-8" />
-          Create New Hotel
-        </h1>
-        <p className="text-muted-foreground mt-1">Set up a hotel and its admin account</p>
-      </div>
+    <div className="mx-auto max-w-300 space-y-6 px-6 py-5">
+      <OpsSectionHeader
+        title="Add Hotel"
+        description="Register a new property with owner, admin, business and emergency information."
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Section 1: Hotel Information */}
-        <Card className="glass-strong">
-          <CardHeader >
-            <CardTitle>Hotel Information</CardTitle>
-            <CardDescription>Basic details about the hotel</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            {/* Hotel Name */}
-            <div>
-              <label className="text-sm font-medium">Hotel Name *</label>
-              <Input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="e.g., Grand Palace Hotel"
-                className={cn(errors.name && 'border-red-500')}
-              />
-              {renderErrorMessage('name')}
-            </div>
-
-            {/* City & Hotel Type Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* City */}
-              <div>
-                <label className="text-sm font-medium">City *</label>
-                <Select value={form.city_id} onValueChange={(v) => setForm((prev) => ({ ...prev, city_id: v }))}>
-                  <SelectTrigger className={cn(errors.city_id && 'border-red-500')}>
-                    <SelectValue placeholder="Select city" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {citiesLoading ? (
-                      <div className="p-2 text-sm text-muted-foreground">Loading...</div>
-                    ) : (
-                      cities.map((city) => (
-                        <SelectItem key={city.id} value={city.id.toString()}>
-                          {city.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {renderErrorMessage('city_id')}
-              </div>
-
-              {/* Hotel Type with Create Option */}
-              <div>
-                <label className="text-sm font-medium">Hotel Type *</label>
-
-                {/* Show dropdown when not creating, text input when creating */}
-                {!showCreateType ? (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Select
-                        value={form.hotel_type_id}
-                        onValueChange={(v) => setForm((prev) => ({ ...prev, hotel_type_id: v }))}
-                      >
-                        <SelectTrigger className={cn(errors.hotel_type_id && 'border-red-500')}>
-                          <SelectValue placeholder="Select or create type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {typesLoading ? (
-                            <div className="p-2 text-sm text-muted-foreground">Loading...</div>
-                          ) : (
-                            hotelTypes.map((type) => (
-                              <SelectItem key={type.id} value={type.id.toString()}>
-                                {type.name}
-                              </SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowCreateType(true)}
-                        className="whitespace-nowrap"
-                      >
-                        + New Type
-                      </Button>
-                    </div>
-                    {renderErrorMessage('hotel_type_id')}
-                  </div>
-                ) : (
-                  /* Create new hotel type input */
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <Input
-                        ref={typeInputRef}
-                        value={newTypeName}
-                        onChange={(e) => setNewTypeName(e.target.value)}
-                        placeholder="e.g., Luxury Villa"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault()
-                            handleCreateHotelType()
-                          }
-                        }}
-                      />
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleCreateHotelType}
-                        disabled={typeLoading || !newTypeName.trim()}
-                      >
-                        {typeLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setShowCreateType(false)
-                          setNewTypeName('')
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Star Rating & Email Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Star Rating (1-5)</label>
-                <Input
-                  name="star_rating"
-                  type="number"
-                  min="1"
-                  max="5"
-                  step="0.5"
-                  value={form.star_rating}
-                  onChange={handleChange}
-                  placeholder="e.g., 4.5"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <Input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  placeholder="hotel@example.com"
-                />
-              </div>
-            </div>
-
-            {/* Address & Zip Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Address</label>
-                <Input
-                  name="address"
-                  value={form.address}
-                  onChange={handleChange}
-                  placeholder="Street address"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Zip Code</label>
-                <Input
-                  name="zip_code"
-                  value={form.zip_code}
-                  onChange={handleChange}
-                  placeholder="Zip/postal code"
-                />
-              </div>
-            </div>
-
-            {/* Owner & Emergency Contacts Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Owner Name</label>
-                <Input
-                  name="owner_name"
-                  value={form.owner_name}
-                  onChange={handleChange}
-                  placeholder="Hotel owner name"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Emergency Contact 1</label>
-                <Input
-                  name="emergency_contact1"
-                  value={form.emergency_contact1}
-                  onChange={handleChange}
-                  placeholder="+88012345678"
-                />
-              </div>
-            </div>
-
-            {/* Emergency Contact 2 & Coordinates Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Emergency Contact 2</label>
-                <Input
-                  name="emergency_contact2"
-                  value={form.emergency_contact2}
-                  onChange={handleChange}
-                  placeholder="+88012345678"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Coordinates (Lat, Lng)</label>
-                <div className="flex gap-2">
-                  <Input
-                    name="latitude"
-                    type="number"
-                    step="0.00001"
-                    value={form.latitude}
-                    onChange={handleChange}
-                    placeholder="23.8103"
-                  />
-                  <Input
-                    name="longitude"
-                    type="number"
-                    step="0.00001"
-                    value={form.longitude}
-                    onChange={handleChange}
-                    placeholder="90.4125"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Section 2: Hotel Policies & Details */}
-        <Card className="glass-strong">
-          <CardHeader >
-            <CardTitle>Policies & Details</CardTitle>
-            <CardDescription>Check-in, cancellation, and house policies</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            {/* Description */}
-            <div>
-              <label className="text-sm font-medium">Description</label>
-              <Textarea
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                placeholder="Hotel description for guests..."
-                rows={3}
-              />
-            </div>
-
-            {/* Short Description */}
-            <div>
-              <label className="text-sm font-medium">Short Description (max 500 chars)</label>
-              <Input
-                name="short_description"
-                value={form.short_description}
-                onChange={handleChange}
-                placeholder="Brief description..."
-                maxLength={500}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                {form.short_description.length}/500
-              </p>
-            </div>
-
-            {/* Check-in/out Times Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Check-in Time</label>
-                <Input
-                  name="check_in_time"
-                  type="time"
-                  value={form.check_in_time}
-                  onChange={handleChange}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Check-out Time</label>
-                <Input
-                  name="check_out_time"
-                  type="time"
-                  value={form.check_out_time}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-
-            {/* Deposit Percent */}
-            <div>
-              <label className="text-sm font-medium">Advance Deposit Required (%)</label>
-              <Input
-                name="advance_deposit_percent"
-                type="number"
-                min="0"
-                max="100"
-                value={form.advance_deposit_percent}
-                onChange={handleChange}
-              />
-            </div>
-
-            {/* Cancellation Policy */}
-            <div>
-              <label className="text-sm font-medium">Cancellation Policy</label>
-              <Select
-                value={form.cancellation_policy}
-                onValueChange={(v) => setForm((prev) => ({ ...prev, cancellation_policy: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="FLEXIBLE">Flexible - Full refund anytime</SelectItem>
-                  <SelectItem value="MODERATE">Moderate - Partial refund</SelectItem>
-                  <SelectItem value="STRICT">Strict - No refund</SelectItem>
-                  <SelectItem value="CUSTOM">Custom - Specify hours and refund %</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Custom Cancellation Fields */}
-            {form.cancellation_policy === 'CUSTOM' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Cancellation Hours Before Check-in</label>
-                  <Input
-                    name="cancellation_hours"
-                    type="number"
-                    min="0"
-                    value={form.cancellation_hours}
-                    onChange={handleChange}
-                    placeholder="e.g., 24"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Refund Percentage (%)</label>
-                  <Input
-                    name="refund_percent"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={form.refund_percent}
-                    onChange={handleChange}
-                    placeholder="e.g., 50"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Reception Numbers */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">Reception Number 1</label>
-                <Input
-                  name="reception_no1"
-                  value={form.reception_no1}
-                  onChange={handleChange}
-                  placeholder="+88012345678"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Reception Number 2</label>
-                <Input
-                  name="reception_no2"
-                  value={form.reception_no2}
-                  onChange={handleChange}
-                  placeholder="+88012345678"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Section 3: Admin Account */}
-        <Card className="glass-strong">
-          <CardHeader >
-            <CardTitle>Hotel Admin Account</CardTitle>
-            <CardDescription>Credentials for the hotel administrator</CardDescription>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            {/* Admin Name */}
-            <div>
-              <label className="text-sm font-medium">Admin Name *</label>
-              <Input
-                name="admin_name"
-                value={form.admin_name}
-                onChange={handleChange}
-                placeholder="Full name of hotel admin"
-                className={cn(errors.admin_name && 'border-red-500')}
-              />
-              {renderErrorMessage('admin_name')}
-            </div>
-
-            {/* Admin Email */}
-            <div>
-              <label className="text-sm font-medium">Admin Email *</label>
-              <Input
-                name="admin_email"
-                type="email"
-                value={form.admin_email}
-                onChange={handleChange}
-                placeholder="admin@hotel.com"
-                className={cn(errors.admin_email && 'border-red-500')}
-              />
-              {renderErrorMessage('admin_email')}
-            </div>
-
-            {/* Admin Password */}
-            <div>
-              <label className="text-sm font-medium">Temporary Password *</label>
-              <Input
-                name="admin_password"
-                type="password"
-                value={form.admin_password}
-                onChange={handleChange}
-                placeholder="Minimum 6 characters"
-                className={cn(errors.admin_password && 'border-red-500')}
-              />
-              {renderErrorMessage('admin_password')}
-              <p className="text-xs text-muted-foreground mt-1">
-                Admin can change password after first login
-              </p>
-            </div>
-
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Make sure to save these credentials securely. Share them with the hotel administrator.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-
-        {/* Form Actions */}
-        <div className="flex gap-3 justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-            disabled={loading}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={loading}
-            className="gap-2"
-          >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {loading ? 'Creating Hotel...' : 'Create Hotel'}
-          </Button>
+      {/* Basic Information */}
+      <section className="space-y-3 rounded-md border border-border/60 p-4">
+        <h3 className="text-sm font-semibold">Basic Information</h3>
+        <p className="text-xs text-muted-foreground">Core property identity and public contact information.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Hotel Name <span className="text-red-500">*</span></Label>
+            <Input value={form.hotel.name} onChange={(e) => setSection('hotel', 'name', e.target.value)} />
+            {err('hotel.name')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Hotel Type <span className="text-red-500">*</span></Label>
+            <Select value={form.hotel.hotel_type_id} onValueChange={(v) => setSection('hotel', 'hotel_type_id', v)}>
+              <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectContent>
+                {hotelTypes.map((t) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {err('hotel.hotel_type_id')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>City <span className="text-red-500">*</span></Label>
+            <Select value={form.hotel.city_id} onValueChange={(v) => setSection('hotel', 'city_id', v)}>
+              <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectContent>
+                {cities.map((c) => <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {err('hotel.city_id')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Star Rating <span className="text-red-500">*</span></Label>
+            <Select value={form.details.star_rating} onValueChange={(v) => setSection('details', 'star_rating', v)}>
+              <SelectTrigger><SelectValue placeholder="Select…" /></SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5].map((n) => <SelectItem key={n} value={String(n)}>{n} Star</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {err('details.star_rating')}
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <Label>Full Address <span className="text-red-500">*</span></Label>
+            <Input value={form.hotel.address} onChange={(e) => setSection('hotel', 'address', e.target.value)} />
+            {err('hotel.address')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Zip Code <span className="text-red-500">*</span></Label>
+            <Input value={form.hotel.zip_code} onChange={(e) => setSection('hotel', 'zip_code', e.target.value)} />
+            {err('hotel.zip_code')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Official Email <span className="text-red-500">*</span></Label>
+            <Input type="email" value={form.hotel.email} onChange={(e) => setSection('hotel', 'email', e.target.value)} />
+            {err('hotel.email')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Reception No. 1 <span className="text-red-500">*</span></Label>
+            <Input value={form.details.reception_no1} onChange={(e) => setSection('details', 'reception_no1', e.target.value)} />
+            {err('details.reception_no1')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Reception No. 2</Label>
+            <Input value={form.details.reception_no2} onChange={(e) => setSection('details', 'reception_no2', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Website</Label>
+            <Input value={form.details.website} onChange={(e) => setSection('details', 'website', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Map Location</Label>
+            <Input value={form.hotel.map_location} onChange={(e) => setSection('hotel', 'map_location', e.target.value)} placeholder="Google Maps link" />
+          </div>
         </div>
-      </form>
+      </section>
+
+      {/* Owner's Information */}
+      <section className="space-y-3 rounded-md border border-border/60 p-4">
+        <h3 className="text-sm font-semibold">Owner Information</h3>
+        <p className="text-xs text-muted-foreground">Legal owner of the property.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Full Name <span className="text-red-500">*</span></Label>
+            <Input value={form.owner.full_name} onChange={(e) => setSection('owner', 'full_name', e.target.value)} />
+            {err('owner.full_name')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Phone <span className="text-red-500">*</span></Label>
+            <Input value={form.owner.phone} onChange={(e) => setSection('owner', 'phone', e.target.value)} />
+            {err('owner.phone')}
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <Label>Address <span className="text-red-500">*</span></Label>
+            <Input value={form.owner.address} onChange={(e) => setSection('owner', 'address', e.target.value)} />
+            {err('owner.address')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Date of Birth</Label>
+            <Input type="date" value={form.owner.dob} onChange={(e) => setSection('owner', 'dob', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Email</Label>
+            <Input type="email" value={form.owner.email} onChange={(e) => setSection('owner', 'email', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>NID Number</Label>
+            <Input value={form.owner.nid_no} onChange={(e) => setSection('owner', 'nid_no', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Passport</Label>
+            <Input value={form.owner.passport} onChange={(e) => setSection('owner', 'passport', e.target.value)} />
+          </div>
+        </div>
+        <UploadField
+          label="Owner Photo" accept="image/*"
+          url={form.owner.photo_url || null}
+          uploading={uploadingKey === 'owner.photo_url'}
+          onUpload={(f) => upload('owner', 'photo_url', f)}
+        />
+      </section>
+
+      {/* Hotel Admin Account */}
+      <section className="space-y-3 rounded-md border border-border/60 p-4">
+        <h3 className="text-sm font-semibold">Hotel Admin Account</h3>
+        <p className="text-xs text-muted-foreground">Primary admin who will manage the hotel dashboard.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Admin Name <span className="text-red-500">*</span></Label>
+            <Input value={form.admin.admin_name} onChange={(e) => setSection('admin', 'admin_name', e.target.value)} />
+            {err('admin.admin_name')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Email <span className="text-red-500">*</span></Label>
+            <Input type="email" value={form.admin.admin_email} onChange={(e) => setSection('admin', 'admin_email', e.target.value)} />
+            {err('admin.admin_email')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Phone <span className="text-red-500">*</span></Label>
+            <Input value={form.admin.admin_phone} onChange={(e) => setSection('admin', 'admin_phone', e.target.value)} />
+            {err('admin.admin_phone')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Emergency Phone</Label>
+            <Input value={form.admin.emergency_phone} onChange={(e) => setSection('admin', 'emergency_phone', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Password <span className="text-red-500">*</span></Label>
+            <Input type="password" value={form.admin.admin_password} onChange={(e) => setSection('admin', 'admin_password', e.target.value)} />
+            {err('admin.admin_password')}
+          </div>
+          <div className="space-y-1.5">
+            <Label>Date of Birth</Label>
+            <Input type="date" value={form.admin.dob} onChange={(e) => setSection('admin', 'dob', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>NID Number</Label>
+            <Input value={form.admin.nid_no} onChange={(e) => setSection('admin', 'nid_no', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Passport</Label>
+            <Input value={form.admin.passport} onChange={(e) => setSection('admin', 'passport', e.target.value)} />
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <Label>Address</Label>
+            <Input value={form.admin.address} onChange={(e) => setSection('admin', 'address', e.target.value)} />
+          </div>
+        </div>
+        <UploadField
+          label="Admin Photo" accept="image/*"
+          url={form.admin.photo_url || null}
+          uploading={uploadingKey === 'admin.photo_url'}
+          onUpload={(f) => upload('admin', 'photo_url', f)}
+        />
+      </section>
+
+      {/* Business Information */}
+      <section className="space-y-3 rounded-md border border-border/60 p-4">
+        <h3 className="text-sm font-semibold">Hotel (Business Information)</h3>
+        <p className="text-xs text-muted-foreground">
+          All optional for now — may become mandatory later. PDF or JPG only.
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          {DOC_FIELDS.map((d) => (
+            <UploadField
+              key={d.key}
+              label={d.label}
+              accept=".pdf,.jpg"
+              url={form.documents[d.key] || null}
+              uploading={uploadingKey === `documents.${d.key}`}
+              onUpload={(f) => upload('documents', d.key, f)}
+            />
+          ))}
+        </div>
+      </section>
+
+      {/* Emergency Contact */}
+      <section className="space-y-3 rounded-md border border-border/60 p-4">
+        <h3 className="text-sm font-semibold">Emergency Contact</h3>
+        <p className="text-xs text-muted-foreground">Point of contact for critical incidents.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label>Name</Label>
+            <Input value={form.details.emergency_contact_name} onChange={(e) => setSection('details', 'emergency_contact_name', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Designation</Label>
+            <Input value={form.details.emergency_contact_designation} onChange={(e) => setSection('details', 'emergency_contact_designation', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Phone 1</Label>
+            <Input value={form.details.emergency_contact_phone1} onChange={(e) => setSection('details', 'emergency_contact_phone1', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Phone 2</Label>
+            <Input value={form.details.emergency_contact_phone2} onChange={(e) => setSection('details', 'emergency_contact_phone2', e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Email</Label>
+            <Input type="email" value={form.details.emergency_contact_email} onChange={(e) => setSection('details', 'emergency_contact_email', e.target.value)} />
+          </div>
+        </div>
+      </section>
+
+      {serverError && <p className="text-sm text-red-500">{serverError}</p>}
+
+      <div className="flex justify-end gap-2 pb-6">
+        <Button variant="outline" onClick={() => router.back()} disabled={saving}>Cancel</Button>
+        <Button onClick={handleSubmit} disabled={saving || !!uploadingKey}>
+          {saving ? 'Creating…' : 'Create Hotel'}
+        </Button>
+      </div>
     </div>
   )
 }

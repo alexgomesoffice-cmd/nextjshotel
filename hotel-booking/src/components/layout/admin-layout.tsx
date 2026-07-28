@@ -259,7 +259,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* ── Main column ── */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* ── Top bar ── */}
-        <header className="sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border/60 bg-background/95 px-4 backdrop-blur">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/60 bg-background/95 px-4 backdrop-blur">
           <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
             <span>Admin</span>
             <span className="text-muted-foreground/40">/</span>

@@ -23,6 +23,13 @@ export const createSystemAdminSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  phone: z.string().min(6, 'Phone number is required'),
+  dob: z.string().min(1, 'Date of birth is required'),
+  address: z.string().min(1, 'Address is required'),
+  nid_no: z.string().min(1, 'NID number is required'),
+  gender: z.string().optional(),
+  passport: z.string().optional(),
+  image_url: z.string().optional(),
 })
 
 export const updateSystemAdminSchema = z.object({

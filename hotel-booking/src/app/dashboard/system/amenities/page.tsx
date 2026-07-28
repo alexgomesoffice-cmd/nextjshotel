@@ -72,7 +72,7 @@ export default function AmenitiesPage() {
               value="ROOM"
               className=" px-4 py-1.5 text-muted-foreground transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
             >
-              Room
+              Room Type
             </TabsTrigger>
           </TabsList>
         </Tabs>

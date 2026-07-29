@@ -33,10 +33,11 @@ export function BedTypeFormDialog({
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!open) return
+  if (!open) return;
 
-    setError(null)
-  }, [open])
+  setName(editing?.name ?? "");
+  setError(null);
+}, [open, editing]);
 
   const handleSave = async () => {
     if (!name.trim()) {

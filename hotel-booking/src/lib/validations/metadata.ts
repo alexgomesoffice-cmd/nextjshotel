@@ -34,3 +34,10 @@ export const createBedTypeSchema = z.object({
 })
 
 export const updateBedTypeSchema = createBedTypeSchema.partial()
+
+export const createRoomFacilitySchema = z.object({
+  name: z.string().min(1, 'Room facility name is required'),
+  is_active: z.boolean().default(true),
+})
+
+export const updateRoomFacilitySchema = createRoomFacilitySchema.partial()

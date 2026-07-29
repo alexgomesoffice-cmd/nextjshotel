@@ -24,6 +24,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         hotel_admin: {
           select: { name: true, email: true, is_active: true, is_blocked: true },
         },
+        owner_detail: true,
+        documents: true,
         images: {
           orderBy: { sort_order: 'asc' },
         },

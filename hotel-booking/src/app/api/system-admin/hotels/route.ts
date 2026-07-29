@@ -56,23 +56,43 @@ export async function GET(req: NextRequest) {
           hotel_type: true,
           hotel_admin: { select: { id: true, name: true, email: true } },
           detail: { select: { star_rating: true } },
+          owner_detail: { select: { full_name: true } },
+          cases: { where: { status: 'PENDING' }, select: { id: true }, take: 1 },
         },
         orderBy,
       }),
       prisma.hotels.count({ where }),
     ])
 
-    const hotelsWithDetails = hotels.map((hotel: (typeof hotels)[number]) => ({
-      id: hotel.id,
-      name: hotel.name,
-      slug: hotel.slug,
-      city: hotel.city,
-      hotelType: hotel.hotel_type,
-      starRating: hotel.detail?.star_rating ? parseFloat(hotel.detail.star_rating.toString()) : null,
-      approval_status: hotel.approval_status,
-      createdAt: hotel.created_at.toISOString(),
-      hotelAdmin: hotel.hotel_admin,
-    }))
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    const stats = await prisma.user_bookings.groupBy({
+      by: ['hotel_id'],
+      where: { hotel_id: { in: hotels.map((h: (typeof hotels)[number]) => h.id) }, created_at: { gte: thirtyDaysAgo } },
+      _count: { id: true },
+      _sum: { total_price: true },
+    })
+    const statsByHotel = new Map<number, { _count: { id: number }; _sum: { total_price: any } }>(
+      stats.map((s: any) => [s.hotel_id, s]),
+    )
+
+    const hotelsWithDetails = hotels.map((hotel: (typeof hotels)[number]) => {
+      const stat = statsByHotel.get(hotel.id)
+      return {
+        id: hotel.id,
+        name: hotel.name,
+        slug: hotel.slug,
+        city: hotel.city,
+        hotelType: hotel.hotel_type,
+        starRating: hotel.detail?.star_rating ? parseFloat(hotel.detail.star_rating.toString()) : null,
+        owner: hotel.owner_detail?.full_name ?? null,
+        hotelAdmin: hotel.hotel_admin,
+        hasPendingCase: hotel.cases.length > 0,
+        bookings30d: stat?._count.id ?? 0,
+        revenue30d: stat?._sum.total_price ? parseFloat(stat._sum.total_price.toString()) : 0,
+        approval_status: hotel.approval_status,
+        createdAt: hotel.created_at.toISOString(),
+      }
+    })
 
     return NextResponse.json({
       success: true,

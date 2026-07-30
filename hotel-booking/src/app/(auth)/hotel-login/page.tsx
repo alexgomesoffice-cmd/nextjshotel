@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import { Hotel, Eye, EyeOff, ArrowRight } from 'lucide-react'
 
 export default function HotelLoginPage() {
   const router = useRouter()
@@ -11,7 +11,7 @@ export default function HotelLoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
+  const [showPassword, setShowPassword] = useState(false)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -51,65 +51,111 @@ export default function HotelLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground">Hotel Admin</h1>
-          <p className="text-muted-foreground mt-2">Sign in to manage your hotel</p>
+  <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+
+    {/* Background */}
+    <div className="absolute top-0 left-1/4 w-96 h-96 bg-green-500/10 rounded-full blur-3xl" />
+    <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
+
+    <div className="relative z-10 w-full max-w-md mx-4 animate-fade-in-up">
+
+      {/* Logo */}
+      <div className="flex items-center justify-center gap-3 mb-8">
+        <div className="relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl blur-lg opacity-50" />
+
+          <div className="relative bg-gradient-to-r from-green-500 to-emerald-500 p-2.5 rounded-xl">
+            <Hotel className="h-6 w-6 text-white" />
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <span className="text-2xl font-bold bg-gradient-to-r from-green-500 to-emerald-500 bg-clip-text text-transparent">
+          Hotel System Admin
+        </span>
+      </div>
+
+      {/* Glass Card */}
+      <div className="glass rounded-2xl p-8 shadow-2xl">
+
+        <h1 className="text-2xl font-bold text-center mb-2">
+          Hotel Admin Login
+        </h1>
+
+        <p className="text-muted-foreground text-center mb-8">
+          Sign in to manage your hotel
+        </p>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+
           {error && (
-            <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-sm font-medium mb-2">
               Email
             </label>
+
             <input
-              id="email"
               type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="admin@hotel.com"
-              required
+              placeholder="manager@hotel.com"
+              className="w-full rounded-lg border border-border/50 bg-secondary/30 px-4 py-3 outline-none transition focus:border-green-500"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground mb-2">
+            <label className="block text-sm font-medium mb-2">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="••••••••"
-              required
-            />
+
+            <div className="relative">
+
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-lg border border-border/50 bg-secondary/30 px-4 py-3 pr-12 outline-none transition focus:border-green-500"
+              />
+
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                {showPassword ? (
+                  <EyeOff size={18} />
+                ) : (
+                  <Eye size={18} />
+                )}
+              </button>
+
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 py-3 font-medium text-white transition hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
+
+            <ArrowRight
+              size={18}
+              className="transition-transform"
+            />
           </button>
+
         </form>
 
-        <div className="text-center mt-6">
-          <Link href="/admin-login" className="text-sm text-muted-foreground hover:text-primary">
-            System Admin Login →
-          </Link>
-        </div>
       </div>
     </div>
-  )
+  </div>
+)
 }

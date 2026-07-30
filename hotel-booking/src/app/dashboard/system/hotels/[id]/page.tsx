@@ -126,7 +126,7 @@ export default function HotelWorkspacePage() {
         <button className="rounded-sm p-1.5 hover:bg-secondary"><MoreHorizontal className="h-4 w-4" /></button>
       </div>
 
-      <div className="px-6">
+      <div className="px-16">
         <Tabs defaultValue="overview" onValueChange={loadTab}>
           <TabsList variant="line">
             <TabsTrigger value="overview">Overview</TabsTrigger>

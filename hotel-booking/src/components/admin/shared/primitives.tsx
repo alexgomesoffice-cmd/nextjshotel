@@ -38,7 +38,7 @@ export const OpsTable = ({ children, className }: { children: ReactNode; classNa
 export const OpsTh = ({ children, className }: { children?: ReactNode; className?: string }) => (
   <th
     className={cn(
-      "sticky top-0 z-10 border-b border-border/60 bg-card px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
+      "sticky top-0 z-10 border-b border-border/60 bg-primary/10 px-3 py-2 text-left text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
       className,
     )}
   >

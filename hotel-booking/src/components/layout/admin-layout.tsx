@@ -171,7 +171,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           href={item.href}
           className={cn(
             'group flex items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13px] transition-colors',
-            active ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:bg-secondary/60 hover:text-foreground',
+            active ? 'bg-secondary text-foreground' : ' hover:bg-secondary/60 hover:text-foreground',
             collapsed && 'justify-center',
           )}
           title={collapsed ? item.label : undefined}

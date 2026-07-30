@@ -108,7 +108,7 @@ export function AmenityFormDialog({
       setAmenityContext(value as 'HOTEL' | 'ROOM')
     }
   >
-    <TabsList className="w-full bg-secondary/60 p-1">
+    <TabsList variant="line" className="w-full">
       <TabsTrigger
         value="HOTEL"
         className="flex-1 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"

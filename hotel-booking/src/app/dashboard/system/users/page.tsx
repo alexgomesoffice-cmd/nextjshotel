@@ -59,7 +59,7 @@ export default function UsersPage() {
       <OpsSectionHeader title="Users" description="Everyone with an account on the platform." />
 
       <Tabs value={type} onValueChange={(v) => setType(v as typeof type)}>
-        <TabsList>
+        <TabsList variant="line">
           {TABS.map((t) => <TabsTrigger key={t.value} value={t.value}>{t.label}</TabsTrigger>)}
         </TabsList>
       </Tabs>

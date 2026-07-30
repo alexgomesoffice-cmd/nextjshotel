@@ -108,20 +108,20 @@ export function AmenityFormDialog({
       setAmenityContext(value as 'HOTEL' | 'ROOM')
     }
   >
-    <TabsList className="rounded-md border border-border/70 bg-background p-1 shadow-sm">
-            <TabsTrigger
-              value="HOTEL"
-              className="rounded-sm px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              Hotel
-            </TabsTrigger>
-            <TabsTrigger
-              value="ROOM"
-              className="rounded-sm px-4 py-1.5 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-            >
-              Room
-            </TabsTrigger>
-          </TabsList>
+    <TabsList className="w-full bg-secondary/60 p-1">
+      <TabsTrigger
+        value="HOTEL"
+        className="flex-1 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+      >
+        Hotel
+      </TabsTrigger>
+      <TabsTrigger
+        value="ROOM"
+        className="flex-1 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+      >
+        Room
+      </TabsTrigger>
+    </TabsList>
   </Tabs>
 </div>
 

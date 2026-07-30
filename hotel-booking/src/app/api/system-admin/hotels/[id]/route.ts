@@ -29,6 +29,12 @@ export async function GET(req: NextRequest, { params }: Params) {
         images: {
           orderBy: { sort_order: 'asc' },
         },
+        cases: {
+          where: { status: 'PENDING' },
+          include: { field_changes: { select: { id: true } } },
+          orderBy: { submitted_at: 'desc' },
+          take: 1,
+        },
       },
     })
 

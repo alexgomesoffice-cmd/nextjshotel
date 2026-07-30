@@ -61,16 +61,16 @@ export default function AmenitiesPage() {
 
       <div className="flex items-center justify-between gap-3">
         <Tabs value={context} onValueChange={(v) => setContext(v as 'HOTEL' | 'ROOM')}>
-          <TabsList className=" border border-border/70 bg-background p-1 shadow-sm">
+          <TabsList className="bg-secondary/60 p-1">
             <TabsTrigger
               value="HOTEL"
-              className=" px-4 py-1.5  text-muted-foreground transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+              className="px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               Hotel
             </TabsTrigger>
             <TabsTrigger
               value="ROOM"
-              className=" px-4 py-1.5 text-muted-foreground transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
+              className="px-4 py-1.5 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
               Room Type
             </TabsTrigger>

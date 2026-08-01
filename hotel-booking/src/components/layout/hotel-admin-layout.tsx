@@ -1,70 +1,72 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import { Building2, Bed, Calendar, Users, Image, Settings, LogOut, Menu, X, ChevronDown, ChevronRight, Tags } from 'lucide-react'
+import {
+  Hotel, LayoutDashboard, BedDouble, Calendar, DollarSign,
+  MessageSquare, Settings, LogOut, Menu, X, Bell, Users, ClipboardList,
+  ShieldCheck, UserCog, Sparkles, PackagePlus, Activity,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-type NavItem = {
-  name: string
-  href?: string
-  icon: any
-  subItems?: { name: string; href: string }[]
-}
+type Item = { icon: React.ElementType; label: string; path: string; end?: boolean; badge?: string }
+type Group = { label: string; items: Item[] }
 
-const hotelAdminLinks: NavItem[] = [
-  { name: 'Overview', href: '/dashboard/hotel', icon: Building2 },
-  {
-    name: 'Hotel Management',
-    icon: Building2,
-    subItems: [
-      { name: 'Hotel Profile', href: '/dashboard/hotel/details' },
-      { name: 'Images', href: '/dashboard/hotel/images' },
-    ]
-  },
-  { name: 'Amenities', href: '/dashboard/hotel/amenities', icon: Tags },
-  { name: 'Bed Types', href: '/dashboard/hotel/bed-types', icon: Bed },
-  { name: 'Room Types', href: '/dashboard/hotel/room-types', icon: Bed },
-  { name: 'Rooms', href: '/dashboard/hotel/rooms', icon: Bed },
-  { name: 'Bookings', href: '/dashboard/hotel/bookings', icon: Calendar },
-  { name: 'Staff', href: '/dashboard/hotel/staff', icon: Users },
-  { name: 'Settings', href: '/dashboard/hotel/settings', icon: Settings },
-]
 
-export default function HotelAdminLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+
+export default function HotelAdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [user, setUser] = useState<{ name: string; email: string; hotel_id: number } | null>(null)
-  const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({
-    'Hotel Management': true,
-    'Amenities & Features': true,
-  })
-
-  const toggleMenu = (name: string) => {
-    setOpenMenus(prev => ({ ...prev, [name]: !prev[name] }))
-  }
+  const [hotelName, setHotelName] = useState<string | null>(null)
+  const [draftBadge, setDraftBadge] = useState<string | undefined>(undefined)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
       .then((r) => r.json())
       .then((data) => {
-        if (data.success && data.data.actor_type === 'HOTEL_ADMIN') {
-          setUser({
-            name: data.data.name,
-            email: data.data.email,
-            hotel_id: data.data.hotel_id
-          })
+        if (data.success && ['HOTEL_ADMIN', 'HOTEL_SUB_ADMIN'].includes(data.data.actor_type)) {
+          setUser({ name: data.data.name, email: data.data.email, hotel_id: data.data.hotel_id })
         } else {
           router.push('/hotel-login')
         }
       })
       .catch(() => router.push('/hotel-login'))
   }, [router])
+
+  useEffect(() => {
+    fetch('/api/hotel-admin/hotel', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => setHotelName(d?.data?.name ?? null))
+      .catch(() => {})
+  }, [])
+
+  // Draft Center badge — reflects the hotel's current open case, if any.
+  // The endpoint doesn't exist yet, so this fails silently to "no badge"
+  // until Draft Center itself is built, same pattern as Review Queue's
+  // pending-count badge on the System Admin side.
+  useEffect(() => {
+    fetch('/api/hotel-admin/cases', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => {
+        const status = d?.data?.currentCase?.status
+        if (status === 'PENDING') setDraftBadge('Review')
+        else if (status === 'REJECTED') setDraftBadge('Action')
+        else if (status === 'DRAFTING') setDraftBadge('Draft')
+      })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/hotel-admin/notifications/unread-count', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((d) => setUnreadCount(d?.data?.count ?? 0))
+      .catch(() => setUnreadCount(0))
+  }, [])
 
   const handleLogout = async () => {
     try {
@@ -75,121 +77,178 @@ export default function HotelAdminLayout({
     router.push('/hotel-login')
   }
 
+  const groups: Group[] = [
+    {
+      label: 'Operations',
+      items: [
+        { icon: LayoutDashboard, label: 'Overview', path: '/dashboard/hotel', end: true },
+        { icon: Calendar, label: 'Reservations', path: '/dashboard/hotel/reservations' },
+        { icon: Users, label: 'Guests', path: '/dashboard/hotel/guests' },
+        { icon: BedDouble, label: 'Rooms', path: '/dashboard/hotel/rooms' },
+      ],
+    },
+    {
+      label: 'Property',
+      items: [
+        { icon: Hotel, label: 'Property', path: '/dashboard/hotel/listing' },
+        { icon: ClipboardList, label: 'Draft Center', path: '/dashboard/hotel/drafts', badge: draftBadge },
+        { icon: ShieldCheck, label: 'Documents', path: '/dashboard/hotel/documents' },
+        { icon: PackagePlus, label: 'Master Data Requests', path: '/dashboard/hotel/master-data-requests' },
+      ],
+    },
+    {
+      label: 'Business',
+      items: [
+        { icon: UserCog, label: 'Team', path: '/dashboard/hotel/team' },
+        { icon: DollarSign, label: 'Revenue', path: '/dashboard/hotel/revenue' },
+        { icon: MessageSquare, label: 'Reviews', path: '/dashboard/hotel/reviews' },
+      ],
+    },
+    {
+      label: '',
+      items: [
+        { icon: Activity, label: 'Activity Log', path: '/dashboard/hotel/activity-log' },
+        { icon: Settings, label: 'Settings', path: '/dashboard/hotel/settings' },
+      ],
+    },
+  ]
+
+  const isActive = (item: Item) =>
+    item.end ? pathname === item.path : pathname.startsWith(item.path)
+
+  const initials = user?.name
+    ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
+    : '··'
+
   return (
     <div className="min-h-screen bg-background">
-      {/* Mobile header */}
-      <div className="lg:hidden flex items-center justify-between p-4 border-b">
-        <span className="font-bold text-lg">Hotel Admin</span>
-        <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-          {sidebarOpen ? <X /> : <Menu />}
-        </button>
-      </div>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <aside
-          className={`fixed lg:sticky top-0 inset-y-0 left-0 z-50 w-64 h-screen bg-card border-r border-accent-foreground flex flex-col transform transition-transform lg:transform-none ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-            }`}
-        >
-          <div className="px-6 pt-6 border-b border-accent-foreground shrink-0">
-            <h2 className="text-xl font-bold">Hotel Admin</h2>
-            {user && (
-              <p className="text-sm text-muted-foreground mt-1">{user.name}</p>
-            )}
-          </div>
-
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto custom-scrollbar [&::-webkit-scrollbar-thumb]:opacity-0 hover:[&::-webkit-scrollbar-thumb]:opacity-100"
-            data-lenis-prevent
-            data-lenis-prevent-wheel
-            data-lenis-prevent-touch>
-            {hotelAdminLinks.map((link) => {
-              const Icon = link.icon
-              const hasSubItems = !!link.subItems
-
-              if (hasSubItems) {
-                const isOpen = openMenus[link.name]
-                // Check if any subitem is active
-                const isAnySubActive = link.subItems?.some(sub =>
-                  pathname === sub.href ||
-                  (sub.href.includes('?') && pathname === sub.href.split('?')[0])
-                )
-
-                return (
-                  <div key={link.name} className="space-y-1">
-                    <button
-                      onClick={() => toggleMenu(link.name)}
-                      className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors hover:bg-muted ${isAnySubActive ? 'text-primary' : ''}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className="w-5 h-5" />
-                        <span className="font-medium">{link.name}</span>
-                      </div>
-                      {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                    </button>
-                    {isOpen && (
-                      <div className="ml-4 pl-4 border-l border-border space-y-1 mt-1">
-                        {link.subItems!.map((sub) => {
-                          const isSubActive = pathname === sub.href.split('?')[0] // Basic check, could be improved with search params
-                          return (
-                            <Link
-                              key={sub.name}
-                              href={sub.href}
-                              onClick={() => setSidebarOpen(false)}
-                              className={`block px-4 py-2 text-sm rounded-lg transition-colors ${isSubActive
-                                  ? 'bg-primary/10 text-primary font-medium'
-                                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                                }`}
-                            >
-                              {sub.name}
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
-                )
-              }
-
-              const isActive = pathname === link.href
-              return (
-                <Link
-                  key={link.name}
-                  href={link.href!}
-                  onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive
-                      ? 'bg-primary text-primary-foreground font-medium'
-                      : 'hover:bg-muted'
-                    }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span>{link.name}</span>
-                </Link>
-              )
-            })}
-          </nav>
-
-          <div className="p-4 border-t border-accent-foreground shrink-0">
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 px-4 py-3 w-full rounded-lg hover:bg-muted text-destructive"
-            >
-              <LogOut className="w-5 h-5" />
-              <span>Logout</span>
-            </button>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <main className="flex-1 p-6 lg:p-8">{children}</main>
-      </div>
-
-      {/* Overlay for mobile */}
-      {sidebarOpen && (
+      {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileSidebarOpen(false)}
         />
       )}
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed left-0 top-0 z-50 flex h-full flex-col border-r border-border bg-card transition-all duration-300',
+          sidebarOpen ? 'w-64' : 'w-20',
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        )}
+      >
+        <div className="flex h-20 shrink-0 items-center justify-between border-b border-border px-4">
+          <Link href="/dashboard/hotel" className="flex min-w-0 items-center gap-3">
+            <div className="shrink-0 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 p-2">
+              <Hotel className="h-5 w-5 text-primary-foreground" />
+            </div>
+            {sidebarOpen && (
+              <div className="animate-fade-in-left min-w-0">
+                <p className="text-gradient truncate text-sm font-bold">Hotel Admin</p>
+                <p className="truncate text-[10px] text-muted-foreground">Property Management</p>
+              </div>
+            )}
+          </Link>
+          <button onClick={() => setMobileSidebarOpen(false)} className="rounded-lg p-2 hover:bg-secondary lg:hidden">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <nav className="flex-1 space-y-4 overflow-y-auto p-3">
+          {groups.map((group) => (
+            <div key={group.label || 'misc'}>
+              {sidebarOpen && group.label && (
+                <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                  {group.label}
+                </p>
+              )}
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const active = isActive(item)
+                  return (
+                    <Link
+                      key={item.path}
+                      href={item.path}
+                      className={cn(
+                        'group flex items-center gap-3 rounded-lg px-3 py-2 transition-all',
+                        active
+                          ? 'border border-green-500/20 bg-gradient-to-r from-green-500/15 to-emerald-500/10 text-foreground'
+                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                      )}
+                    >
+                      <item.icon className={cn('h-4 w-4 shrink-0', active && 'text-green-600')} />
+                      {sidebarOpen && (
+                        <>
+                          <span className="flex-1 truncate text-sm font-medium">{item.label}</span>
+                          {item.badge && (
+                            <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-600 border border-amber-500/20">
+                              {item.badge}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        <div className="shrink-0 border-t border-border p-3">
+          <button
+            onClick={handleLogout}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            {sidebarOpen && <span className="text-sm font-medium">Log out</span>}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main */}
+      <div className={cn('transition-all duration-300', sidebarOpen ? 'lg:ml-64' : 'lg:ml-20')}>
+        <header className="glass-strong sticky top-0 z-30 h-16 border-b border-border">
+          <div className="flex h-full items-center justify-between gap-4 px-4 sm:px-6">
+            <div className="flex items-center gap-3">
+              <button onClick={() => setMobileSidebarOpen(true)} className="rounded-lg p-2 hover:bg-secondary lg:hidden">
+                <Menu className="h-5 w-5" />
+              </button>
+              <button onClick={() => setSidebarOpen(!sidebarOpen)} className="hidden rounded-lg p-2 hover:bg-secondary lg:flex">
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="hidden items-center gap-2 text-sm sm:flex">
+                <Sparkles className="h-4 w-4 text-green-500" />
+                <span className="text-muted-foreground">{hotelName ?? '—'}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push('/dashboard/hotel/notifications')}
+                className="relative rounded-lg p-2 transition-colors hover:bg-secondary"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-green-500" />
+                )}
+              </button>
+              <div className="flex items-center gap-3 border-l border-border pl-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-emerald-500">
+                  <span className="text-xs font-semibold text-primary-foreground">{initials}</span>
+                </div>
+                <div className="hidden sm:block">
+                  <p className="text-sm font-medium leading-tight">{user?.name ?? '—'}</p>
+                  <p className="text-xs leading-tight text-muted-foreground">
+                    {user?.email ? 'General Manager' : ''}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+      </div>
     </div>
   )
 }

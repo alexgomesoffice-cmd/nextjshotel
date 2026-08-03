@@ -6,14 +6,24 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   Hotel, LayoutDashboard, BedDouble, Calendar, DollarSign,
   MessageSquare, Settings, LogOut, Menu, X, Bell, Users, ClipboardList,
-  ShieldCheck, UserCog, Sparkles, PackagePlus, Activity,
+  UserCog, Sparkles, PackagePlus, Activity,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 type Item = { icon: React.ElementType; label: string; path: string; end?: boolean; badge?: string }
 type Group = { label: string; items: Item[] }
 
-
+// ─────────────────────────────────────────────────────────
+// Matches the React design's HotelAdminLayout 1:1 for sizing (w-64/w-20
+// sidebar, h-20 header, h-16 topbar), animation (animate-fade-in-left,
+// gradient active state), icons, and mobile drawer behavior. Nav content
+// is ours: Operations/Property/Business groups kept exactly as the dummy
+// had them, with Master Data Requests and Activity Log added (new in our
+// plan, not in the dummy). Documents moved OUT of the sidebar — it now
+// lives inside the Property page's tabs instead, per your latest note.
+// Notification bell is simplified to badge + click-through for now (no
+// dropdown panel yet — same scope decision made for the System Admin bell).
+// ─────────────────────────────────────────────────────────
 
 export default function HotelAdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -82,7 +92,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
       label: 'Operations',
       items: [
         { icon: LayoutDashboard, label: 'Overview', path: '/dashboard/hotel', end: true },
-        { icon: Calendar, label: 'Reservations', path: '/dashboard/hotel/reservations' },
+        { icon: Calendar, label: 'Bookings', path: '/dashboard/hotel/bookings' },
         { icon: Users, label: 'Guests', path: '/dashboard/hotel/guests' },
         { icon: BedDouble, label: 'Rooms', path: '/dashboard/hotel/rooms' },
       ],
@@ -92,7 +102,6 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
       items: [
         { icon: Hotel, label: 'Property', path: '/dashboard/hotel/listing' },
         { icon: ClipboardList, label: 'Draft Center', path: '/dashboard/hotel/drafts', badge: draftBadge },
-        { icon: ShieldCheck, label: 'Documents', path: '/dashboard/hotel/documents' },
         { icon: PackagePlus, label: 'Master Data Requests', path: '/dashboard/hotel/master-data-requests' },
       ],
     },
@@ -154,7 +163,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
           </button>
         </div>
 
-        <nav className="flex-1 space-y-4 overflow-y-auto p-3" data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch>
+        <nav className="flex-1 space-y-4 overflow-y-auto p-3">
           {groups.map((group) => (
             <div key={group.label || 'misc'}>
               {sidebarOpen && group.label && (
@@ -173,7 +182,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
                         'group flex items-center gap-3 rounded-lg px-3 py-2 transition-all',
                         active
                           ? 'border border-green-500/20 bg-gradient-to-r from-green-500/15 to-emerald-500/10 text-foreground'
-                          : 'text-muted-foreground hover:bg-secondary hover:text-foreground',
+                          : ' hover:bg-secondary hover:text-foreground',
                       )}
                     >
                       <item.icon className={cn('h-4 w-4 shrink-0', active && 'text-green-600')} />

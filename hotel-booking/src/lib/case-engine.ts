@@ -51,7 +51,8 @@ export async function applyFieldChange(fc: {
     case 'HOTEL': {
       if (!fc.field_name) return
       if (HOTEL_TABLE_FIELDS.has(fc.field_name)) {
-        await prisma.hotels.update({ where: { id: hotelId }, data: { [fc.field_name]: value } })
+        const normalizedValue = fc.field_name === 'zip_code' ? String(value ?? '') : value
+        await prisma.hotels.update({ where: { id: hotelId }, data: { [fc.field_name]: normalizedValue } })
       } else if (HOTEL_DETAILS_FIELDS.has(fc.field_name)) {
         await prisma.hotel_details.update({ where: { hotel_id: hotelId }, data: { [fc.field_name]: value } })
       }
@@ -78,10 +79,33 @@ export async function applyFieldChange(fc: {
 
     case 'HOTEL_IMAGE': {
       if (fc.entity_id === null) {
-        // value: image_url string
-        await prisma.hotel_images.create({ data: { hotel_id: hotelId, image_url: value } })
+        // value: { image_url, is_cover, sort_order }
+        const payload = typeof value === 'string'
+          ? { image_url: value, is_cover: false, sort_order: 0 }
+          : value
+
+        if (payload.is_cover === true) {
+          await prisma.hotel_images.updateMany({ where: { hotel_id: hotelId }, data: { is_cover: false } })
+        }
+
+        await prisma.hotel_images.create({
+          data: {
+            hotel_id: hotelId,
+            image_url: payload.image_url,
+            is_cover: Boolean(payload.is_cover),
+            sort_order: Number(payload.sort_order ?? 0),
+          },
+        })
       } else if (fc.field_name === 'deleted') {
         await prisma.hotel_images.delete({ where: { id: fc.entity_id } }).catch(() => {})
+      } else if (fc.field_name === 'is_cover') {
+        const shouldCover = Boolean(value)
+        if (shouldCover) {
+          await prisma.hotel_images.updateMany({ where: { hotel_id: hotelId }, data: { is_cover: false } })
+          await prisma.hotel_images.update({ where: { id: fc.entity_id }, data: { is_cover: true } })
+        } else {
+          await prisma.hotel_images.update({ where: { id: fc.entity_id }, data: { is_cover: false } })
+        }
       }
       return
     }
@@ -202,6 +226,136 @@ export async function applyFieldChange(fc: {
       return
     }
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// HOTEL ADMIN SIDE — staging edits into a DRAFTING case before submission.
+// ─────────────────────────────────────────────────────────────────────────
+
+function serializeValue(v: any): string {
+  return typeof v === 'string' ? v : JSON.stringify(v)
+}
+
+/** The hotel's most recent case (any status), with field changes — or null. */
+export async function getLatestCase(hotelId: number) {
+  return prisma.cases.findFirst({
+    where: { hotel_id: hotelId },
+    orderBy: { created_at: 'desc' },
+    include: {
+      field_changes: { orderBy: { id: 'asc' } },
+      decider: { select: { name: true } },
+    },
+  })
+}
+
+/**
+ * Stage one field change into the hotel's open DRAFTING case (creating it if
+ * none exists). Throws if a case is currently PENDING — editing is locked
+ * while a submission is under review. If the proposed value matches the
+ * live/previous value, any existing staged row for that exact field is
+ * removed instead (mirrors the dummy's "equals live = drop from draft").
+ */
+export async function stageFieldChange(params: {
+  hotelId: number
+  hotelAdminId: number
+  entityType: string
+  entityId: number | null
+  fieldName: string | null
+  previousValue: any
+  proposedValue: any
+}) {
+  const { hotelId, hotelAdminId, entityType, entityId, fieldName } = params
+  const previous = params.previousValue === null || params.previousValue === undefined ? null : serializeValue(params.previousValue)
+  const proposed = serializeValue(params.proposedValue)
+
+  let openCase = await prisma.cases.findFirst({
+    where: { hotel_id: hotelId, status: { in: ['DRAFTING', 'PENDING'] } },
+  })
+
+  if (openCase && openCase.status === 'PENDING') {
+    throw new Error('Editing is locked while your last submission is under review.')
+  }
+
+  // Creating a brand-new record (entity_id null) is never "equal to live" —
+  // only updates to an existing field can collapse back to a no-op.
+  const isNoOp = entityId !== null && fieldName !== null && proposed === (previous ?? '')
+
+  if (!openCase) {
+    if (isNoOp) return null // nothing to stage, nothing to create a case for
+    openCase = await prisma.cases.create({
+      data: { hotel_id: hotelId, submitted_by: hotelAdminId, status: 'DRAFTING' },
+    })
+  }
+
+  const existing = await prisma.case_field_changes.findFirst({
+    where: { case_id: openCase.id, entity_type: entityType as any, entity_id: entityId, field_name: fieldName },
+  })
+
+  if (isNoOp) {
+    if (existing) await prisma.case_field_changes.delete({ where: { id: existing.id } })
+  } else if (existing) {
+    await prisma.case_field_changes.update({
+      where: { id: existing.id },
+      data: { proposed_value: proposed, status: 'PENDING', rejection_reason: null, decided_at: null },
+    })
+  } else {
+    await prisma.case_field_changes.create({
+      data: {
+        case_id: openCase.id,
+        entity_type: entityType as any,
+        entity_id: entityId,
+        field_name: fieldName,
+        previous_value: previous,
+        proposed_value: proposed,
+      },
+    })
+  }
+
+  // Clean up: if that was the last staged field and the case has nothing
+  // left, remove the empty DRAFTING case entirely rather than leave a shell.
+  const remaining = await prisma.case_field_changes.count({ where: { case_id: openCase.id } })
+  if (remaining === 0 && openCase.status === 'DRAFTING') {
+    await prisma.cases.delete({ where: { id: openCase.id } })
+    return null
+  }
+
+  return getLatestCase(hotelId)
+}
+
+/** Discard one staged field change (must belong to an open DRAFTING case). */
+export async function discardSingleField(hotelId: number, fieldChangeId: number) {
+  const fc = await prisma.case_field_changes.findUnique({ where: { id: fieldChangeId }, include: { case: true } })
+  if (!fc || fc.case.hotel_id !== hotelId) throw new Error('Change not found.')
+  if (fc.case.status !== 'DRAFTING') throw new Error('Only changes in an unsubmitted draft can be discarded individually.')
+
+  await prisma.case_field_changes.delete({ where: { id: fieldChangeId } })
+
+  const remaining = await prisma.case_field_changes.count({ where: { case_id: fc.case_id } })
+  if (remaining === 0) {
+    await prisma.cases.delete({ where: { id: fc.case_id } })
+  }
+}
+
+/** Flip the open DRAFTING case to PENDING. */
+export async function submitCase(hotelId: number) {
+  const openCase = await prisma.cases.findFirst({
+    where: { hotel_id: hotelId, status: 'DRAFTING' },
+    include: { field_changes: true },
+  })
+  if (!openCase) throw new Error('No draft to submit.')
+  if (openCase.field_changes.length === 0) throw new Error('No changes to submit.')
+
+  return prisma.cases.update({
+    where: { id: openCase.id },
+    data: { status: 'PENDING', submitted_at: new Date() },
+  })
+}
+
+/** Discard the open DRAFTING case entirely (cascades to its field changes). */
+export async function discardCase(hotelId: number) {
+  const openCase = await prisma.cases.findFirst({ where: { hotel_id: hotelId, status: 'DRAFTING' } })
+  if (!openCase) throw new Error('No draft to discard.')
+  await prisma.cases.delete({ where: { id: openCase.id } })
 }
 
 /** Reject one field — does not touch the case's own status. */

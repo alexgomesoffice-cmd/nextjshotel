@@ -79,6 +79,25 @@ export async function applyFieldChange(fc: {
 
     case 'HOTEL_IMAGE': {
       if (fc.entity_id === null) {
+        if (Array.isArray(value)) {
+          const coverPayload = value.find((payload: any) => payload?.is_cover === true)
+          if (coverPayload) {
+            await prisma.hotel_images.updateMany({ where: { hotel_id: hotelId }, data: { is_cover: false } })
+          }
+
+          for (const payload of value) {
+            await prisma.hotel_images.create({
+              data: {
+                hotel_id: hotelId,
+                image_url: payload.image_url,
+                is_cover: Boolean(payload.is_cover),
+                sort_order: Number(payload.sort_order ?? 0),
+              },
+            })
+          }
+          return
+        }
+
         // value: { image_url, is_cover, sort_order }
         const payload = typeof value === 'string'
           ? { image_url: value, is_cover: false, sort_order: 0 }

@@ -105,28 +105,44 @@ export const AmenityChanges = ({ changes, canDiscard, onDiscard }: { changes: FC
 
 /* ---- Gallery: thumbnail previews, added vs removed ---- */
 export const GalleryChanges = ({ changes, canDiscard, onDiscard }: { changes: FC[]; canDiscard: boolean; onDiscard: (id: number) => void }) => (
-  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+  <div className="space-y-3">
     {changes.map((fc) => {
       const isDeletion = fc.field_name === 'deleted'
-      const url = isDeletion ? fc.previous_value : (safeParse(fc.proposed_value)?.image_url ?? fc.proposed_value)
+      const parsed = safeParse(fc.proposed_value)
+      const proposedItems = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : [])
+      const urls = isDeletion
+        ? [fc.previous_value]
+        : proposedItems.map((item: any) => typeof item === 'string' ? item : item?.image_url).filter(Boolean)
+
       return (
         <div key={fc.id} className="relative rounded-xl overflow-hidden border border-border/60">
-          <div className="aspect-video bg-secondary/50 relative">
-            {url && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={url} alt="" className={`h-full w-full object-cover ${isDeletion ? 'opacity-40 grayscale' : ''}`} />
-            )}
-            <span className={`absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isDeletion ? 'bg-destructive/80 text-white' : 'bg-green-500/80 text-white'}`}>
-              {isDeletion ? 'Removing' : 'Adding'}
-            </span>
-            {canDiscard && (
-              <button onClick={() => onDiscard(fc.id)} className="absolute top-1.5 right-1.5 h-5 w-5 rounded-full bg-black/60 text-white flex items-center justify-center">
-                <X className="h-3 w-3" />
-              </button>
-            )}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2 bg-secondary/20">
+            {urls.map((url, index) => (
+              <div key={`${fc.id}-${index}`} className="relative aspect-video rounded-lg overflow-hidden border border-border/40 bg-secondary/50">
+                {url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={url} alt="" className={`h-full w-full object-cover ${isDeletion ? 'opacity-40 grayscale' : ''}`} />
+                )}
+                {!isDeletion && proposedItems[index]?.is_cover && (
+                  <span className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-500 text-black">
+                    Cover
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
-          <div className="p-2 flex items-center justify-between">
-            <FieldReviewBadge state={fc.status} />
+          <div className="flex items-center justify-between px-2 pb-2 pt-1">
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isDeletion ? 'bg-destructive/80 text-white' : 'bg-green-500/80 text-white'}`}>
+              {isDeletion ? 'Removing' : `Adding ${urls.length}`}
+            </span>
+            <div className="flex items-center gap-2">
+              <FieldReviewBadge state={fc.status} />
+              {canDiscard && (
+                <button onClick={() => onDiscard(fc.id)} className="h-5 w-5 rounded-full bg-black/60 text-white flex items-center justify-center">
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
           </div>
           {fc.rejection_reason && <p className="text-xs text-destructive px-2 pb-2">{fc.rejection_reason}</p>}
         </div>

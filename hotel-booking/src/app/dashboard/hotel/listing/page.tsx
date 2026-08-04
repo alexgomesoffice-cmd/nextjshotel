@@ -14,7 +14,7 @@ import {
   SectionShell, Row, FieldDef,
 } from '@/components/hotel-admin/property/property-ui'
 import { sectionKeyFor } from '@/lib/hotel-admin/sections'
-import { SectionEditDialog } from '@/components/hotel-admin/property/section-dialog'
+import { SectionInlineEditor } from '@/components/hotel-admin/property/section-dialog'
 
 type SectionKey = 'general' | 'location' | 'contacts' | 'amenities' | 'gallery' | 'policies' | 'business' | 'owner' | 'admin'
 
@@ -202,9 +202,6 @@ export default function HotelAdminPropertyPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={() => router.push('/dashboard/hotel/drafts')}>
-            <ClipboardList className="h-4 w-4 mr-2" /> Draft Center
-          </Button>
           {isDrafting && (
             <Button variant="ghost" size="sm" onClick={discardDraft}>
               <Trash2 className="h-4 w-4 mr-2" /> Discard Draft
@@ -220,7 +217,7 @@ export default function HotelAdminPropertyPage() {
         <PendingReviewBanner fieldCount={totalFieldCount} submittedAt={currentCase?.submitted_at} onOpen={() => router.push('/dashboard/hotel/drafts')} />
       )}
       {isDrafting && (
-        <UnsubmittedBanner fieldCount={totalFieldCount} onSubmit={submitForReview} />
+        <UnsubmittedBanner fieldCount={totalFieldCount} onOpen={() => router.push('/dashboard/hotel/drafts')} />
       )}
       {isRejected && rejectedCount > 0 && (
         <RejectedBanner fieldCount={rejectedCount} />
@@ -232,7 +229,12 @@ export default function HotelAdminPropertyPage() {
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SectionKey)}>
         <TabsList className="flex-wrap h-auto">
           {SECTIONS.map((s) => (
-            <TabsTrigger key={s.key} value={s.key} className="gap-1.5">
+            <TabsTrigger
+              key={s.key}
+              value={s.key}
+              className="gap-1.5"
+              disabled={openSection !== null && openSection !== s.key}
+            >
               <s.icon className="h-3.5 w-3.5" /> {s.title}
             </TabsTrigger>
           ))}
@@ -251,25 +253,28 @@ export default function HotelAdminPropertyPage() {
                 pendingCount={counts.pending}
                 rejectedCount={counts.rejected}
                 editingLocked={pendingReview}
+                isEditing={openSection === s.key}
                 onEdit={() => setOpenSection(s.key)}
               >
-                <SectionPreview sectionKey={s.key} hotel={hotel} pendingMap={pendingMap} />
+                {openSection === s.key ? (
+                  <SectionInlineEditor
+                    section={SECTIONS.find((item) => item.key === s.key) ?? null}
+                    fields={fieldsFor(s.key, hotel)}
+                    pendingMap={pendingMap}
+                    editingLocked={pendingReview}
+                    hotel={hotel}
+                    onClose={() => setOpenSection(null)}
+                    onSaveFields={stageChanges}
+                    onRefetch={fetchAll}
+                  />
+                ) : (
+                  <SectionPreview sectionKey={s.key} hotel={hotel} pendingMap={pendingMap} />
+                )}
               </SectionShell>
             </TabsContent>
           )
         })}
       </Tabs>
-
-      <SectionEditDialog
-        section={SECTIONS.find((s) => s.key === openSection) ?? null}
-        fields={openSection ? fieldsFor(openSection, hotel) : []}
-        pendingMap={pendingMap}
-        editingLocked={pendingReview}
-        hotel={hotel}
-        onClose={() => setOpenSection(null)}
-        onSaveFields={stageChanges}
-        onRefetch={fetchAll}
-      />
 
     </div>
   )

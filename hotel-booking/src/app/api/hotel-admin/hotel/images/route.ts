@@ -61,8 +61,12 @@ export async function POST(req: NextRequest) {
     await ensureDir()
 
     const wantCover = formData.get('set_as_cover') === 'true'
+    const coverIndexRaw = formData.get('set_as_cover_index')
+    const coverIndex = coverIndexRaw !== null && coverIndexRaw !== '' ? Number(coverIndexRaw) : null
     const images = await prisma.hotel_images.findMany({ where: { hotel_id: hotelId }, select: { id: true } })
     const coverOnFirstUpload = images.length === 0 && wantCover
+    const coverOnIndexedUpload = Number.isInteger(coverIndex) && coverIndex! >= 0 && coverIndex! < files.length
+    const stagedImages: { image_url: string; is_cover: boolean; sort_order: number }[] = []
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -81,24 +85,25 @@ export async function POST(req: NextRequest) {
         .toFile(filepath)
 
       const imageUrl = `/uploads/hotels/${filename}`
+      stagedImages.push({
+        image_url: imageUrl,
+        is_cover: (coverOnIndexedUpload && i === coverIndex) || (coverOnFirstUpload && i === 0),
+        sort_order: i,
+      })
+    }
 
-      try {
-        await stageFieldChange({
-          hotelId,
-          hotelAdminId,
-          entityType: 'HOTEL_IMAGE',
-          entityId: null,
-          fieldName: null,
-          previousValue: null,
-          proposedValue: {
-            image_url: imageUrl,
-            is_cover: coverOnFirstUpload && i === 0,
-            sort_order: i,
-          },
-        })
-      } catch (e: any) {
-        return NextResponse.json({ success: false, message: e.message || 'Failed to stage image' }, { status: 400 })
-      }
+    try {
+      await stageFieldChange({
+        hotelId,
+        hotelAdminId,
+        entityType: 'HOTEL_IMAGE',
+        entityId: null,
+        fieldName: null,
+        previousValue: null,
+        proposedValue: stagedImages,
+      })
+    } catch (e: any) {
+      return NextResponse.json({ success: false, message: e.message || 'Failed to stage image' }, { status: 400 })
     }
 
     const currentCase = await getLatestCase(hotelId)

@@ -27,7 +27,7 @@ export const Row = ({ label, value, pending }: { label: string; value: React.Rea
 
 /* ---- SectionShell: the card wrapper for each Property tab body ---- */
 export const SectionShell = ({
-  title, description, icon: Icon, accent, requiresApproval, pendingCount, rejectedCount, editingLocked, onEdit, children,
+  title, description, icon: Icon, accent, requiresApproval, pendingCount, rejectedCount, editingLocked, isEditing, onEdit, children,
 }: {
   title: string
   description: string
@@ -37,6 +37,7 @@ export const SectionShell = ({
   pendingCount: number
   rejectedCount: number
   editingLocked: boolean
+  isEditing?: boolean
   onEdit: () => void
   children: React.ReactNode
 }) => {
@@ -80,14 +81,16 @@ export const SectionShell = ({
 
         <div className="flex-1">{children}</div>
 
-        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
-          <p className="text-[11px] text-muted-foreground">
-            {editingLocked ? 'Edits unlock after review' : 'Edits are saved as draft'}
-          </p>
-          <Button variant="outline" size="sm" onClick={onEdit} disabled={editingLocked}>
-            {editingLocked ? <><Lock className="h-3.5 w-3.5 mr-1.5" /> Locked</> : <><Edit3 className="h-3.5 w-3.5 mr-1.5" /> Edit</>}
-          </Button>
-        </div>
+        {!isEditing && (
+          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
+            <p className="text-[11px] text-muted-foreground">
+              {editingLocked ? 'Edits unlock after review' : 'Edits are saved as draft'}
+            </p>
+            <Button variant="outline" size="sm" onClick={onEdit} disabled={editingLocked}>
+              {editingLocked ? <><Lock className="h-3.5 w-3.5 mr-1.5" /> Locked</> : <><Edit3 className="h-3.5 w-3.5 mr-1.5" /> Edit</>}
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -184,8 +187,8 @@ export const PendingReviewBanner = ({
 
 /* ---- Unsubmitted draft chip (case is DRAFTING) ---- */
 export const UnsubmittedBanner = ({
-  fieldCount, onSubmit,
-}: { fieldCount: number; onSubmit: () => void }) => (
+  fieldCount, onOpen,
+}: { fieldCount: number; onOpen: () => void }) => (
   <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-transparent to-transparent px-5 py-4 flex items-center justify-between gap-4 flex-wrap animate-fade-in-up">
     <div className="flex items-center gap-3 min-w-0">
       <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center shrink-0">
@@ -193,11 +196,11 @@ export const UnsubmittedBanner = ({
       </div>
       <div className="min-w-0">
         <p className="text-sm font-semibold">You have {fieldCount} unsubmitted change{fieldCount === 1 ? '' : 's'}</p>
-        <p className="text-xs text-muted-foreground">All edits accumulate into a single draft. Submitting creates one Review Case.</p>
+        <p className="text-xs text-muted-foreground">All edits accumulate into a single draft. Open Draft Center to review and submit when ready.</p>
       </div>
     </div>
-    <Button variant="default" size="sm" onClick={onSubmit}>
-      Submit For Review
+    <Button variant="outline" size="sm" onClick={onOpen}>
+      <ClipboardList className="h-4 w-4 mr-2" /> Draft Center
     </Button>
   </div>
 )

@@ -166,6 +166,15 @@ const InlineFieldEditor = ({
 
   return (
     <div className="rounded-xl border border-border bg-card/40 p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">{field.label}</p>
+          
+        </div>
+        {isDirty && !field.locked && (
+          <span className="text-[10px] uppercase tracking-wide text-amber-600 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5">Changed</span>
+        )}
+      </div>
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Current value</Label>
@@ -176,9 +185,6 @@ const InlineFieldEditor = ({
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">New value</Label>
-            {isDirty && !field.locked && (
-              <span className="text-[10px] uppercase tracking-wide text-amber-600 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5">Changed</span>
-            )}
           </div>
           {field.multiline ? (
             <Textarea rows={4} value={displayed} onChange={(e) => onChange(e.target.value)} disabled={disabled} />

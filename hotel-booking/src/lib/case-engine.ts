@@ -44,7 +44,7 @@ export async function applyFieldChange(fc: {
   entity_id: number | null
   field_name: string | null
   proposed_value: string
-}, hotelId: number) {
+}, hotelId: number, ctx: { roomTypeIdMap: Record<string, number> } = { roomTypeIdMap: {} }) {
   const value = parseValue(fc.proposed_value)
 
   switch (fc.entity_type) {
@@ -168,7 +168,7 @@ export async function applyFieldChange(fc: {
 
     case 'ROOM_TYPE': {
       if (fc.entity_id === null) {
-        // value: { name, description, amenity_ids: number[] }
+        // value: { name, description, amenity_ids: number[], client_key?: string }
         const rt = await prisma.room_types.create({
           data: { hotel_id: hotelId, name: value.name, description: value.description ?? null },
         })
@@ -176,6 +176,13 @@ export async function applyFieldChange(fc: {
           await prisma.room_type_amenities.createMany({
             data: value.amenity_ids.map((amenity_id: number) => ({ room_type_id: rt.id, amenity_id })),
           })
+        }
+        // Photos staged alongside this same proposal reference this room
+        // type by a client-generated key (since it has no real id until
+        // now) — record the resolution so ROOM_TYPE_IMAGE entries in the
+        // same approval batch can find it.
+        if (typeof value.client_key === 'string') {
+          ctx.roomTypeIdMap[value.client_key] = rt.id
         }
       } else if (fc.field_name === 'amenity_ids') {
         await prisma.room_type_amenities.deleteMany({ where: { room_type_id: fc.entity_id } })
@@ -192,8 +199,16 @@ export async function applyFieldChange(fc: {
 
     case 'ROOM_TYPE_IMAGE': {
       if (fc.entity_id === null) {
-        // value: { room_type_id, image_url }
-        await prisma.room_images.create({ data: { room_type_id: value.room_type_id, image_url: value.image_url } })
+        // value: { room_type_id: number | string, image_url }
+        // room_type_id may be a client_key (string) referencing a ROOM_TYPE
+        // creation proposed in the same case, resolved via ctx once that
+        // room type has actually been created above.
+        let roomTypeId = value.room_type_id
+        if (typeof roomTypeId === 'string') {
+          roomTypeId = ctx.roomTypeIdMap[roomTypeId]
+          if (!roomTypeId) return // sibling room type wasn't approved (e.g. rejected) — nothing to attach to
+        }
+        await prisma.room_images.create({ data: { room_type_id: roomTypeId, image_url: value.image_url } })
       } else if (fc.field_name === 'deleted') {
         await prisma.room_images.delete({ where: { id: fc.entity_id } }).catch(() => {})
       }
@@ -306,9 +321,13 @@ export async function stageFieldChange(params: {
     })
   }
 
-  const existing = await prisma.case_field_changes.findFirst({
-    where: { case_id: openCase.id, entity_type: entityType as any, entity_id: entityId, field_name: fieldName },
-  })
+  const isNewRecordProposal = entityId === null && fieldName === null
+
+  const existing = isNewRecordProposal
+    ? null // every "new record" call is a distinct item — never collapse into a prior one
+    : await prisma.case_field_changes.findFirst({
+        where: { case_id: openCase.id, entity_type: entityType as any, entity_id: entityId, field_name: fieldName },
+      })
 
   if (isNoOp) {
     if (existing) await prisma.case_field_changes.delete({ where: { id: existing.id } })
@@ -339,6 +358,20 @@ export async function stageFieldChange(params: {
   }
 
   return getLatestCase(hotelId)
+}
+
+/** Every ROOM_TYPE creation proposal this hotel has ever made, newest first. */
+export async function getRoomTypeCreationHistory(hotelId: number) {
+  const changes = await prisma.case_field_changes.findMany({
+    where: {
+      entity_type: 'ROOM_TYPE',
+      entity_id: null,
+      case: { hotel_id: hotelId },
+    },
+    include: { case: { select: { status: true, submitted_at: true } } },
+    orderBy: { created_at: 'desc' },
+  })
+  return changes
 }
 
 /** Discard one staged field change (must belong to an open DRAFTING case). */
@@ -392,9 +425,13 @@ export async function approveRemaining(caseId: number, decidedBy: number) {
     include: { field_changes: true },
   })
 
-  const pending = c.field_changes.filter((fc: (typeof c.field_changes)[number]) => fc.status === 'PENDING')
+  const pending = c.field_changes
+    .filter((fc: (typeof c.field_changes)[number]) => fc.status === 'PENDING')
+    .sort((a: (typeof c.field_changes)[number], b: (typeof c.field_changes)[number]) => a.id - b.id)
+
+  const ctx = { roomTypeIdMap: {} as Record<string, number> }
   for (const fc of pending) {
-    await applyFieldChange(fc, c.hotel_id)
+    await applyFieldChange(fc, c.hotel_id, ctx)
     await prisma.case_field_changes.update({
       where: { id: fc.id },
       data: { status: 'APPROVED', decided_at: new Date() },

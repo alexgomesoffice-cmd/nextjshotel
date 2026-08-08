@@ -1,9 +1,9 @@
 import {
   Hotel, MapPin, Phone, Sparkles, ImageIcon, ClipboardList, Building2,
-  UserCircle2, ShieldCheck,
+  UserCircle2, ShieldCheck, BedDouble,
 } from 'lucide-react'
 
-export type SectionKey = 'general' | 'location' | 'contacts' | 'amenities' | 'gallery' | 'policies' | 'business' | 'owner' | 'admin'
+export type SectionKey = 'general' | 'location' | 'contacts' | 'amenities' | 'gallery' | 'policies' | 'business' | 'owner' | 'admin' | 'roomTypes'
 
 export const SECTION_META: Record<SectionKey, { title: string; description: string; icon: any; accent: string }> = {
   general:   { title: 'General Information', description: 'Public identity of your hotel', icon: Hotel, accent: 'from-emerald-500 to-green-600' },
@@ -15,6 +15,7 @@ export const SECTION_META: Record<SectionKey, { title: string; description: stri
   business:  { title: 'Business & Documents', description: 'Legal documents verified by the System Admin', icon: Building2, accent: 'from-slate-500 to-slate-700' },
   owner:     { title: 'Owner Information', description: 'Identity of the property owner', icon: UserCircle2, accent: 'from-purple-500 to-fuchsia-600' },
   admin:     { title: 'Hotel Admin Information', description: 'Your management profile on record', icon: ShieldCheck, accent: 'from-teal-500 to-emerald-600' },
+  roomTypes: { title: 'Room Types', description: 'New room types you have proposed', icon: BedDouble, accent: 'from-indigo-500 to-blue-600' },
 }
 
 const HOTEL_FIELD_GROUPS: Record<string, SectionKey> = {
@@ -28,6 +29,7 @@ const HOTEL_FIELD_GROUPS: Record<string, SectionKey> = {
 const ENTITY_TO_SECTION: Record<string, SectionKey> = {
   AMENITY: 'amenities', HOTEL_IMAGE: 'gallery', POLICY: 'policies',
   HOTEL_DOCUMENT: 'business', HOTEL_OWNER: 'owner', HOTEL_ADMIN: 'admin',
+  ROOM_TYPE: 'roomTypes', ROOM_TYPE_IMAGE: 'roomTypes',
 }
 
 export function sectionKeyFor(entityType: string, fieldName: string | null): SectionKey {

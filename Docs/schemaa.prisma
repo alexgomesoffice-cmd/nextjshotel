@@ -98,6 +98,7 @@ enum CaseEntityType {
   ROOM_TYPE          // room_types — always hotel-owned; creating (name+description+amenity selection bundled together) or editing one is fully reviewed content, no operational fields on it at all
   ROOM_TYPE_IMAGE    // room_images tied to a room_type
   ROOM_FACILITY      // a physical room's facility selection (room_detail_facilities) — entity_id = the room_details.id
+  ROOM_DETAIL        // creating a new physical room (room_details) — entity_id null = new record, proposed_value carries room_number/floor/price/room_size/max_occupancy/facility_ids/bed_types. Editing an EXISTING room's non-facility fields stays immediate, not reviewed.
   // BED_TYPE removed — bed types are now fully global/System-Admin-owned (no
   // hotel-custom creation path at all), so there's nothing left for Hotel
   // Admin to propose here. Bed selection on a room is just part of that
@@ -702,6 +703,8 @@ model master_data_requests {
   hotel_id          Int
   requested_by      Int                     // hotel_admins.id
   category          MasterDataCategory
+  name              String                  @db.VarChar(150) // the requested item's name, e.g. "Rollaway Bed"
+  context           AmenityContext?         // only set when category = AMENITY (Hotel vs Room amenity)
   note              String                  @db.Text
   status            MasterDataRequestStatus @default(PENDING)
   resolved_by       Int?                    // system_admins.id
@@ -1037,7 +1040,7 @@ model cases {
   id             Int         @id @default(autoincrement())
   hotel_id       Int
   submitted_by   Int         // hotel_admins.id
-  status         CaseStatus  @default(PENDING)
+  status         CaseStatus  @default(DRAFTING)
   summary        String?     @db.Text
   submitted_at   DateTime    @default(now())
   decided_by     Int?        // system_admins.id

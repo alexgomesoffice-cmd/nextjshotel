@@ -50,6 +50,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { Skeleton } from '@/components/ui/skeleton'
+import {RoomTypesSection} from '@/components/hotel-admin/rooms/room-type-selection'
 
 interface RoomType {
   id: number
@@ -161,14 +162,22 @@ export default function HotelRoomsPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Rooms Inventory</h1>
-          <p className="text-muted-foreground mt-1">Manage your physical room instances and their statuses.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Rooms</h1>
+          <p className="text-muted-foreground mt-1">Manage your physical rooms and room types.</p>
         </div>
-        <div className="flex items-center gap-2">
+      </div>
+
+      <Tabs defaultValue="rooms">
+        <TabsList>
+          <TabsTrigger value="rooms">Physical Rooms</TabsTrigger>
+          <TabsTrigger value="types">Room Types</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="rooms" className="mt-6 space-y-6">
+      <div className="flex items-center gap-2 justify-end">
           <Button onClick={handleOpenAdd} className="gap-2 shadow-lg">
             <Plus className="w-4 h-4" /> Add Room
           </Button>
-        </div>
       </div>
 
       {/* Stats Section */}
@@ -358,6 +367,12 @@ export default function HotelRoomsPage() {
           </TableBody>
         </Table>
       </div>
+        </TabsContent>
+
+        <TabsContent value="types" className="mt-6">
+          <RoomTypesSection />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

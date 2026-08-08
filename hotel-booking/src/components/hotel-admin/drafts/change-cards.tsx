@@ -205,3 +205,45 @@ export const DocumentChanges = ({ changes, canDiscard, onDiscard }: { changes: F
     })}
   </div>
 )
+
+/* ---- Room Types: creation proposal + its one linked photo, grouped by client_key ---- */
+export const RoomTypeChanges = ({ changes, canDiscard, onDiscard }: { changes: FC[]; canDiscard: boolean; onDiscard: (id: number) => void }) => {
+  const roomTypeEntries = changes.filter((fc) => fc.entity_type === 'ROOM_TYPE')
+  const imageEntries = changes.filter((fc) => fc.entity_type === 'ROOM_TYPE_IMAGE')
+
+  return (
+    <div className="space-y-3">
+      {roomTypeEntries.map((fc) => {
+        const value = safeParse(fc.proposed_value) ?? {}
+        const image = imageEntries.find((img) => safeParse(img.proposed_value)?.room_type_id === value.client_key)
+        const imageUrl = image ? safeParse(image.proposed_value)?.image_url : null
+
+        return (
+          <div key={fc.id} className="rounded-xl border border-border/60 p-3 flex gap-3">
+            <div className="w-16 h-16 rounded-lg overflow-hidden border border-border/40 bg-secondary/50 shrink-0">
+              {imageUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+              )}
+            </div>
+            <div className="min-w-0 flex-1 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-sm font-semibold truncate">{value.name ?? 'Room Type'}</p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <FieldReviewBadge state={fc.status} />
+                  {canDiscard && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { onDiscard(fc.id); if (image) onDiscard(image.id) }}>
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground line-clamp-2">{value.description}</p>
+              {fc.rejection_reason && <p className="text-xs text-destructive">{fc.rejection_reason}</p>}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}

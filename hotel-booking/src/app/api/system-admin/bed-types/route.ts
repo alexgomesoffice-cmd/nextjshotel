@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         orderBy: { name: 'asc' },
-        include: { _count: { select: { room_detail_bed_types: true } } },
+        include: { _count: { select: { room_variant_bed_types: true } } },
       }),
       prisma.bed_types.count({ where }),
     ])
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       name: b.name,
       is_active: b.is_active,
       created_at: b.created_at,
-      usage_count: b._count.room_detail_bed_types,
+      usage_count: b._count.room_variant_bed_types,
     }))
 
     return NextResponse.json({

@@ -95,14 +95,14 @@ enum CaseEntityType {
   HOTEL_DOCUMENT     // hotel_documents
   AMENITY            // a hotel's or room type's amenity SELECTION only — amenities themselves are fully global/System-Admin-owned now, same as bed types, so there's no "creating a new custom amenity" case anymore
   POLICY             // policies
-  ROOM_TYPE          // room_types — always hotel-owned; creating (name+description+amenity selection bundled together) or editing one is fully reviewed content, no operational fields on it at all
-  ROOM_TYPE_IMAGE    // room_images tied to a room_type
-  ROOM_FACILITY      // a physical room's facility selection (room_detail_facilities) — entity_id = the room_details.id
-  ROOM_DETAIL        // creating a new physical room (room_details) — entity_id null = new record, proposed_value carries room_number/floor/price/room_size/max_occupancy/facility_ids/bed_types. Editing an EXISTING room's non-facility fields stays immediate, not reviewed.
+  // ROOM_TYPE, ROOM_TYPE_IMAGE, ROOM_FACILITY, ROOM_DETAIL removed —
+  // Room Type / Room Variant / Physical Room management is direct Hotel
+  // Admin CRUD now (see room-variant-matching.ts), never case-reviewed.
+  // Confirmed zero code references before removal — case-engine.ts's
+  // applyFieldChange branches for these were removed in the same pass.
   // BED_TYPE removed — bed types are now fully global/System-Admin-owned (no
   // hotel-custom creation path at all), so there's nothing left for Hotel
-  // Admin to propose here. Bed selection on a room is just part of that
-  // room's own ROOM_DETAIL creation proposal.
+  // Admin to propose here.
 }
 
 enum NotificationType {
@@ -577,7 +577,7 @@ model bed_types {
   is_active             Boolean                 @default(true)
   created_at            DateTime                @default(now())
 
-  room_detail_bed_types room_detail_bed_types[]
+  room_variant_bed_types room_variant_bed_types[]
 
   @@map("bed_types")
 }
@@ -608,7 +608,7 @@ model room_types {
   updated_at  DateTime @updatedAt
 
   hotel               hotels                @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
-  room_details        room_details[]
+  room_variants       room_variants[]
   type_images         room_images[]         @relation("RoomTypeImages")
   room_type_amenities room_type_amenities[]
   room_bookings       room_bookings[]
@@ -620,19 +620,15 @@ model room_types {
 }
 
 // ═══════════════════════════════════════════════════════
-// ROOM FACILITIES  (replaces the old ac/smoking_allowed/pet_allowed booleans)
-// ═══════════════════════════════════════════════════════
-// ROOM FACILITIES  (replaces the old ac/smoking_allowed/pet_allowed booleans)
+// ROOM FACILITIES
 // Fully global, System-Admin-owned — no hotel_id, no is_default, same as
-// amenities and bed_types now. Hotel Admin only selects from what's
-// available (per physical room — room_detail_facilities); if nothing fits,
-// they submit a master_data_requests entry (category: ROOM_FACILITY).
-// Structural/physical properties of one specific room (AC, smoking allowed,
-// pet allowed, balcony, etc.), not marketing amenities — that's what
-// distinguishes this from amenities, not who's allowed to create them
-// (nobody but System Admin creates either one now).
-// Confirmed reviewed: selecting facilities on a room goes through the case
-// system, bundled into that room's own creation proposal (see room_details).
+// amenities and bed_types. Hotel Admin only selects from what's available
+// (per room variant — room_variant_facilities); if nothing fits, they
+// submit a master_data_requests entry (category: ROOM_FACILITY).
+// Structural/physical properties (AC, smoking allowed, pet allowed,
+// balcony, etc.), not marketing amenities.
+// Selection now lives on room_variants, set directly by Hotel Admin —
+// immediate, NOT case-reviewed (see room_variants above).
 // ═══════════════════════════════════════════════════════
 
 model room_facilities {
@@ -641,49 +637,18 @@ model room_facilities {
   is_active  Boolean  @default(true)
   created_at DateTime @default(now())
 
-  room_detail_facilities room_detail_facilities[]
+  room_variant_facilities room_variant_facilities[]
 
   @@map("room_facilities")
 }
 
-model room_detail_facilities {
-  id             Int             @id @default(autoincrement())
-  room_detail_id Int
-  facility_id    Int
-  created_at     DateTime        @default(now())
+// room_detail_facilities and room_detail_bed_types (the old physical-room-
+// level junction tables) were removed here — nothing references them
+// anymore now that facilities/beds live on room_variants instead. No live
+// data existed under the old shape (room creation was never successfully
+// exercised end-to-end through the old case-based flow), so there's
+// nothing to migrate off of them.
 
-  room_detail room_details    @relation(fields: [room_detail_id], references: [id], onDelete: Cascade)
-  facility    room_facilities @relation(fields: [facility_id], references: [id], onDelete: Cascade)
-
-  @@unique([room_detail_id, facility_id])
-  @@index([room_detail_id])
-  @@map("room_detail_facilities")
-}
-
-// ═══════════════════════════════════════════════════════
-// ROOM DETAIL BED TYPES
-// Bed configuration lives at the PHYSICAL ROOM level, not the room type —
-// a single room can carry multiple beds of the same or different types
-// (e.g. 2 Twin + 1 Queen). count = how many of that bed type in this room.
-// Hotel Admin selects from available bed_types (global + their own custom
-// ones, which they can still propose via case review); if the type they
-// need doesn't exist, they submit a master_data_requests entry instead.
-// ═══════════════════════════════════════════════════════
-
-model room_detail_bed_types {
-  id             Int          @id @default(autoincrement())
-  room_detail_id Int
-  bed_type_id    Int
-  count          Int          @default(1)
-  created_at     DateTime     @default(now())
-
-  room_detail room_details @relation(fields: [room_detail_id], references: [id], onDelete: Cascade)
-  bed_type    bed_types    @relation(fields: [bed_type_id], references: [id])
-
-  @@unique([room_detail_id, bed_type_id])
-  @@index([room_detail_id])
-  @@map("room_detail_bed_types")
-}
 
 // ═══════════════════════════════════════════════════════
 // MASTER DATA REQUESTS
@@ -748,92 +713,161 @@ model room_type_amenities {
 
 // ═══════════════════════════════════════════════════════
 // ROOM DETAILS  (physical room instances)
-// Creation is reviewed (case system, entity_type ROOM_DETAIL) — Hotel Admin
-// only; Hotel Sub-Admin lost room creation, keeps only status updates.
-// Room type must be selected from a dropdown of existing room types.
-// price = base nightly rate for THIS specific room. pricing_rules can
-// override it with a discounted_price for a limited window (see below).
-// max_occupancy = guest count for THIS physical room (moved down from
-// room_types — a room type is a name/description classification only now).
-// Bed configuration (room_detail_bed_types) and facility selection
-// (room_detail_facilities) both live here too — a room can have multiple
-// beds of the same or different types, and its own facility selection,
-// distinct from the room type's own amenities (room_type_amenities).
+// Creation/editing is direct Hotel Admin CRUD — immediate, NOT
+// case-reviewed. Room number is unique hotel-wide (enforced in the API
+// layer). Variant-defining fields (price/size/occupancy/facilities/beds)
+// now live on room_variants — this table only holds room_number, floor,
+// status, and notes. See room_variants above for the matching logic.
+// ═══════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════
+// ROOM VARIANTS  (guest-facing sellable configuration)
+// Sits between room_types (broad category) and room_details (physical
+// inventory). Auto-created/reused — Hotel Admin never manages this
+// directly. signature_hash is a deterministic hash of every field that
+// defines the variant (price, room_size, max_occupancy, facility set, bed
+// set) — NOT images. @@unique([room_type_id, signature_hash]) is the
+// concurrency guard: two concurrent room creations with the same config
+// resolve to the same row via upsert instead of racing into duplicates.
+// Direct Hotel Admin CRUD, NOT case-reviewed — see room_details below.
+// ═══════════════════════════════════════════════════════
+
+model room_variants {
+  id             Int      @id @default(autoincrement())
+  room_type_id   Int
+  signature_hash String   @db.VarChar(64)
+  price          Decimal  @db.Decimal(12, 2)
+  room_size      String?  @db.VarChar(50)
+  max_occupancy  Int?
+  is_active      Boolean  @default(true)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  room_type      room_types                @relation(fields: [room_type_id], references: [id], onDelete: Cascade)
+  room_details   room_details[]
+  room_bookings  room_bookings[]
+  variant_images room_images[]             @relation("RoomVariantImages")
+  facilities     room_variant_facilities[]
+  bed_types      room_variant_bed_types[]
+  pricing_rules  pricing_rules[]
+
+  @@unique([room_type_id, signature_hash])
+  @@index([room_type_id])
+  @@map("room_variants")
+}
+
+model room_variant_facilities {
+  id              Int      @id @default(autoincrement())
+  room_variant_id Int
+  facility_id     Int
+  created_at      DateTime @default(now())
+
+  room_variant room_variants   @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
+  facility     room_facilities @relation(fields: [facility_id], references: [id], onDelete: Cascade)
+
+  @@unique([room_variant_id, facility_id])
+  @@index([room_variant_id])
+  @@map("room_variant_facilities")
+}
+
+model room_variant_bed_types {
+  id              Int      @id @default(autoincrement())
+  room_variant_id Int
+  bed_type_id     Int
+  count           Int      @default(1)
+  created_at      DateTime @default(now())
+
+  room_variant room_variants @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
+  bed_type     bed_types     @relation(fields: [bed_type_id], references: [id])
+
+  @@unique([room_variant_id, bed_type_id])
+  @@index([room_variant_id])
+  @@map("room_variant_bed_types")
+}
+
+// ═══════════════════════════════════════════════════════
+// ROOM DETAILS  (physical room instances — actual inventory)
+// Direct Hotel Admin CRUD, immediate, NOT case-reviewed. Creating or
+// editing a room's variant-defining fields (price/size/occupancy/
+// facilities/beds) triggers signature matching against room_variants —
+// see /lib/room-variant-matching.ts. Only room_number/floor/status/notes
+// live here now; everything guest-facing moved to room_variants.
+// Room number is unique HOTEL-WIDE (across all types/variants), not just
+// within one room type — enforced in the API layer since the hotel_id
+// isn't a direct column here (reachable via room_variant -> room_type).
 // ═══════════════════════════════════════════════════════
 
 model room_details {
   id              Int        @id @default(autoincrement())
-  room_type_id    Int
+  room_variant_id Int
   room_number     String     @db.VarChar(50)
   floor           Int?
-  price           Decimal    @db.Decimal(12, 2)
-  room_size       String?    @db.VarChar(50)
-  max_occupancy   Int?
   status          RoomStatus @default(AVAILABLE)
   notes           String?    @db.Text
   created_at      DateTime   @default(now())
   updated_at      DateTime   @updatedAt
   deleted_at      DateTime?
 
-  room_type            room_types                @relation(fields: [room_type_id], references: [id], onDelete: Cascade)
-  room_images          room_images[]             @relation("RoomDetailImages")
-  room_trackers        room_trackers[]
-  room_bookings        room_bookings[]
-  pricing_rules        pricing_rules[]
-  room_facility_links  room_detail_facilities[]
-  room_bed_type_links  room_detail_bed_types[]
+  room_variant  room_variants  @relation(fields: [room_variant_id], references: [id])
+  room_images   room_images[]  @relation("RoomDetailImages")
+  room_trackers room_trackers[]
+  room_bookings room_bookings[]
 
-  @@unique([room_type_id, room_number, deleted_at])
-  @@index([room_type_id])
+  @@unique([room_variant_id, room_number, deleted_at])
+  @@index([room_variant_id])
   @@index([status])
   @@map("room_details")
 }
 
 // ═══════════════════════════════════════════════════════
 // ROOM IMAGES
-// Exactly ONE of room_type_id or room_detail_id must be set:
-//   room_type_id   → shared image for all rooms of that type
-//   room_detail_id → image for one specific physical room
+// Exactly ONE of room_type_id / room_variant_id / room_detail_id is set:
+//   room_type_id    → shared image for the room type's marketing page
+//   room_variant_id → shared image for every physical room in that variant
+//                     (the default, guest-facing gallery)
+//   room_detail_id  → optional extra photo for one specific physical room
+//                     (rare — not required by the variant model, kept for
+//                     flexibility, unused by default)
 // ═══════════════════════════════════════════════════════
 
 model room_images {
-  id             Int           @id @default(autoincrement())
-  image_url      String        @db.LongText
-  is_cover       Boolean       @default(false)
-  sort_order     Int           @default(0)
-  room_type_id   Int?
-  room_detail_id Int?
-  created_at     DateTime      @default(now())
+  id              Int            @id @default(autoincrement())
+  image_url       String         @db.LongText
+  is_cover        Boolean        @default(false)
+  sort_order      Int            @default(0)
+  room_type_id    Int?
+  room_variant_id Int?
+  room_detail_id  Int?
+  created_at      DateTime       @default(now())
 
-  room_type   room_types?   @relation("RoomTypeImages", fields: [room_type_id], references: [id], onDelete: Cascade)
-  room_detail room_details? @relation("RoomDetailImages", fields: [room_detail_id], references: [id], onDelete: Cascade)
+  room_type    room_types?    @relation("RoomTypeImages", fields: [room_type_id], references: [id], onDelete: Cascade)
+  room_variant room_variants? @relation("RoomVariantImages", fields: [room_variant_id], references: [id], onDelete: Cascade)
+  room_detail  room_details?  @relation("RoomDetailImages", fields: [room_detail_id], references: [id], onDelete: Cascade)
 
   @@index([room_type_id])
+  @@index([room_variant_id])
   @@index([room_detail_id])
   @@map("room_images")
 }
 
 // ═══════════════════════════════════════════════════════
-// PRICING RULES  (temporary discount on a specific physical room)
-// room_details.price is the room's base price. A pricing_rules row is an
-// active discount override for that room, valid until end_date — after
-// which it reverts to room_details.price automatically (no row deletion
-// needed; the API just checks end_date >= today when resolving current price).
-// Confirmed: keep both start_date and end_date (a discount can be scheduled
-// ahead and expires on its own).
+// PRICING RULES  (temporary discount on a room variant)
+// room_variants.price is the variant's base rate. A pricing_rules row is
+// an active discount override for EVERY room in that variant, valid until
+// end_date — after which it reverts to room_variants.price automatically.
 // ═══════════════════════════════════════════════════════
 
 model pricing_rules {
-  id               Int          @id @default(autoincrement())
-  room_detail_id   Int
-  name             String?      @db.VarChar(150)
-  start_date       DateTime     @db.Date
-  end_date         DateTime     @db.Date
-  discounted_price Decimal      @db.Decimal(12, 2)
-  created_at       DateTime     @default(now())
-  room_detail      room_details @relation(fields: [room_detail_id], references: [id], onDelete: Cascade)
+  id               Int           @id @default(autoincrement())
+  room_variant_id  Int
+  name             String?       @db.VarChar(150)
+  start_date       DateTime      @db.Date
+  end_date         DateTime      @db.Date
+  discounted_price Decimal       @db.Decimal(12, 2)
+  created_at       DateTime      @default(now())
+  room_variant     room_variants @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
 
-  @@index([room_detail_id])
+  @@index([room_variant_id])
   @@index([start_date, end_date])
   @@map("pricing_rules")
 }
@@ -879,18 +913,21 @@ model room_bookings {
   id              Int          @id @default(autoincrement())
   booking_id      Int
   room_type_id    Int
+  room_variant_id Int
   room_detail_id  Int
   price_per_night Decimal      @db.Decimal(12, 2)
   nights          Int
   subtotal        Decimal      @db.Decimal(12, 2)
   created_at      DateTime     @default(now())
 
-  booking     user_bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  room_type   room_types    @relation(fields: [room_type_id], references: [id])
-  room_detail room_details  @relation(fields: [room_detail_id], references: [id])
+  booking      user_bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  room_type    room_types    @relation(fields: [room_type_id], references: [id])
+  room_variant room_variants @relation(fields: [room_variant_id], references: [id])
+  room_detail  room_details  @relation(fields: [room_detail_id], references: [id])
 
   @@index([booking_id])
   @@index([room_type_id])
+  @@index([room_variant_id])
   @@index([room_detail_id])
   @@map("room_bookings")
 }

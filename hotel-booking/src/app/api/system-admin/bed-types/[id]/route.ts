@@ -64,13 +64,13 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     const bedType = await prisma.bed_types.findUnique({
       where: { id: bedTypeId },
-      include: { _count: { select: { room_detail_bed_types: true } } },
+      include: { _count: { select: { room_variant_bed_types: true } } },
     })
     if (!bedType) {
       return NextResponse.json({ success: false, message: 'Bed type not found' }, { status: 404 })
     }
 
-    const usageCount = bedType._count.room_detail_bed_types
+    const usageCount = bedType._count.room_variant_bed_types
     if (usageCount > 0) {
       await prisma.bed_types.update({ where: { id: bedTypeId }, data: { is_active: false } })
       return NextResponse.json({

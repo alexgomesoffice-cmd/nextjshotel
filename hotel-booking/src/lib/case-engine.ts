@@ -44,7 +44,7 @@ export async function applyFieldChange(fc: {
   entity_id: number | null
   field_name: string | null
   proposed_value: string
-}, hotelId: number, ctx: { roomTypeIdMap: Record<string, number> } = { roomTypeIdMap: {} }) {
+}, hotelId: number) {
   const value = parseValue(fc.proposed_value)
 
   switch (fc.entity_type) {
@@ -166,99 +166,14 @@ export async function applyFieldChange(fc: {
       return
     }
 
-    case 'ROOM_TYPE': {
-      if (fc.entity_id === null) {
-        // value: { name, description, amenity_ids: number[], client_key?: string }
-        const rt = await prisma.room_types.create({
-          data: { hotel_id: hotelId, name: value.name, description: value.description ?? null },
-        })
-        if (Array.isArray(value.amenity_ids) && value.amenity_ids.length > 0) {
-          await prisma.room_type_amenities.createMany({
-            data: value.amenity_ids.map((amenity_id: number) => ({ room_type_id: rt.id, amenity_id })),
-          })
-        }
-        // Photos staged alongside this same proposal reference this room
-        // type by a client-generated key (since it has no real id until
-        // now) — record the resolution so ROOM_TYPE_IMAGE entries in the
-        // same approval batch can find it.
-        if (typeof value.client_key === 'string') {
-          ctx.roomTypeIdMap[value.client_key] = rt.id
-        }
-      } else if (fc.field_name === 'amenity_ids') {
-        await prisma.room_type_amenities.deleteMany({ where: { room_type_id: fc.entity_id } })
-        if (Array.isArray(value) && value.length > 0) {
-          await prisma.room_type_amenities.createMany({
-            data: value.map((amenity_id: number) => ({ room_type_id: fc.entity_id!, amenity_id })),
-          })
-        }
-      } else if (fc.field_name) {
-        await prisma.room_types.update({ where: { id: fc.entity_id }, data: { [fc.field_name]: value } })
-      }
-      return
-    }
-
-    case 'ROOM_TYPE_IMAGE': {
-      if (fc.entity_id === null) {
-        // value: { room_type_id: number | string, image_url }
-        // room_type_id may be a client_key (string) referencing a ROOM_TYPE
-        // creation proposed in the same case, resolved via ctx once that
-        // room type has actually been created above.
-        let roomTypeId = value.room_type_id
-        if (typeof roomTypeId === 'string') {
-          roomTypeId = ctx.roomTypeIdMap[roomTypeId]
-          if (!roomTypeId) return // sibling room type wasn't approved (e.g. rejected) — nothing to attach to
-        }
-        await prisma.room_images.create({ data: { room_type_id: roomTypeId, image_url: value.image_url } })
-      } else if (fc.field_name === 'deleted') {
-        await prisma.room_images.delete({ where: { id: fc.entity_id } }).catch(() => {})
-      }
-      return
-    }
-
-    case 'ROOM_FACILITY': {
-      // entity_id = room_details.id, value = array of facility ids
-      if (fc.field_name === 'selection' && fc.entity_id !== null) {
-        await prisma.room_detail_facilities.deleteMany({ where: { room_detail_id: fc.entity_id } })
-        if (Array.isArray(value) && value.length > 0) {
-          await prisma.room_detail_facilities.createMany({
-            data: value.map((facility_id: number) => ({ room_detail_id: fc.entity_id!, facility_id })),
-          })
-        }
-      }
-      return
-    }
-
-    case 'ROOM_DETAIL': {
-      if (fc.entity_id === null) {
-        // value: { room_type_id, room_number, floor, price, room_size,
-        //          max_occupancy, facility_ids: number[], bed_types: {bed_type_id, count}[] }
-        const room = await prisma.room_details.create({
-          data: {
-            room_type_id: value.room_type_id,
-            room_number: value.room_number,
-            floor: value.floor ?? null,
-            price: value.price,
-            room_size: value.room_size ?? null,
-            max_occupancy: value.max_occupancy ?? null,
-          },
-        })
-        if (Array.isArray(value.facility_ids) && value.facility_ids.length > 0) {
-          await prisma.room_detail_facilities.createMany({
-            data: value.facility_ids.map((facility_id: number) => ({ room_detail_id: room.id, facility_id })),
-          })
-        }
-        if (Array.isArray(value.bed_types) && value.bed_types.length > 0) {
-          await prisma.room_detail_bed_types.createMany({
-            data: value.bed_types.map((b: { bed_type_id: number; count: number }) => ({
-              room_detail_id: room.id, bed_type_id: b.bed_type_id, count: b.count,
-            })),
-          })
-        }
-      }
-      // Editing an existing room's non-facility fields is immediate (not
-      // reviewed) per our design, so there's no "update" branch here.
-      return
-    }
+    // ROOM_TYPE, ROOM_TYPE_IMAGE, ROOM_FACILITY, and ROOM_DETAIL branches
+    // were removed here — Room Type / Room Variant / Physical Room
+    // management is direct Hotel Admin CRUD now (see room-variant-matching.ts
+    // and the hotel-admin/room-types + hotel-admin/rooms routes), never
+    // case-reviewed. Confirmed zero remaining callers before removal: no
+    // stageFieldChange call anywhere in the codebase references these
+    // entity types, and the corresponding CaseEntityType enum values were
+    // removed from schema.prisma in the same pass.
   }
 }
 
@@ -360,19 +275,9 @@ export async function stageFieldChange(params: {
   return getLatestCase(hotelId)
 }
 
-/** Every ROOM_TYPE creation proposal this hotel has ever made, newest first. */
-export async function getRoomTypeCreationHistory(hotelId: number) {
-  const changes = await prisma.case_field_changes.findMany({
-    where: {
-      entity_type: 'ROOM_TYPE',
-      entity_id: null,
-      case: { hotel_id: hotelId },
-    },
-    include: { case: { select: { status: true, submitted_at: true } } },
-    orderBy: { created_at: 'desc' },
-  })
-  return changes
-}
+// getRoomTypeCreationHistory removed — Room Type creation is direct CRUD
+// now, never staged as a case_field_changes row, so there's nothing left
+// for this to query.
 
 /** Discard one staged field change (must belong to an open DRAFTING case). */
 export async function discardSingleField(hotelId: number, fieldChangeId: number) {
@@ -429,9 +334,8 @@ export async function approveRemaining(caseId: number, decidedBy: number) {
     .filter((fc: (typeof c.field_changes)[number]) => fc.status === 'PENDING')
     .sort((a: (typeof c.field_changes)[number], b: (typeof c.field_changes)[number]) => a.id - b.id)
 
-  const ctx = { roomTypeIdMap: {} as Record<string, number> }
   for (const fc of pending) {
-    await applyFieldChange(fc, c.hotel_id, ctx)
+    await applyFieldChange(fc, c.hotel_id)
     await prisma.case_field_changes.update({
       where: { id: fc.id },
       data: { status: 'APPROVED', decided_at: new Date() },

@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
-import { createRoomSchema, bulkCreateRoomSchema } from '@/lib/validations/room'
+import { createRoomSchema, bulkCreateRoomSchema, CreateRoomInput, BulkCreateRoomInput } from '@/lib/validations/room'
+import { findOrCreateVariant } from '@/lib/room-variant-matching'
+import { parseRoomNumberInput } from '@/lib/room-number-parser'
+import { logHotelAdminActivity } from '@/lib/hotel-admin-activity'
 import fs from 'fs/promises'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
@@ -22,16 +25,13 @@ async function ensureDir() {
 async function saveImages(files: File[]) {
   if (!files || files.length === 0) return []
   await ensureDir()
-  const urls = []
+  const urls: string[] = []
   for (const file of files) {
     if (!(file instanceof Blob)) continue
     const buffer = Buffer.from(await file.arrayBuffer())
     const filename = `${uuidv4()}.webp`
     const filepath = path.join(UPLOAD_DIR, filename)
-    await sharp(buffer)
-      .resize(1920, 1080, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toFile(filepath)
+    await sharp(buffer).resize(1920, 1080, { fit: 'inside', withoutEnlargement: true }).webp({ quality: 80 }).toFile(filepath)
     urls.push(`/uploads/rooms/${filename}`)
   }
   return urls
@@ -39,6 +39,7 @@ async function saveImages(files: File[]) {
 
 /**
  * GET /api/hotel-admin/rooms
+ * Flat list of physical rooms, each with its resolved variant nested.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -46,67 +47,28 @@ export async function GET(req: NextRequest) {
     if (auth.error) return auth.error
 
     const hotelId = auth.payload.hotel_id
-    if (!hotelId) {
-      return NextResponse.json({ success: false, message: 'Hotel association missing' }, { status: 400 })
-    }
+    if (!hotelId) return NextResponse.json({ success: false, message: 'Hotel association missing' }, { status: 400 })
 
     const { searchParams } = new URL(req.url)
     const roomTypeId = searchParams.get('roomTypeId')
     const status = searchParams.get('status')
     const search = searchParams.get('search')?.trim() ?? ''
-    const page = parseInt(searchParams.get('page') ?? '0')
-    const limit = parseInt(searchParams.get('limit') ?? '0')
-    const where = {
-      room_type: { hotel_id: hotelId },
-      deleted_at: null,
-      ...(roomTypeId ? { room_type_id: parseInt(roomTypeId) } : {}),
-      ...(status ? { status: status as RoomStatus } : {}),
-      ...(search ? { room_number: { contains: search, mode: 'insensitive' } } : {}),
-    }
-
-    const include = {
-      room_type: {
-        select: {
-          id: true,
-          name: true,
-          base_price: true,
-        },
-      },
-      room_images: {
-        where: { is_cover: true },
-        take: 1,
-      },
-    }
-
-    if (page > 0 && limit > 0) {
-      const [rooms, total] = await Promise.all([
-        prisma.room_details.findMany({
-          where,
-          include,
-          orderBy: { room_number: 'asc' },
-          skip: (page - 1) * limit,
-          take: limit,
-        }),
-        prisma.room_details.count({ where }),
-      ])
-
-      return NextResponse.json({
-        success: true,
-        data: {
-          rooms,
-          pagination: {
-            page,
-            limit,
-            total,
-            totalPages: Math.ceil(total / limit),
-          },
-        },
-      })
-    }
 
     const rooms = await prisma.room_details.findMany({
-      where,
-      include,
+      where: {
+        room_variant: { room_type: { hotel_id: hotelId, ...(roomTypeId ? { id: parseInt(roomTypeId) } : {}) } },
+        deleted_at: null,
+        ...(status ? { status: status as RoomStatus } : {}),
+        ...(search ? { room_number: { contains: search } } : {}),
+      },
+      include: {
+        room_variant: {
+          include: {
+            room_type: { select: { id: true, name: true } },
+            variant_images: { where: { is_cover: true }, take: 1 },
+          },
+        },
+      },
       orderBy: { room_number: 'asc' },
     })
 
@@ -119,154 +81,129 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/hotel-admin/rooms
+ * Direct create (single or bulk via `bulk=true`) — live immediately, no
+ * case review. Variant matching happens atomically inside a transaction.
+ * Hotel-Admin only — Sub-Admin does not have room-creation authority.
  */
 export async function POST(req: NextRequest) {
   try {
-    const auth = await requireAuth(req, ['HOTEL_ADMIN', 'HOTEL_SUB_ADMIN'])
+    const auth = await requireAuth(req, ['HOTEL_ADMIN'])
     if (auth.error) return auth.error
 
     const hotelId = auth.payload.hotel_id
+    const hotelAdminId = auth.payload.actor_id
+    if (!hotelId) return NextResponse.json({ success: false, message: 'Hotel association missing' }, { status: 400 })
+
     const formData = await req.formData()
-    
     const isBulk = formData.get('bulk') === 'true'
     const files = formData.getAll('files') as File[]
-    
-    // Convert FormData to object for validation
-    const rawData: Record<string, string | number | boolean> = {}
+
+    const rawData: Record<string, any> = {}
     formData.forEach((value, key) => {
-      if (key !== 'files' && key !== 'bulk') {
-        // Try to parse numbers and booleans
-        if (['room_type_id', 'start_number', 'end_number', 'floor', 'price'].includes(key)) {
-          rawData[key] = parseFloat(value.toString())
-        } else if (['ac', 'smoking_allowed', 'pet_allowed'].includes(key)) {
-          rawData[key] = value.toString() === 'true'
-        } else {
-          rawData[key] = value.toString()
-        }
+      if (key === 'files' || key === 'bulk') return
+      if (['room_type_id', 'floor', 'price', 'max_occupancy'].includes(key)) {
+        rawData[key] = value === '' ? undefined : Number(value)
+      } else if (key === 'facility_ids' || key === 'bed_types') {
+        try { rawData[key] = JSON.parse(value.toString()) } catch { rawData[key] = [] }
+      } else {
+        rawData[key] = value.toString()
       }
     })
 
-    if (isBulk) {
-      const result = bulkCreateRoomSchema.safeParse(rawData)
-      if (!result.success) {
-        return NextResponse.json({ success: false, message: 'Validation error', errors: result.error.format() }, { status: 400 })
-      }
-
-      const { room_type_id, prefix, start_number, end_number, ...commonData } = result.data
-
-      const roomType = await prisma.room_types.findUnique({ where: { id: room_type_id } })
-      if (!roomType || roomType.hotel_id !== hotelId) {
-        return NextResponse.json({ success: false, message: 'Invalid room type' }, { status: 400 })
-      }
-
-      const roomsToCreate: Array<{
-        room_type_id: number
-        room_number: string
-        floor: number
-        price: number
-        status: RoomStatus
-        room_size?: string | null
-        ac: boolean
-        smoking_allowed: boolean
-        pet_allowed: boolean
-        notes?: string
-      }> = []
-      for (let i = start_number; i <= end_number; i++) {
-        roomsToCreate.push({
-          room_type_id,
-          room_number: `${prefix || ''}${i}`,
-          ...commonData,
-          price: commonData.price
-        })
-      }
-
-      // Check for duplicates in the generated set + existing
-      const existing = await prisma.room_details.findMany({
-        where: {
-          room_type_id,
-          room_number: { in: roomsToCreate.map(r => r.room_number) },
-          floor: commonData.floor,
-          deleted_at: null
-        }
-      })
-
-      if (existing.length > 0) {
-        return NextResponse.json({ 
-          success: false, 
-          message: `Some rooms already exist on this floor: ${existing.map(r => r.room_number).join(', ')}` 
-        }, { status: 400 })
-      }
-
-      const imageUrls = await saveImages(files)
-
-      await prisma.$transaction(async (tx) => {
-        for (const roomData of roomsToCreate) {
-          const room = await tx.room_details.create({ data: roomData })
-          if (imageUrls.length > 0) {
-            await tx.room_images.createMany({
-              data: imageUrls.map((url, idx) => ({
-                room_detail_id: room.id,
-                image_url: url,
-                is_cover: idx === 0,
-                sort_order: idx
-              }))
-            })
-          }
-        }
-      })
-
-      void emitToRoom(`hotel:${hotelId}:availability`, 'room:updated', { hotel_id: hotelId })
-
-      return NextResponse.json({ success: true, message: `${roomsToCreate.length} rooms created successfully` }, { status: 201 })
-    }
-
-    // Single creation
-    const result = createRoomSchema.safeParse(rawData)
+    const schema = isBulk ? bulkCreateRoomSchema : createRoomSchema
+    const result = schema.safeParse(rawData)
     if (!result.success) {
-      return NextResponse.json({ success: false, message: 'Validation error', errors: result.error.format() }, { status: 400 })
+      return NextResponse.json({ success: false, message: 'Validation error', errors: result.error.issues }, { status: 400 })
     }
+    const data = result.data
 
-    const roomType = await prisma.room_types.findUnique({ where: { id: result.data.room_type_id } })
+    const roomType = await prisma.room_types.findUnique({ where: { id: data.room_type_id } })
     if (!roomType || roomType.hotel_id !== hotelId) {
       return NextResponse.json({ success: false, message: 'Invalid room type' }, { status: 400 })
     }
 
-    const { prefix, ...finalData } = result.data
-    const fullRoomNumber = `${prefix || ''}${finalData.room_number}`
+    let roomNumbers: string[]
+    if (isBulk) {
+      const parsed = parseRoomNumberInput((data as BulkCreateRoomInput).room_numbers)
+      if (parsed.error) return NextResponse.json({ success: false, message: parsed.error }, { status: 400 })
+      roomNumbers = parsed.roomNumbers
+    } else {
+      roomNumbers = [(data as CreateRoomInput).room_number]
+    }
 
-    const existing = await prisma.room_details.findFirst({
+    // Room numbers are unique HOTEL-WIDE, not just within this room type —
+    // check across every room this hotel owns, via room_variant -> room_type.
+    const collisions = await prisma.room_details.findMany({
       where: {
-        room_type_id: finalData.room_type_id,
-        room_number: fullRoomNumber,
-        floor: finalData.floor,
-        deleted_at: null
-      }
+        room_variant: { room_type: { hotel_id: hotelId } },
+        room_number: { in: roomNumbers },
+        deleted_at: null,
+      },
+      select: { room_number: true },
     })
-
-    if (existing) {
-      return NextResponse.json({ success: false, message: 'Room number already exists on this floor for this type' }, { status: 400 })
+    if (collisions.length > 0) {
+      return NextResponse.json({
+        success: false,
+        message: `Room number${collisions.length > 1 ? 's' : ''} already in use: ${collisions.map((c) => c.room_number).join(', ')}`,
+      }, { status: 400 })
     }
 
     const imageUrls = await saveImages(files)
 
-    const room = await prisma.room_details.create({
-      data: {
-        ...finalData,
-        room_number: fullRoomNumber,
-        price: finalData.price,
-        room_images: {
-          create: imageUrls.map((url, idx) => ({
+    const { rooms, variant, isNewlyCreated } = await prisma.$transaction(async (tx) => {
+      const { variant, isNewlyCreated } = await findOrCreateVariant(tx, {
+        room_type_id: data.room_type_id,
+        price: data.price,
+        room_size: data.room_size ?? null,
+        max_occupancy: data.max_occupancy ?? null,
+        facility_ids: data.facility_ids ?? [],
+        bed_types: data.bed_types ?? [],
+      })
+
+      // New images are always appended to the variant's gallery — never
+      // replace what's already there if this join an existing variant.
+      if (imageUrls.length > 0) {
+        const existingCount = await tx.room_images.count({ where: { room_variant_id: variant.id } })
+        await tx.room_images.createMany({
+          data: imageUrls.map((url, idx) => ({
+            room_variant_id: variant.id,
             image_url: url,
-            is_cover: idx === 0,
-            sort_order: idx
-          }))
-        }
+            is_cover: existingCount === 0 && idx === 0,
+            sort_order: existingCount + idx,
+          })),
+        })
       }
+
+      await tx.room_details.createMany({
+        data: roomNumbers.map((room_number) => ({
+          room_variant_id: variant.id,
+          room_number,
+          floor: data.floor ?? null,
+          notes: data.notes ?? null,
+        })),
+      })
+
+      const rooms = await tx.room_details.findMany({
+        where: { room_variant_id: variant.id, room_number: { in: roomNumbers } },
+      })
+
+      return { rooms, variant, isNewlyCreated }
+    })
+
+    await logHotelAdminActivity({
+      hotelId, actorId: hotelAdminId, actorType: 'HOTEL_ADMIN',
+      action: isBulk ? 'room.bulk_created' : 'room.created',
+      entityType: 'room_details', entityId: rooms[0]?.id,
+      metadata: { room_numbers: roomNumbers, variant_id: variant.id, matched_existing_variant: !isNewlyCreated },
     })
 
     void emitToRoom(`hotel:${hotelId}:availability`, 'room:updated', { hotel_id: hotelId })
 
-    return NextResponse.json({ success: true, data: room }, { status: 201 })
+    return NextResponse.json({
+      success: true,
+      message: `${rooms.length} room${rooms.length > 1 ? 's' : ''} created`,
+      data: { rooms, variant_id: variant.id, matched_existing_variant: !isNewlyCreated },
+    }, { status: 201 })
   } catch (error) {
     console.error('Failed to create room:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })

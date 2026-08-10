@@ -9,22 +9,50 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { Plus, BedDouble, Upload, X, ClipboardList } from 'lucide-react'
+import { Plus, BedDouble, Pencil, ChevronDown, ChevronRight, DoorOpen } from 'lucide-react'
+import { RoomFormDialog } from './room-form-dialog'
 
+type RoomDetail = { id: number; room_number: string; floor: number | null; status: string }
+type Variant = {
+  id: number
+  price: string
+  room_size: string | null
+  max_occupancy: number | null
+  facilities: { facility: { id: number; name: string } }[]
+  bed_types: { bed_type: { id: number; name: string }; count: number }[]
+  variant_images: { image_url: string }[]
+  room_details: RoomDetail[]
+}
 type RoomType = {
   id: number
   name: string
   description: string | null
-  room_count: number
   room_type_amenities: { amenity: { id: number; name: string } }[]
-  type_images: { image_url: string }[]
+  room_variants: Variant[]
+}
+
+const STATUS_COLOR: Record<string, string> = {
+  AVAILABLE: 'bg-green-500/10 text-green-600 border-green-500/30',
+  BOOKED: 'bg-blue-500/10 text-blue-600 border-blue-500/30',
+  CHECKED_IN: 'bg-purple-500/10 text-purple-600 border-purple-500/30',
+  CHECKED_OUT: 'bg-slate-500/10 text-slate-600 border-slate-500/30',
+  MAINTENANCE: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
+}
+
+function variantLabel(v: Variant): string {
+  const beds = v.bed_types.map((b) => `${b.count} × ${b.bed_type.name}`).join(', ')
+  const facilities = v.facilities.map((f) => f.facility.name).join(' · ')
+  return [beds, facilities].filter(Boolean).join(' · ') || 'No configuration set'
 }
 
 export const RoomTypesSection = () => {
   const { toast } = useToast()
   const [roomTypes, setRoomTypes] = useState<RoomType[]>([])
   const [loading, setLoading] = useState(true)
-  const [open, setOpen] = useState(false)
+  const [createOpen, setCreateOpen] = useState(false)
+  const [editType, setEditType] = useState<RoomType | null>(null)
+  const [addRoomFor, setAddRoomFor] = useState<number | null>(null)
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
   const fetchRoomTypes = useCallback(async () => {
     const res = await fetch('/api/hotel-admin/room-types', { credentials: 'include' })
@@ -35,13 +63,35 @@ export const RoomTypesSection = () => {
 
   useEffect(() => { fetchRoomTypes() }, [fetchRoomTypes])
 
+  const toggleExpanded = (id: number) => {
+    setExpanded((s) => {
+      const next = new Set(s)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  const changeStatus = async (roomId: number, status: string) => {
+    const res = await fetch(`/api/hotel-admin/rooms/${roomId}/status`, {
+      method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    })
+    const data = await res.json()
+    if (data.success) {
+      toast({ title: 'Status updated' })
+      fetchRoomTypes()
+    } else {
+      toast({ title: 'Could not update status', description: data.message, variant: 'destructive' })
+    }
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4">
         <p className="text-sm text-muted-foreground max-w-xl">
-          Room types are yours to create directly — proposals are reviewed by the System Admin and appear in Draft Center until decided.
+          Room Types, Variants, and Physical Rooms are all managed directly — changes go live immediately, no review needed.
         </p>
-        <Button size="sm" onClick={() => setOpen(true)}>
+        <Button size="sm" onClick={() => setCreateOpen(true)}>
           <Plus className="h-4 w-4 mr-2" /> New Room Type
         </Button>
       </div>
@@ -55,34 +105,74 @@ export const RoomTypesSection = () => {
               <BedDouble className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="mt-4 font-medium">No room types yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Propose your first room type to get started.</p>
+            <p className="text-sm text-muted-foreground mt-1">Create one to start adding rooms.</p>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="space-y-4">
           {roomTypes.map((rt) => (
             <Card key={rt.id} className="overflow-hidden">
-              <div className="h-32 bg-gradient-to-br from-indigo-500/20 via-blue-400/10 to-transparent relative">
-                {rt.type_images?.[0]?.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={rt.type_images[0].image_url} alt="" className="h-full w-full object-cover" />
-                ) : null}
-                <div className="absolute bottom-3 right-3 text-right">
-                  <span className="text-xs px-2 py-1 rounded-full bg-background/80 backdrop-blur font-medium">
-                    {rt.room_count} room{rt.room_count === 1 ? '' : 's'}
-                  </span>
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="font-semibold">{rt.name}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{rt.description}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setEditType(rt)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setAddRoomFor(rt.id)}>
+                      <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Room
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <CardContent className="p-5 space-y-3">
-                <div>
-                  <h3 className="font-semibold">{rt.name}</h3>
-                  <p className="text-xs text-muted-foreground line-clamp-2">{rt.description}</p>
-                </div>
-                <div className="flex flex-wrap gap-1">
-                  {rt.room_type_amenities.slice(0, 4).map((ra) => (
-                    <span key={ra.amenity.id} className="text-[10px] px-1.5 py-0.5 rounded bg-secondary/60 text-muted-foreground">{ra.amenity.name}</span>
-                  ))}
-                  {rt.room_type_amenities.length > 4 && <span className="text-[10px] text-muted-foreground">+{rt.room_type_amenities.length - 4}</span>}
+
+                <div className="mt-4 space-y-2">
+                  {rt.room_variants.length === 0 && (
+                    <p className="text-xs text-muted-foreground py-3">No rooms yet — click Add Room to create the first one.</p>
+                  )}
+                  {rt.room_variants.map((v) => {
+                    const isOpen = expanded.has(v.id)
+                    return (
+                      <div key={v.id} className="rounded-xl border border-border/60 overflow-hidden">
+                        <button
+                          onClick={() => toggleExpanded(v.id)}
+                          className="w-full flex items-center justify-between gap-3 p-3 hover:bg-secondary/30 transition text-left"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            {isOpen ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight className="h-3.5 w-3.5 shrink-0" />}
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">{variantLabel(v)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                ৳{Number(v.price).toLocaleString()}/night
+                                {v.max_occupancy ? ` · ${v.max_occupancy} guests` : ''}
+                                {v.room_size ? ` · ${v.room_size}` : ''}
+                              </p>
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground shrink-0">{v.room_details.length} room{v.room_details.length === 1 ? '' : 's'}</span>
+                        </button>
+                        {isOpen && (
+                          <div className="border-t border-border/60 p-3 flex flex-wrap gap-2">
+                            {v.room_details.map((r) => (
+                              <div key={r.id} className={cn('flex items-center gap-1.5 rounded-lg border px-2 py-1', STATUS_COLOR[r.status] ?? '')}>
+                                <DoorOpen className="h-3 w-3" />
+                                <span className="text-xs font-medium">{r.room_number}</span>
+                                <select
+                                  value={r.status}
+                                  onChange={(e) => changeStatus(r.id, e.target.value)}
+                                  className="text-[10px] bg-transparent border-0 outline-none cursor-pointer"
+                                >
+                                  {Object.keys(STATUS_COLOR).map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                                </select>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -90,18 +180,21 @@ export const RoomTypesSection = () => {
         </div>
       )}
 
-      <NewRoomTypeDialog open={open} onOpenChange={setOpen} onProposed={fetchRoomTypes} />
+      <RoomTypeFormDialog open={createOpen} onOpenChange={setCreateOpen} onSaved={fetchRoomTypes} />
+      <RoomTypeFormDialog open={!!editType} onOpenChange={(v) => !v && setEditType(null)} existing={editType} onSaved={fetchRoomTypes} />
+      <RoomFormDialog open={!!addRoomFor} onOpenChange={(v) => !v && setAddRoomFor(null)} roomTypeId={addRoomFor} onCreated={fetchRoomTypes} />
     </div>
   )
 }
 
-const NewRoomTypeDialog = ({ open, onOpenChange, onProposed }: { open: boolean; onOpenChange: (v: boolean) => void; onProposed: () => void }) => {
+const RoomTypeFormDialog = ({
+  open, onOpenChange, existing, onSaved,
+}: { open: boolean; onOpenChange: (v: boolean) => void; existing?: RoomType | null; onSaved: () => void }) => {
   const { toast } = useToast()
   const [amenities, setAmenities] = useState<{ id: number; name: string }[]>([])
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [selectedAmenities, setSelectedAmenities] = useState<number[]>([])
-  const [file, setFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -110,34 +203,32 @@ const NewRoomTypeDialog = ({ open, onOpenChange, onProposed }: { open: boolean; 
       .then((r) => r.json())
       .then((d) => setAmenities(d?.data?.ROOM ?? []))
       .catch(() => setAmenities([]))
-  }, [open])
+    setName(existing?.name ?? '')
+    setDescription(existing?.description ?? '')
+    setSelectedAmenities(existing?.room_type_amenities.map((a) => a.amenity.id) ?? [])
+  }, [open, existing])
 
   const toggleAmenity = (id: number) => {
     setSelectedAmenities((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
-  }
-
-  const reset = () => {
-    setName(''); setDescription(''); setSelectedAmenities([]); setFile(null)
   }
 
   const submit = async () => {
     if (!name.trim()) return
     setSaving(true)
     try {
-      const fd = new FormData()
-      fd.append('name', name)
-      fd.append('description', description)
-      fd.append('amenity_ids', JSON.stringify(selectedAmenities))
-      if (file) fd.append('file', file)
-      const res = await fetch('/api/hotel-admin/room-types/propose', { method: 'POST', credentials: 'include', body: fd })
+      const url = existing ? `/api/hotel-admin/room-types/${existing.id}` : '/api/hotel-admin/room-types'
+      const res = await fetch(url, {
+        method: existing ? 'PATCH' : 'POST',
+        credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description, amenity_ids: selectedAmenities }),
+      })
       const data = await res.json()
       if (data.success) {
-        toast({ title: 'Room type proposed', description: 'Check Draft Center to submit it for review.' })
-        reset()
+        toast({ title: existing ? 'Room type updated' : 'Room type created' })
         onOpenChange(false)
-        onProposed()
+        onSaved()
       } else {
-        toast({ title: 'Could not propose room type', description: data.message, variant: 'destructive' })
+        toast({ title: 'Could not save', description: data.message, variant: 'destructive' })
       }
     } finally {
       setSaving(false)
@@ -146,15 +237,15 @@ const NewRoomTypeDialog = ({ open, onOpenChange, onProposed }: { open: boolean; 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[440px]">
         <DialogHeader>
-          <DialogTitle>New Room Type</DialogTitle>
-          <DialogDescription>Reviewed by the System Admin — track it in Draft Center.</DialogDescription>
+          <DialogTitle>{existing ? 'Edit Room Type' : 'New Room Type'}</DialogTitle>
+          <DialogDescription>Live immediately — no approval needed.</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <div>
             <Label className="text-xs">Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Deluxe King Suite" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Deluxe Room" />
           </div>
           <div>
             <Label className="text-xs">Description</Label>
@@ -166,42 +257,19 @@ const NewRoomTypeDialog = ({ open, onOpenChange, onProposed }: { open: boolean; 
               {amenities.map((a) => {
                 const checked = selectedAmenities.includes(a.id)
                 return (
-                  <button
-                    key={a.id} type="button" onClick={() => toggleAmenity(a.id)}
-                    className={cn(
-                      'text-xs px-2.5 py-1.5 rounded-full border transition',
-                      checked ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600' : 'border-border bg-secondary/30 text-muted-foreground',
-                    )}
-                  >
+                  <button key={a.id} type="button" onClick={() => toggleAmenity(a.id)}
+                    className={cn('text-xs px-2.5 py-1.5 rounded-full border transition',
+                      checked ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600' : 'border-border bg-secondary/30 text-muted-foreground')}>
                     {a.name}
                   </button>
                 )
               })}
             </div>
           </div>
-          <div>
-            <Label className="text-xs">Photo (one image)</Label>
-            {file ? (
-              <div className="relative w-24 h-24 mt-1 rounded-lg overflow-hidden border border-border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={URL.createObjectURL(file)} alt="" className="h-full w-full object-cover" />
-                <button onClick={() => setFile(null)} className="absolute top-1 right-1 h-5 w-5 rounded-full bg-black/60 text-white flex items-center justify-center">
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ) : (
-              <label className="mt-1 w-24 h-24 rounded-lg border-2 border-dashed border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:border-emerald-500 cursor-pointer transition">
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
-                <Upload className="h-4 w-4" />
-              </label>
-            )}
-          </div>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button disabled={saving || !name.trim()} onClick={submit}>
-            <ClipboardList className="h-4 w-4 mr-2" /> Propose Room Type
-          </Button>
+          <Button disabled={saving || !name.trim()} onClick={submit}>{existing ? 'Save Changes' : 'Create Room Type'}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

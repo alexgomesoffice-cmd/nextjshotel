@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { useToast } from '@/hooks/use-toast'
 import { KPI, SectionCard, Timeline, EmptyState } from '@/components/hotel-admin/drafts/draft-primitives'
-import { GenericChangesTable, AmenityChanges, GalleryChanges, PolicyChanges, DocumentChanges, RoomTypeChanges } from '@/components/hotel-admin/drafts/change-cards'
+import { GenericChangesTable, AmenityChanges, GalleryChanges, PolicyChanges, DocumentChanges } from '@/components/hotel-admin/drafts/change-cards'
 import { SECTION_META, sectionKeyFor, SectionKey } from '@/lib/hotel-admin/sections'
 
 export default function HotelAdminDraftCenterPage() {
@@ -163,8 +163,6 @@ export default function HotelAdminDraftCenterPage() {
                   <PolicyChanges changes={changes} canDiscard={canDiscardFields} onDiscard={discardField} />
                 ) : key === 'business' ? (
                   <DocumentChanges changes={changes} canDiscard={canDiscardFields} onDiscard={discardField} />
-                ) : key === 'roomTypes' ? (
-                  <RoomTypeChanges changes={changes} canDiscard={canDiscardFields} onDiscard={discardField} />
                 ) : (
                   <GenericChangesTable changes={changes} canDiscard={canDiscardFields} onDiscard={discardField} />
                 )}

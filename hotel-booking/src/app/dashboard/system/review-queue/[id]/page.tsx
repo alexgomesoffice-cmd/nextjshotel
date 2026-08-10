@@ -33,8 +33,10 @@ interface CaseDetail {
 const SECTION_TITLE: Record<string, string> = {
   HOTEL: 'Hotel', HOTEL_OWNER: 'Owner', HOTEL_ADMIN: 'Hotel Admin',
   HOTEL_IMAGE: 'Gallery', HOTEL_DOCUMENT: 'Documents', AMENITY: 'Amenities',
-  POLICY: 'Policies', ROOM_TYPE: 'Room Types', ROOM_TYPE_IMAGE: 'Room Type Images',
-  ROOM_FACILITY: 'Room Facilities', ROOM_DETAIL: 'Rooms',
+  POLICY: 'Policies',
+  // ROOM_TYPE/ROOM_TYPE_IMAGE/ROOM_FACILITY/ROOM_DETAIL removed — Room
+  // Type/Variant/Physical Room management is direct Hotel Admin CRUD now,
+  // never case-reviewed, so these entity types can never appear here.
 }
 
 function displayValue(v: string | null) {

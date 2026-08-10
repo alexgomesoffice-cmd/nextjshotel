@@ -1,27 +1,20 @@
 // src/lib/validations/room-type.ts
 import { z } from 'zod'
 
-// Room type creation schema
+// Room Type is a pure classification now — name + description only.
+// Price/occupancy/beds/facilities all live on room_variants, not here.
 export const createRoomTypeSchema = z.object({
-  name: z.string().min(1, 'Room type name is required'),
-  description: z.string().optional(),
-  base_price: z.number().positive('Base price must be positive'),
-  max_occupancy: z.number().int().positive().min(1).default(1),
-  room_size: z.number().positive().optional(),
-  bed_types: z.array(z.object({
-    bed_type_id: z.number().int().positive(),
-    count: z.number().int().positive().min(1),
-  })).optional(),
-  amenities: z.array(z.number().int().positive()).optional(),
-  cancellation_policy: z.enum(['FLEXIBLE', 'MODERATE', 'STRICT', 'CUSTOM']).default('FLEXIBLE'),
-  cancellation_hours: z.number().int().positive().optional(),
-  refund_percent: z.number().int().min(0).max(100).optional(),
-  check_in_override: z.string().optional(),
-  check_out_override: z.string().optional(),
+  name: z.string().min(2).max(150),
+  description: z.string().max(2000).optional().nullable(),
+  amenity_ids: z.array(z.number().int().positive()).optional().default([]),
 })
 
-// Room type update schema
-export const updateRoomTypeSchema = createRoomTypeSchema.partial()
+export const updateRoomTypeSchema = z.object({
+  name: z.string().min(2).max(150).optional(),
+  description: z.string().max(2000).optional().nullable(),
+  amenity_ids: z.array(z.number().int().positive()).optional(),
+  is_active: z.boolean().optional(),
+})
 
 export type CreateRoomTypeInput = z.infer<typeof createRoomTypeSchema>
 export type UpdateRoomTypeInput = z.infer<typeof updateRoomTypeSchema>

@@ -1,149 +1,198 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { updateRoomSchema } from '@/lib/validations/room'
+import { findOrCreateVariant } from '@/lib/room-variant-matching'
+import { logHotelAdminActivity } from '@/lib/hotel-admin-activity'
 import { emitToRoom } from '@/lib/socket-emit'
 
-/**
- * PATCH /api/hotel-admin/rooms/[id]
- * Update a specific room.
- */
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+type Params = { params: Promise<{ id: string }> }
+
+// Fields that define a variant — if the PATCH body touches any of these,
+// the room's signature is recalculated and it may move to a different
+// (matched or newly created) variant. Everything else is physical-only.
+const VARIANT_DEFINING_KEYS = ['price', 'room_size', 'max_occupancy', 'facility_ids', 'bed_types'] as const
+
+export async function GET(req: NextRequest, { params }: Params) {
   try {
-    const resolvedParams = await params
     const auth = await requireAuth(req, ['HOTEL_ADMIN', 'HOTEL_SUB_ADMIN'])
     if (auth.error) return auth.error
 
     const hotelId = auth.payload.hotel_id
-    const roomId = parseInt(resolvedParams.id)
+    const { id } = await params
+    const roomId = parseInt(id)
+    if (isNaN(roomId)) return NextResponse.json({ success: false, message: 'Invalid room ID' }, { status: 400 })
 
-    if (isNaN(roomId)) {
-      return NextResponse.json({ success: false, message: 'Invalid room ID' }, { status: 400 })
-    }
-
-    const body = await req.json()
-    const result = updateRoomSchema.safeParse(body)
-
-    if (!result.success) {
-      return NextResponse.json(
-        { success: false, message: 'Validation error', errors: result.error.format() },
-        { status: 400 }
-      )
-    }
-
-    // Check if room exists and belongs to this hotel
     const room = await prisma.room_details.findUnique({
       where: { id: roomId },
-      include: { room_type: true }
+      include: {
+        room_variant: {
+          include: {
+            room_type: true,
+            facilities: { include: { facility: true } },
+            bed_types: { include: { bed_type: true } },
+            variant_images: { orderBy: { sort_order: 'asc' } },
+          },
+        },
+      },
     })
 
-    if (!room || room.room_type.hotel_id !== hotelId || room.deleted_at) {
+    if (!room || room.room_variant.room_type.hotel_id !== hotelId || room.deleted_at) {
       return NextResponse.json({ success: false, message: 'Room not found' }, { status: 404 })
     }
 
-    // Handle room number and prefix
-    const stripOldPrefix = (roomNumber: string) => {
-      const match = roomNumber.match(/^(.*?)(\d.*)$/)
-      return match ? match[2] : roomNumber
+    return NextResponse.json({ success: true, data: room })
+  } catch (error) {
+    console.error('Failed to fetch room:', error)
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
+  }
+}
+
+/**
+ * PATCH /api/hotel-admin/rooms/[id]
+ * Direct edit — live immediately, no case review. If any variant-defining
+ * field is present in the body, recalculates the signature and moves the
+ * room to whichever variant matches (existing or newly created); otherwise
+ * only the physical-room fields (room_number/floor/notes) are touched.
+ * Room status is intentionally NOT accepted here — see the /status route.
+ */
+export async function PATCH(req: NextRequest, { params }: Params) {
+  try {
+    const auth = await requireAuth(req, ['HOTEL_ADMIN'])
+    if (auth.error) return auth.error
+
+    const hotelId = auth.payload.hotel_id
+    const hotelAdminId = auth.payload.actor_id
+    const { id } = await params
+    const roomId = parseInt(id)
+    if (isNaN(roomId)) return NextResponse.json({ success: false, message: 'Invalid room ID' }, { status: 400 })
+
+    const body = await req.json()
+    const result = updateRoomSchema.safeParse(body)
+    if (!result.success) {
+      return NextResponse.json({ success: false, message: 'Validation error', errors: result.error.issues }, { status: 400 })
+    }
+    const data = result.data
+
+    const room = await prisma.room_details.findUnique({
+      where: { id: roomId },
+      include: {
+        room_variant: {
+          include: { facilities: true, bed_types: true, room_type: true },
+        },
+      },
+    })
+    if (!room || room.room_variant.room_type.hotel_id !== hotelId || room.deleted_at) {
+      return NextResponse.json({ success: false, message: 'Room not found' }, { status: 404 })
     }
 
-    let finalRoomNumber = room.room_number
-    if (result.data.room_number !== undefined) {
-      finalRoomNumber = result.data.prefix !== undefined
-        ? (result.data.room_number.startsWith(result.data.prefix)
-          ? result.data.room_number
-          : `${result.data.prefix}${result.data.room_number}`)
-        : result.data.room_number
-    } else if (result.data.prefix !== undefined) {
-      if (!room.room_number.startsWith(result.data.prefix)) {
-        finalRoomNumber = `${result.data.prefix}${stripOldPrefix(room.room_number)}`
-      }
+    const touchesVariant = VARIANT_DEFINING_KEYS.some((k) => data[k] !== undefined)
+
+    if (data.room_number && data.room_number !== room.room_number) {
+      const collision = await prisma.room_details.findFirst({
+        where: {
+          room_variant: { room_type: { hotel_id: hotelId } },
+          room_number: data.room_number,
+          deleted_at: null,
+          id: { not: roomId },
+        },
+      })
+      if (collision) return NextResponse.json({ success: false, message: 'Room number already in use' }, { status: 400 })
     }
 
-    const roomTypeId = result.data.room_type_id !== undefined ? result.data.room_type_id : room.room_type_id
+    let newVariantId: number | null = null
+    let matchedExisting = false
 
-    if (result.data.room_type_id !== undefined && result.data.room_type_id !== room.room_type_id) {
-      const newRoomType = await prisma.room_types.findUnique({ where: { id: result.data.room_type_id } })
-      if (!newRoomType || newRoomType.hotel_id !== hotelId) {
-        return NextResponse.json({ success: false, message: 'Invalid room type' }, { status: 400 })
+    if (touchesVariant) {
+      const currentVariant = room.room_variant
+      const config = {
+        room_type_id: currentVariant.room_type_id,
+        price: data.price !== undefined ? data.price : Number(currentVariant.price),
+        room_size: data.room_size !== undefined ? data.room_size : currentVariant.room_size,
+        max_occupancy: data.max_occupancy !== undefined ? data.max_occupancy : currentVariant.max_occupancy,
+        facility_ids: data.facility_ids !== undefined ? data.facility_ids : currentVariant.facilities.map((f) => f.facility_id),
+        bed_types: data.bed_types !== undefined ? data.bed_types : currentVariant.bed_types.map((b) => ({ bed_type_id: b.bed_type_id, count: b.count })),
       }
+
+      const txResult = await prisma.$transaction(async (tx) => {
+        const { variant, isNewlyCreated } = await findOrCreateVariant(tx, config)
+        await tx.room_details.update({
+          where: { id: roomId },
+          data: {
+            room_variant_id: variant.id,
+            ...(data.room_number !== undefined && { room_number: data.room_number }),
+            ...(data.floor !== undefined && { floor: data.floor }),
+            ...(data.notes !== undefined && { notes: data.notes }),
+          },
+        })
+        return { variant, isNewlyCreated }
+      })
+      newVariantId = txResult.variant.id
+      matchedExisting = !txResult.isNewlyCreated
+    } else {
+      await prisma.room_details.update({
+        where: { id: roomId },
+        data: {
+          ...(data.room_number !== undefined && { room_number: data.room_number }),
+          ...(data.floor !== undefined && { floor: data.floor }),
+          ...(data.notes !== undefined && { notes: data.notes }),
+        },
+      })
     }
 
-    // Note: unique constraint is on room_type_id + room_number
-    const existing = await prisma.room_details.findFirst({
-      where: {
-        room_type_id: roomTypeId,
-        room_number: finalRoomNumber,
-        deleted_at: null,
-        id: { not: roomId }
-      }
+    const updatedRoom = await prisma.room_details.findUnique({
+      where: { id: roomId },
+      include: { room_variant: { include: { room_type: true, facilities: { include: { facility: true } }, bed_types: { include: { bed_type: true } } } } },
     })
 
-    if (existing) {
-      return NextResponse.json({ success: false, message: 'Room with same number already exists for this type' }, { status: 400 })
-    }
-
-    const { prefix, ...updateData } = result.data
-    void prefix
-
-    const updatedRoom = await prisma.room_details.update({
-      where: { id: roomId },
-      data: {
-        ...updateData,
-        room_number: finalRoomNumber,
-        price: updateData.price !== undefined ? updateData.price.toString() : undefined
-      }
+    await logHotelAdminActivity({
+      hotelId, actorId: hotelAdminId, actorType: 'HOTEL_ADMIN',
+      action: touchesVariant ? 'room.variant_changed' : 'room.updated',
+      entityType: 'room_details', entityId: roomId,
+      metadata: touchesVariant
+        ? { from_variant_id: room.room_variant_id, to_variant_id: newVariantId, matched_existing_variant: matchedExisting }
+        : { changed: Object.keys(data) },
     })
 
     void emitToRoom(`hotel:${hotelId}:availability`, 'room:updated', { hotel_id: hotelId })
 
-    return NextResponse.json({ success: true, data: updatedRoom })
+    return NextResponse.json({ success: true, message: 'Room updated', data: updatedRoom })
   } catch (error) {
     console.error('Failed to update room:', error)
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      return NextResponse.json({ success: false, message: 'Room number already exists for this room type' }, { status: 400 })
-    }
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }
 
 /**
  * DELETE /api/hotel-admin/rooms/[id]
- * Soft delete a room.
+ * Soft delete a physical room. Its variant is left in place even if this
+ * was the last room in it (see Artifact 7 — no auto-delete of empty
+ * variants; pricing_rules/booking history may still reference it).
  */
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(req: NextRequest, { params }: Params) {
   try {
-    const resolvedParams = await params
-    const auth = await requireAuth(req, ['HOTEL_ADMIN', 'HOTEL_SUB_ADMIN'])
+    const auth = await requireAuth(req, ['HOTEL_ADMIN'])
     if (auth.error) return auth.error
 
     const hotelId = auth.payload.hotel_id
-    const roomId = parseInt(resolvedParams.id)
+    const hotelAdminId = auth.payload.actor_id
+    const { id } = await params
+    const roomId = parseInt(id)
+    if (isNaN(roomId)) return NextResponse.json({ success: false, message: 'Invalid room ID' }, { status: 400 })
 
-    if (isNaN(roomId)) {
-      return NextResponse.json({ success: false, message: 'Invalid room ID' }, { status: 400 })
-    }
-
-    // Check if room exists and belongs to this hotel
     const room = await prisma.room_details.findUnique({
       where: { id: roomId },
-      include: { room_type: true }
+      include: { room_variant: { include: { room_type: true } } },
     })
-
-    if (!room || room.room_type.hotel_id !== hotelId || room.deleted_at) {
+    if (!room || room.room_variant.room_type.hotel_id !== hotelId || room.deleted_at) {
       return NextResponse.json({ success: false, message: 'Room not found' }, { status: 404 })
     }
 
-    await prisma.room_details.update({
-      where: { id: roomId },
-      data: { deleted_at: new Date() }
+    await prisma.room_details.update({ where: { id: roomId }, data: { deleted_at: new Date() } })
+
+    await logHotelAdminActivity({
+      hotelId, actorId: hotelAdminId, actorType: 'HOTEL_ADMIN',
+      action: 'room.deleted', entityType: 'room_details', entityId: roomId,
     })
 
     void emitToRoom(`hotel:${hotelId}:availability`, 'room:updated', { hotel_id: hotelId })

@@ -107,3 +107,43 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }
+
+/**
+ * DELETE /api/hotel-admin/room-types/[id]
+ * A room type can only be removed before any room variant is created for it.
+ */
+export async function DELETE(req: NextRequest, { params }: Params) {
+  try {
+    const auth = await requireAuth(req, ['HOTEL_ADMIN'])
+    if (auth.error) return auth.error
+
+    const hotelId = auth.payload.hotel_id
+    const hotelAdminId = auth.payload.actor_id
+    const { id } = await params
+    const roomTypeId = parseInt(id)
+    if (isNaN(roomTypeId)) return NextResponse.json({ success: false, message: 'Invalid ID' }, { status: 400 })
+
+    const roomType = await prisma.room_types.findUnique({
+      where: { id: roomTypeId },
+      select: { hotel_id: true, name: true, _count: { select: { room_variants: true } } },
+    })
+    if (!roomType || roomType.hotel_id !== hotelId) {
+      return NextResponse.json({ success: false, message: 'Room type not found' }, { status: 404 })
+    }
+    if (roomType._count.room_variants > 0) {
+      return NextResponse.json({ success: false, message: 'Room types with room variants cannot be deleted.' }, { status: 409 })
+    }
+
+    await prisma.room_types.delete({ where: { id: roomTypeId } })
+    await logHotelAdminActivity({
+      hotelId, actorId: hotelAdminId, actorType: 'HOTEL_ADMIN',
+      action: 'room_type.deleted', entityType: 'room_types', entityId: roomTypeId,
+      metadata: { name: roomType.name },
+    })
+
+    return NextResponse.json({ success: true, message: 'Room type deleted' })
+  } catch (error) {
+    console.error('Delete room type error:', error)
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
+  }
+}

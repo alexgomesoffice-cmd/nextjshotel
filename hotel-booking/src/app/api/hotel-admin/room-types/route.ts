@@ -6,8 +6,10 @@ import { logHotelAdminActivity } from '@/lib/hotel-admin-activity'
 
 /**
  * GET /api/hotel-admin/room-types
- * Lists this hotel's room types, each with its variants and room counts
- * nested — this is the tree the UI renders (Room Type -> Variant -> Rooms).
+ * Lightweight list for the main Rooms page — each type's cover image and
+ * summary counts only (variant count, room count, starting price). NOT the
+ * full nested Variant/Room tree — that's what GET /room-types/[id] returns,
+ * loaded only once the Hotel Admin drills into a specific room type.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -20,23 +22,23 @@ export async function GET(req: NextRequest) {
     const roomTypes = await prisma.room_types.findMany({
       where: { hotel_id: hotelId, is_active: true },
       include: {
-        room_type_amenities: { include: { amenity: true } },
-        type_images: { orderBy: { sort_order: 'asc' } },
+        type_images: { where: { is_cover: true }, take: 1 },
         room_variants: {
           where: { is_active: true },
-          include: {
-            facilities: { include: { facility: true } },
-            bed_types: { include: { bed_type: true } },
-            variant_images: { orderBy: { sort_order: 'asc' } },
-            room_details: { where: { deleted_at: null }, orderBy: { room_number: 'asc' } },
-          },
-          orderBy: { created_at: 'asc' },
+          select: { price: true, _count: { select: { room_details: { where: { deleted_at: null } } } } },
         },
       },
       orderBy: { created_at: 'desc' },
     })
 
-    return NextResponse.json({ success: true, data: roomTypes })
+    const summarized = roomTypes.map((rt) => {
+      const { room_variants, ...rest } = rt
+      const roomCount = room_variants.reduce((sum, v) => sum + v._count.room_details, 0)
+      const startingPrice = room_variants.length > 0 ? Math.min(...room_variants.map((v) => Number(v.price))) : null
+      return { ...rest, variant_count: room_variants.length, room_count: roomCount, starting_price: startingPrice }
+    })
+
+    return NextResponse.json({ success: true, data: summarized })
   } catch (error) {
     console.error('Fetch room types error:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })

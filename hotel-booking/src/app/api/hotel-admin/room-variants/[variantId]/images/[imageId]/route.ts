@@ -31,3 +31,40 @@ export async function DELETE(
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }
+
+/**
+ * PATCH — set this image as the variant's cover photo.
+ */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ variantId: string; imageId: string }> }
+) {
+  try {
+    const auth = await requireAuth(req, ['HOTEL_ADMIN'])
+    if (auth.error) return auth.error
+
+    const hotelId = auth.payload.hotel_id
+    const { variantId, imageId } = await params
+    const vId = parseInt(variantId)
+    const imgId = parseInt(imageId)
+    if (isNaN(vId) || isNaN(imgId)) return NextResponse.json({ success: false, message: 'Invalid ID' }, { status: 400 })
+
+    const image = await prisma.room_images.findUnique({
+      where: { id: imgId },
+      include: { room_variant: { include: { room_type: true } } },
+    })
+    if (!image || image.room_variant_id !== vId || image.room_variant?.room_type.hotel_id !== hotelId) {
+      return NextResponse.json({ success: false, message: 'Image not found' }, { status: 404 })
+    }
+
+    await prisma.$transaction([
+      prisma.room_images.updateMany({ where: { room_variant_id: vId }, data: { is_cover: false } }),
+      prisma.room_images.update({ where: { id: imgId }, data: { is_cover: true } }),
+    ])
+
+    return NextResponse.json({ success: true, message: 'Cover photo updated' })
+  } catch (error) {
+    console.error('Set variant cover image error:', error)
+    return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
+  }
+}

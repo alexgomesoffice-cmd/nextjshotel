@@ -19,14 +19,14 @@ export async function GET(req: NextRequest) {
     const [facilities, total] = await Promise.all([
       prisma.room_facilities.findMany({
         where, skip, take: limit, orderBy: { name: 'asc' },
-        include: { _count: { select: { room_detail_facilities: true } } },
+        include: { _count: { select: { room_variant_facilities: true } } },
       }),
       prisma.room_facilities.count({ where }),
     ])
 
     const data = facilities.map((f: (typeof facilities)[number]) => ({
       id: f.id, name: f.name, is_active: f.is_active, created_at: f.created_at,
-      usage_count: f._count.room_detail_facilities,
+      usage_count: f._count.room_variant_facilities,
     }))
 
     return NextResponse.json({

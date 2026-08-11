@@ -151,7 +151,7 @@ export function AmenityFormDialog({
                 className="h-8 w-full rounded-sm border border-border/60 bg-secondary/40 pl-7 pr-2 text-xs outline-none focus:border-primary/60"
               />
             </div>
-            <div className="grid max-h-40 grid-cols-8 gap-1 overflow-y-auto rounded-md border border-border/40 p-1.5 custom-scrollbar"
+            <div className="grid max-h-40 grid-cols-8 gap-1 overflow-y-auto rounded-md border border-border/40 p-1.5 "
                                     data-lenis-prevent="true"
                   data-lenis-prevent-wheel="true"
                   data-lenis-prevent-touch="true">

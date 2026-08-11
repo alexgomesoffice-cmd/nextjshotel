@@ -1,0 +1,17 @@
+T-1
+6 A - stu2 
+7 A - stu2
+7 B Economics remain
+8 A - stu9
+8 B - stu11 ict prac 0
+9 A - stu17 
+9 A - stu16 absent
+10 A - stu26
+10 A - stu31 fail English 2nd
+10 A- stu25 fail Agri
+
+T-2
+9 B - stu24
+
+T-3
+8 B - stu12 

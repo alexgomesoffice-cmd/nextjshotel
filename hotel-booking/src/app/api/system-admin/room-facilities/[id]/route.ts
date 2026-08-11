@@ -50,11 +50,11 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     const facility = await prisma.room_facilities.findUnique({
       where: { id: facilityId },
-      include: { _count: { select: { room_detail_facilities: true } } },
+      include: { _count: { select: { room_variant_facilities: true } } },
     })
     if (!facility) return NextResponse.json({ success: false, message: 'Room facility not found' }, { status: 404 })
 
-    const usageCount = facility._count.room_detail_facilities
+    const usageCount = facility._count.room_variant_facilities
     if (usageCount > 0) {
       await prisma.room_facilities.update({ where: { id: facilityId }, data: { is_active: false } })
       return NextResponse.json({

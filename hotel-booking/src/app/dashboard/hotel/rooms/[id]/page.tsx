@@ -50,6 +50,27 @@ export default function RoomTypeDetailPage() {
     else toast({ title: 'Could not update status', description: data.message, variant: 'destructive' })
   }
 
+  const deleteVariant = async (variantId: number) => {
+    if (!window.confirm('Delete this room variant? This cannot be undone.')) return
+
+    try {
+      const res = await fetch(`/api/hotel-admin/room-variants/${variantId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      const data = await res.json()
+
+      if (data.success) {
+        toast({ title: 'Room variant deleted' })
+        await fetchRoomType()
+      } else {
+        toast({ title: 'Could not delete room variant', description: data.message, variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Could not delete room variant', description: 'Failed to delete room variant', variant: 'destructive' })
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -112,6 +133,7 @@ export default function RoomTypeDetailPage() {
                 onChangeStatus={changeStatus}
                 onAddRoom={() => setAddRoomOpen(true)}
                 onChanged={fetchRoomType}
+                onDelete={() => deleteVariant(v.id)}
               />
             ))}
           </div>

@@ -1,12 +1,13 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { MoreVertical, ImageIcon, Pencil, DoorOpen, ChevronDown, ChevronUp, Plus } from 'lucide-react'
+import { MoreVertical, ImageIcon, Pencil, DoorOpen, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import { ImageManager } from './image-manager'
 import { VariantFormDialog } from './variant-form-dialog'
 
@@ -24,8 +25,8 @@ function variantLabel(v: any): string {
 }
 
 export const VariantCard = ({
-  variant, onEditRoom, onChangeStatus, onAddRoom, onChanged,
-}: { variant: any; onEditRoom: (roomId: number) => void; onChangeStatus: (roomId: number, status: string) => void; onAddRoom: () => void; onChanged: () => void }) => {
+  variant, onEditRoom, onChangeStatus, onAddRoom, onChanged, onDelete,
+}: { variant: any; onEditRoom: (roomId: number) => void; onChangeStatus: (roomId: number, status: string) => void; onAddRoom: () => void; onChanged: () => void; onDelete: () => void }) => {
   const [imageDialogOpen, setImageDialogOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [roomsOpen, setRoomsOpen] = useState(true)
@@ -69,6 +70,14 @@ export const VariantCard = ({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setImageDialogOpen(true)}><ImageIcon className="h-3.5 w-3.5 mr-2" /> Manage Photos</DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={onDelete}
+                    disabled={variant.room_details.length > 0}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                    {variant.room_details.length > 0 ? 'Delete unavailable with rooms' : 'Delete Room Variant'}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -91,7 +100,7 @@ export const VariantCard = ({
               ) : (
                 <div className="flex flex-wrap gap-1.5">
                   {variant.room_details.map((r: any) => (
-                    <RoomChip key={r.id} room={r} onEdit={() => onEditRoom(r.id)} onChangeStatus={(s) => onChangeStatus(r.id, s)} />
+                    <RoomChip key={r.id} room={r} variantId={variant.id} />
                   ))}
                 </div>
               )}
@@ -121,20 +130,14 @@ export const VariantCard = ({
   )
 }
 
-const RoomChip = ({ room, onEdit, onChangeStatus }: { room: any; onEdit: () => void; onChangeStatus: (s: string) => void }) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <button className={cn('flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium', STATUS_COLOR[room.status] ?? '')}>
-        <DoorOpen className="h-3 w-3" /> {room.room_number}
-      </button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="start">
-      <DropdownMenuItem onClick={onEdit}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit Room</DropdownMenuItem>
-      {Object.keys(STATUS_COLOR).map((s) => (
-        <DropdownMenuItem key={s} onClick={() => onChangeStatus(s)} disabled={s === room.status}>
-          Mark as {s.replace('_', ' ')}
-        </DropdownMenuItem>
-      ))}
-    </DropdownMenuContent>
-  </DropdownMenu>
+const RoomChip = ({ room, variantId }: { room: any; variantId: number }) => (
+  <Link
+    href={`/dashboard/hotel/rooms/variants/${variantId}/rooms/${room.id}`}
+    className={cn(
+      'flex items-center gap-1.5 rounded-lg border px-2 py-1 text-xs font-medium transition-colors hover:border-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+      STATUS_COLOR[room.status] ?? ''
+    )}
+  >
+    <DoorOpen className="h-3 w-3" /> {room.room_number}
+  </Link>
 )

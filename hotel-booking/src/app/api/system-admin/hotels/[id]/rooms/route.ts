@@ -18,19 +18,33 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const roomTypes = await prisma.room_types.findMany({
       where: { hotel_id: hotelId },
-      include: { room_details: { select: { price: true } } },
+      include: {
+        type_images: { where: { is_cover: true }, take: 1 },
+        room_variants: {
+          include: {
+            _count: {
+              select: {
+                room_details: { where: { deleted_at: null } },
+              },
+            },
+          },
+        },
+      },
       orderBy: { name: 'asc' },
     })
 
     const data = roomTypes.map((rt: (typeof roomTypes)[number]) => {
-      const prices = rt.room_details.map((r) => parseFloat(r.price.toString()))
+      const roomCount = rt.room_variants.reduce((sum, variant) => sum + variant._count.room_details, 0)
+      const startingPrice = rt.room_variants.length ? Math.min(...rt.room_variants.map((variant) => Number(variant.price))) : null
       return {
         id: rt.id,
         name: rt.name,
+        description: rt.description,
         is_active: rt.is_active,
-        room_count: rt.room_details.length,
-        min_price: prices.length ? Math.min(...prices) : null,
-        max_price: prices.length ? Math.max(...prices) : null,
+        variant_count: rt.room_variants.length,
+        room_count: roomCount,
+        starting_price: startingPrice,
+        cover_image_url: rt.type_images?.[0]?.image_url ?? null,
       }
     })
 

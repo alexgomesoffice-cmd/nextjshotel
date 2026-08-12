@@ -34,7 +34,14 @@ export async function GET(req: NextRequest) {
 
     const where: any = {
       deleted_at: null,
-      name: { contains: search },
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { address: { contains: search } },
+        { city: { name: { contains: search } } },
+      ]
     }
 
     if (status && ['UNPUBLISHED', 'PUBLISHED', 'SUSPENDED'].includes(status)) where.approval_status = status
@@ -58,6 +65,21 @@ export async function GET(req: NextRequest) {
           detail: { select: { star_rating: true } },
           owner_detail: { select: { full_name: true } },
           cases: { where: { status: 'PENDING' }, select: { id: true }, take: 1 },
+          images: { where: { is_cover: true }, take: 1 },
+          room_types: {
+            select: {
+              id: true,
+              room_variants: {
+                select: {
+                  _count: {
+                    select: {
+                      room_details: { where: { deleted_at: null } },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
         orderBy,
       }),
@@ -77,6 +99,13 @@ export async function GET(req: NextRequest) {
 
     const hotelsWithDetails = hotels.map((hotel: (typeof hotels)[number]) => {
       const stat = statsByHotel.get(hotel.id)
+      const roomTypeCount = hotel.room_types.length
+      const variantCount = hotel.room_types.reduce((sum, roomType) => sum + roomType.room_variants.length, 0)
+      const roomCount = hotel.room_types.reduce(
+        (sum, roomType) => sum + roomType.room_variants.reduce((variantSum, variant) => variantSum + variant._count.room_details, 0),
+        0,
+      )
+
       return {
         id: hotel.id,
         name: hotel.name,
@@ -91,6 +120,10 @@ export async function GET(req: NextRequest) {
         revenue30d: stat?._sum.total_price ? parseFloat(stat._sum.total_price.toString()) : 0,
         approval_status: hotel.approval_status,
         createdAt: hotel.created_at.toISOString(),
+        cover_image_url: hotel.images?.[0]?.image_url ?? null,
+        room_type_count: roomTypeCount,
+        variant_count: variantCount,
+        room_count: roomCount,
       }
     })
 

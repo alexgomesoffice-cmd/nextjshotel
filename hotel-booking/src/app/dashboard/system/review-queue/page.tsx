@@ -65,7 +65,7 @@ export default function ReviewQueuePage() {
   useEffect(() => { load() }, [load])
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-4 px-6 py-5">
+    <div className="mx-auto max-w-[1200px] space-y-4 px-6 py-5">
       <OpsSectionHeader
         title="Review Queue"
         description={`${rows.length} case${rows.length === 1 ? '' : 's'} · processed first-in-first-out · every admin sees the same queue`}

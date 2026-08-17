@@ -11,11 +11,13 @@ import { Button } from '@/components/ui/button'
 export interface RoomFacilityRecord { id: number; name: string }
 
 export function RoomFacilityFormDialog({
-  open, onOpenChange, editing, onSaved,
+  open, onOpenChange, editing, prefillName, fulfillsRequestId, onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   editing: RoomFacilityRecord | null
+  prefillName?: string
+  fulfillsRequestId?: number
   onSaved: () => void
 }) {
   const [name, setName] = useState('')
@@ -23,8 +25,8 @@ export function RoomFacilityFormDialog({
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (open) { setName(editing?.name ?? ''); setError(null) }
-  }, [open, editing])
+    if (open) { setName(editing?.name ?? prefillName ?? ''); setError(null) }
+  }, [open, editing, prefillName])
 
   const handleSave = async () => {
     if (!name.trim()) { setError('Name is required.'); return }
@@ -36,7 +38,10 @@ export function RoomFacilityFormDialog({
       const res = await fetch(url, {
         method, credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), is_active: true }),
+        body: JSON.stringify({
+          name: name.trim(), is_active: true,
+          ...(!editing && fulfillsRequestId ? { fulfills_request_id: fulfillsRequestId } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.success) { setError(data.message || 'Something went wrong.'); return }

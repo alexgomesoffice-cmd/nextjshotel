@@ -35,12 +35,16 @@ export function AmenityFormDialog({
   onOpenChange,
   context,
   editing,
+  prefillName,
+  fulfillsRequestId,
   onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   context: 'HOTEL' | 'ROOM'
   editing: AmenityRecord | null
+  prefillName?: string
+  fulfillsRequestId?: number
   onSaved: () => void
 }) {
   const [name, setName] = useState('')
@@ -52,7 +56,7 @@ export function AmenityFormDialog({
 
   useEffect(() => {
   if (open) {
-    setName(editing?.name ?? '')
+    setName(editing?.name ?? prefillName ?? '')
     setIcon(editing?.icon ?? 'Sparkles')
     setAmenityContext(editing?.context ?? context)
     setIconQuery('')
@@ -78,7 +82,10 @@ export function AmenityFormDialog({
         method,
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), icon, context: amenityContext, is_active: true }),
+        body: JSON.stringify({
+          name: name.trim(), icon, context: amenityContext, is_active: true,
+          ...(!editing && fulfillsRequestId ? { fulfills_request_id: fulfillsRequestId } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.success) {

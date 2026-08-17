@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { createBedTypeSchema } from '@/lib/validations/metadata'
+import { validateFulfillsRequest, markRequestFulfilledTx, notifyRequestFulfilled } from '@/lib/master-data-fulfillment'
 
 // Bed types are fully global now — no is_default/hotel_id, no context.
 // Same shape as system-admin/amenities, minus icon/context.
@@ -71,7 +72,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const bedType = await prisma.bed_types.create({ data: { name, is_active } })
+    const fulfillsRequestId = typeof body.fulfills_request_id === 'number' ? body.fulfills_request_id : undefined
+    const { request, error } = await validateFulfillsRequest(fulfillsRequestId, 'BED_TYPE')
+    if (error) return NextResponse.json({ success: false, message: error }, { status: 400 })
+
+    const bedType = await prisma.$transaction(async (tx) => {
+      const created = await tx.bed_types.create({ data: { name, is_active } })
+      if (request) await markRequestFulfilledTx(tx, request.id, auth.payload.actor_id, created.id)
+      return created
+    })
+
+    if (request) await notifyRequestFulfilled({ id: request.id, requested_by: request.requested_by, category: 'BED_TYPE' }, name)
+
     return NextResponse.json({ success: true, message: 'Bed type created successfully', data: bedType })
   } catch (error) {
     console.error('Failed to create bed type:', error)

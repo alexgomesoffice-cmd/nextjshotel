@@ -60,7 +60,7 @@ export default function SystemAdminRoomTypesPage() {
   }, [loadHotels])
 
   return (
-    <div className="mx-auto max-w-[1280px] space-y-6 px-6 py-5">
+    <div className="mx-auto max-w-[1200px] space-y-4 px-6 py-5">
       <OpsSectionHeader
         title="Hotel Room Types"
         description="View and manage room type configurations across all properties."

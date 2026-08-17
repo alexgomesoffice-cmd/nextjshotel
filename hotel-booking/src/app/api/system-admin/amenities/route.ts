@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { createAmenitySchema } from '@/lib/validations/metadata'
+import { validateFulfillsRequest, markRequestFulfilledTx, notifyRequestFulfilled } from '@/lib/master-data-fulfillment'
 
 // ─── GET /api/system-admin/amenities ───────────────────────────────────────
 // Amenities are fully global now (no is_default/hotel_id) — this simply
@@ -88,6 +89,13 @@ export async function POST(req: NextRequest) {
 
     const { name, icon, context, is_active } = result.data
 
+    const fulfillsRequestId = typeof body.fulfills_request_id === 'number' ? body.fulfills_request_id : undefined
+    const { request, error } = await validateFulfillsRequest(fulfillsRequestId, 'AMENITY')
+    if (error) return NextResponse.json({ success: false, message: error }, { status: 400 })
+    if (request && request.context !== context) {
+      return NextResponse.json({ success: false, message: `The linked request was for a ${request.context?.toLowerCase()} amenity.` }, { status: 400 })
+    }
+
     const existing = await prisma.amenities.findFirst({
       where: { name: { equals: name }, context },
     })
@@ -98,9 +106,15 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const newAmenity = await prisma.amenities.create({
-      data: { name, icon: icon || null, context, is_active },
+    const newAmenity = await prisma.$transaction(async (tx) => {
+      const created = await tx.amenities.create({
+        data: { name, icon: icon || null, context, is_active },
+      })
+      if (request) await markRequestFulfilledTx(tx, request.id, auth.payload.actor_id, created.id)
+      return created
     })
+
+    if (request) await notifyRequestFulfilled({ id: request.id, requested_by: request.requested_by, category: 'AMENITY' }, name)
 
     return NextResponse.json({ success: true, message: 'Amenity created successfully', data: newAmenity })
   } catch (error) {

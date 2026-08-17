@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Plus, Search } from 'lucide-react'
 import { OpsSectionHeader, OpsTable, OpsTh, OpsTd } from '@/components/admin/shared/primitives'
 import { Button } from '@/components/ui/button'
@@ -8,12 +9,30 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AmenityFormDialog, AmenityIcon, AmenityRecord } from '@/components/admin/amenities/amenity-form-dialog'
 
 export default function AmenitiesPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [context, setContext] = useState<'HOTEL' | 'ROOM'>('HOTEL')
   const [q, setQ] = useState('')
   const [rows, setRows] = useState<(AmenityRecord & { usage_count: number })[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<AmenityRecord | null>(null)
+  const [prefillName, setPrefillName] = useState<string | undefined>()
+  const [fulfillsRequestId, setFulfillsRequestId] = useState<number | undefined>()
+
+  useEffect(() => {
+    const requestId = searchParams.get('fulfills_request_id')
+    const name = searchParams.get('prefill_name')
+    const ctx = searchParams.get('prefill_context')
+    if (requestId) {
+      setFulfillsRequestId(parseInt(requestId))
+      setPrefillName(name ?? undefined)
+      if (ctx === 'HOTEL' || ctx === 'ROOM') setContext(ctx)
+      setEditing(null)
+      setDialogOpen(true)
+      router.replace('/dashboard/system/amenities')
+    }
+  }, [searchParams, router])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -128,9 +147,11 @@ export default function AmenitiesPage() {
 
       <AmenityFormDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(v) => { setDialogOpen(v); if (!v) { setPrefillName(undefined); setFulfillsRequestId(undefined) } }}
         context={context}
         editing={editing}
+        prefillName={prefillName}
+        fulfillsRequestId={fulfillsRequestId}
         onSaved={load}
       />
     </div>

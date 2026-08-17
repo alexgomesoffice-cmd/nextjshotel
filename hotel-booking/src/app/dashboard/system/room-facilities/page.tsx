@@ -1,17 +1,34 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Plus, Search, Wrench } from 'lucide-react'
 import { OpsSectionHeader, OpsTable, OpsTh, OpsTd } from '@/components/admin/shared/primitives'
 import { Button } from '@/components/ui/button'
 import { RoomFacilityFormDialog, RoomFacilityRecord } from '@/components/admin/room-facilities/room-facility-form-dialog'
 
 export default function RoomFacilitiesPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [q, setQ] = useState('')
   const [rows, setRows] = useState<(RoomFacilityRecord & { usage_count: number })[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<RoomFacilityRecord | null>(null)
+  const [prefillName, setPrefillName] = useState<string | undefined>()
+  const [fulfillsRequestId, setFulfillsRequestId] = useState<number | undefined>()
+
+  useEffect(() => {
+    const requestId = searchParams.get('fulfills_request_id')
+    const name = searchParams.get('prefill_name')
+    if (requestId) {
+      setFulfillsRequestId(parseInt(requestId))
+      setPrefillName(name ?? undefined)
+      setEditing(null)
+      setDialogOpen(true)
+      router.replace('/dashboard/system/room-facilities')
+    }
+  }, [searchParams, router])
 
   const load = useCallback(() => {
     setLoading(true)
@@ -81,7 +98,14 @@ export default function RoomFacilitiesPage() {
         </tbody>
       </OpsTable>
 
-      <RoomFacilityFormDialog open={dialogOpen} onOpenChange={setDialogOpen} editing={editing} onSaved={load} />
+      <RoomFacilityFormDialog
+        open={dialogOpen}
+        onOpenChange={(v) => { setDialogOpen(v); if (!v) { setPrefillName(undefined); setFulfillsRequestId(undefined) } }}
+        editing={editing}
+        prefillName={prefillName}
+        fulfillsRequestId={fulfillsRequestId}
+        onSaved={load}
+      />
     </div>
   )
 }

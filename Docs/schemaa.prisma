@@ -95,14 +95,14 @@ enum CaseEntityType {
   HOTEL_DOCUMENT     // hotel_documents
   AMENITY            // a hotel's or room type's amenity SELECTION only — amenities themselves are fully global/System-Admin-owned now, same as bed types, so there's no "creating a new custom amenity" case anymore
   POLICY             // policies
-  ROOM_TYPE          // OBSOLETE as of the Room Variant redesign — Room Type creation/editing is now direct Hotel Admin CRUD, never case-reviewed. Left in place rather than removed blindly; see cleanup note below.
-  ROOM_TYPE_IMAGE    // OBSOLETE, same reason as ROOM_TYPE above.
-  ROOM_FACILITY      // OBSOLETE as of the Room Variant redesign — facility selection now lives on room_variants, set directly by Hotel Admin, never case-reviewed.
-  ROOM_DETAIL        // OBSOLETE as of the Room Variant redesign — physical room creation/editing (and the variant matching it triggers) is now direct Hotel Admin CRUD, never case-reviewed. `applyFieldChange`'s ROOM_TYPE/ROOM_TYPE_IMAGE/ROOM_FACILITY/ROOM_DETAIL branches in case-engine.ts are now unreachable dead code — kept for now since removing them (and these four enum values) safely requires first confirming zero existing case_field_changes rows reference them; propose that cleanup as a separate follow-up rather than doing it blindly here.
+  // ROOM_TYPE, ROOM_TYPE_IMAGE, ROOM_FACILITY, ROOM_DETAIL removed —
+  // Room Type / Room Variant / Physical Room management is direct Hotel
+  // Admin CRUD now (see room-variant-matching.ts), never case-reviewed.
+  // Confirmed zero code references before removal — case-engine.ts's
+  // applyFieldChange branches for these were removed in the same pass.
   // BED_TYPE removed — bed types are now fully global/System-Admin-owned (no
   // hotel-custom creation path at all), so there's nothing left for Hotel
-  // Admin to propose here. Bed selection on a room is just part of that
-  // room's own ROOM_DETAIL creation proposal.
+  // Admin to propose here.
 }
 
 enum NotificationType {
@@ -115,6 +115,7 @@ enum NotificationType {
   NEW_REVIEW
   DOCUMENT_EXPIRING
   ACCOUNT_BLOCKED
+  MASTER_DATA_REQUEST  // a Hotel Admin submitted, or a System Admin resolved, a master data request — NOT a case, deliberately separate from CASE_SUBMITTED
   GENERAL
 }
 
@@ -674,6 +675,7 @@ model master_data_requests {
   status            MasterDataRequestStatus @default(PENDING)
   resolved_by       Int?                    // system_admins.id
   resolved_at       DateTime?
+  resolution_note   String?                 @db.Text // dismissal reason; also usable for a short fulfillment note if ever needed
   created_entity_id Int?                    // id of the row created via the normal creation page when this request is fulfilled — not auto-generated. No DB-level FK since it's polymorphic across three tables (amenities/bed_types/room_facilities).
   created_at        DateTime                @default(now())
 
@@ -688,8 +690,10 @@ enum MasterDataCategory {
   AMENITY
   BED_TYPE
   ROOM_FACILITY
-  // ROOM_TYPE removed — Hotel Admin creates their own room type directly
-  // (via case review), there's no global template to request anymore.
+  // ROOM_TYPE is intentionally NOT here — Room Types are hotel-owned and
+  // created/edited directly by Hotel Admin (immediate, no review of any
+  // kind), so there's no global template to request. This is unrelated to
+  // Case Review, which also no longer applies to Room Type management.
 }
 
 enum MasterDataRequestStatus {

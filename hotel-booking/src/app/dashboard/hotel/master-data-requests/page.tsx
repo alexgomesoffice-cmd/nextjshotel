@@ -1,55 +1,58 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Sparkles, BedDouble, Layers } from 'lucide-react'
-import { RequestCard } from '@/components/hotel-admin/master-data/request-card'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Sparkles, BedDouble, Layers, Plus } from 'lucide-react'
+import { RequestDialog } from '@/components/hotel-admin/master-data/request-dialog'
+import { RequestHistory } from '@/components/hotel-admin/master-data/request-history'
 
 export default function MasterDataRequestsPage() {
   const [requests, setRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [dialogCategory, setDialogCategory] = useState<'AMENITY' | 'BED_TYPE' | 'ROOM_FACILITY' | null>(null)
 
-  const fetchAll = useCallback(async () => {
+  const fetchRequests = useCallback(async () => {
     const res = await fetch('/api/hotel-admin/master-data-requests', { credentials: 'include' })
     const data = await res.json()
     if (data.success) setRequests(data.data)
     setLoading(false)
   }, [])
 
-  useEffect(() => { fetchAll() }, [fetchAll])
-
-  if (loading) return <div className="p-8 text-sm text-muted-foreground">Loading…</div>
-
-  const byCategory = (c: string) => requests.filter((r) => r.category === c)
+  useEffect(() => { fetchRequests() }, [fetchRequests])
 
   return (
     <div className="space-y-6">
-      <div className="animate-fade-in-up">
+      <div>
         <h1 className="text-2xl sm:text-3xl font-bold">Master Data Requests</h1>
         <p className="text-muted-foreground text-sm max-w-2xl mt-1">
-          Request a global item the System Admin creates manually if approved. Room types are created directly by you from the Rooms page.
+          Can&apos;t find something you need while configuring your hotel? Request it here. A System Admin will manually review and create global master data when appropriate.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <RequestCard
-          title="Amenities" description="Hotel or room amenity you'd like added"
-          icon={Sparkles} accent="from-fuchsia-500 to-pink-600"
-          category="AMENITY" requests={byCategory('AMENITY')} needsContext
-          onSubmitted={fetchAll}
-        />
-        <RequestCard
-          title="Bed Types" description="A bed type not yet in the global list"
-          icon={BedDouble} accent="from-indigo-500 to-blue-600"
-          category="BED_TYPE" requests={byCategory('BED_TYPE')}
-          onSubmitted={fetchAll}
-        />
-        <RequestCard
-          title="Room Facilities" description="A physical-room facility not yet available"
-          icon={Layers} accent="from-orange-500 to-amber-600"
-          category="ROOM_FACILITY" requests={byCategory('ROOM_FACILITY')}
-          onSubmitted={fetchAll}
-        />
+      <Card>
+        <CardContent className="p-5">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Request a missing item from the global catalog</p>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => setDialogCategory('AMENITY')}>
+              <Sparkles className="h-4 w-4 mr-2" /> Request Amenity
+            </Button>
+            <Button variant="outline" onClick={() => setDialogCategory('BED_TYPE')}>
+              <BedDouble className="h-4 w-4 mr-2" /> Request Bed Type
+            </Button>
+            <Button variant="outline" onClick={() => setDialogCategory('ROOM_FACILITY')}>
+              <Layers className="h-4 w-4 mr-2" /> Request Room Facility
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div>
+        <h2 className="text-sm font-semibold mb-3">My Requests</h2>
+        {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : <RequestHistory requests={requests} />}
       </div>
+
+      <RequestDialog open={!!dialogCategory} onOpenChange={(v) => !v && setDialogCategory(null)} category={dialogCategory} onSubmitted={fetchRequests} />
     </div>
   )
 }

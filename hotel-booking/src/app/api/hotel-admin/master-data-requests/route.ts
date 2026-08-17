@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
+import { notifySystemAdmins } from '@/lib/notifications'
 import { z } from 'zod'
 
 const createSchema = z.object({
@@ -36,9 +37,13 @@ export async function GET(req: NextRequest) {
   }
 }
 
+const CATEGORY_LABEL: Record<string, string> = { AMENITY: 'Amenity', BED_TYPE: 'Bed Type', ROOM_FACILITY: 'Room Facility' }
+
 /**
  * POST /api/hotel-admin/master-data-requests
  * Submits a new request. context is required for AMENITY, ignored otherwise.
+ * hotel_id/requested_by/status/resolved_by/created_entity_id are always
+ * server-derived — never accepted from the client body.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -60,6 +65,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: 'Select whether this amenity is for the Hotel or a Room.' }, { status: 400 })
     }
 
+    // Duplicate-pending protection — same hotel, category, name (and
+    // context, for amenities) with an existing PENDING request.
+    const duplicate = await prisma.master_data_requests.findFirst({
+      where: {
+        hotel_id: hotelId,
+        category,
+        name: { equals: name },
+        status: 'PENDING',
+        ...(category === 'AMENITY' ? { context } : {}),
+      },
+    })
+    if (duplicate) {
+      return NextResponse.json({ success: false, message: `A pending request for "${name}" already exists.` }, { status: 400 })
+    }
+
     const request = await prisma.master_data_requests.create({
       data: {
         hotel_id: hotelId,
@@ -69,6 +89,15 @@ export async function POST(req: NextRequest) {
         note,
         context: category === 'AMENITY' ? context : null,
       },
+    })
+
+    const hotel = await prisma.hotels.findUnique({ where: { id: hotelId }, select: { name: true } })
+    await notifySystemAdmins({
+      type: 'MASTER_DATA_REQUEST',
+      title: 'New Master Data Request',
+      message: `${hotel?.name ?? 'A hotel'} requested a new ${CATEGORY_LABEL[category]}: "${name}"`,
+      relatedEntityType: 'MASTER_DATA_REQUEST',
+      relatedEntityId: request.id,
     })
 
     return NextResponse.json({ success: true, message: 'Request submitted', data: request })

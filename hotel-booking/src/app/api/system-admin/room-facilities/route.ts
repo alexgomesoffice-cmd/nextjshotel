@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { createRoomFacilitySchema } from '@/lib/validations/metadata'
+import { validateFulfillsRequest, markRequestFulfilledTx, notifyRequestFulfilled } from '@/lib/master-data-fulfillment'
 
 // Fully global, System-Admin-owned — same shape as bed_types.
 export async function GET(req: NextRequest) {
@@ -56,7 +57,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: `A room facility named "${name}" already exists.` }, { status: 409 })
     }
 
-    const facility = await prisma.room_facilities.create({ data: { name, is_active } })
+    const fulfillsRequestId = typeof body.fulfills_request_id === 'number' ? body.fulfills_request_id : undefined
+    const { request, error } = await validateFulfillsRequest(fulfillsRequestId, 'ROOM_FACILITY')
+    if (error) return NextResponse.json({ success: false, message: error }, { status: 400 })
+
+    const facility = await prisma.$transaction(async (tx) => {
+      const created = await tx.room_facilities.create({ data: { name, is_active } })
+      if (request) await markRequestFulfilledTx(tx, request.id, auth.payload.actor_id, created.id)
+      return created
+    })
+
+    if (request) await notifyRequestFulfilled({ id: request.id, requested_by: request.requested_by, category: 'ROOM_FACILITY' }, name)
+
     return NextResponse.json({ success: true, message: 'Room facility created successfully', data: facility })
   } catch (error) {
     console.error('Failed to create room facility:', error)

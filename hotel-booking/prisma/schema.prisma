@@ -115,6 +115,7 @@ enum NotificationType {
   NEW_REVIEW
   DOCUMENT_EXPIRING
   ACCOUNT_BLOCKED
+  MASTER_DATA_REQUEST  // a Hotel Admin submitted, or a System Admin resolved, a master data request — NOT a case, deliberately separate from CASE_SUBMITTED
   GENERAL
 }
 
@@ -674,6 +675,7 @@ model master_data_requests {
   status            MasterDataRequestStatus @default(PENDING)
   resolved_by       Int?                    // system_admins.id
   resolved_at       DateTime?
+  resolution_note   String?                 @db.Text // dismissal reason; also usable for a short fulfillment note if ever needed
   created_entity_id Int?                    // id of the row created via the normal creation page when this request is fulfilled — not auto-generated. No DB-level FK since it's polymorphic across three tables (amenities/bed_types/room_facilities).
   created_at        DateTime                @default(now())
 
@@ -688,8 +690,10 @@ enum MasterDataCategory {
   AMENITY
   BED_TYPE
   ROOM_FACILITY
-  // ROOM_TYPE removed — Hotel Admin creates their own room type directly
-  // (via case review), there's no global template to request anymore.
+  // ROOM_TYPE is intentionally NOT here — Room Types are hotel-owned and
+  // created/edited directly by Hotel Admin (immediate, no review of any
+  // kind), so there's no global template to request. This is unrelated to
+  // Case Review, which also no longer applies to Room Type management.
 }
 
 enum MasterDataRequestStatus {

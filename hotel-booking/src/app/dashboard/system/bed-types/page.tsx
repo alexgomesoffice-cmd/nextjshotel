@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Plus, Search } from 'lucide-react'
 import { OpsSectionHeader, OpsTable, OpsTh, OpsTd } from '@/components/admin/shared/primitives'
 import { Button } from '@/components/ui/button'
@@ -11,11 +12,29 @@ interface BedTypeRow extends BedTypeRecord {
 }
 
 export default function BedTypesPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [q, setQ] = useState('')
   const [rows, setRows] = useState<BedTypeRow[]>([])
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<BedTypeRecord | null>(null)
+  const [prefillName, setPrefillName] = useState<string | undefined>()
+  const [fulfillsRequestId, setFulfillsRequestId] = useState<number | undefined>()
+
+  // Arriving from a Master Data Request's "Create Bed Type" action —
+  // open the normal creation dialog pre-filled, rather than a special path.
+  useEffect(() => {
+    const requestId = searchParams.get('fulfills_request_id')
+    const name = searchParams.get('prefill_name')
+    if (requestId) {
+      setFulfillsRequestId(parseInt(requestId))
+      setPrefillName(name ?? undefined)
+      setEditing(null)
+      setDialogOpen(true)
+      router.replace('/dashboard/system/bed-types')
+    }
+  }, [searchParams, router])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -85,7 +104,7 @@ export default function BedTypesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-300 space-y-4 px-6 py-5">
+    <div className="mx-auto max-w-[1200px] space-y-4 px-6 py-5">
       <OpsSectionHeader
         title="Bed Types"
         description="Manage bed type options used across room setup forms."
@@ -164,8 +183,10 @@ export default function BedTypesPage() {
 
       <BedTypeFormDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(v) => { setDialogOpen(v); if (!v) { setPrefillName(undefined); setFulfillsRequestId(undefined) } }}
         editing={editing}
+        prefillName={prefillName}
+        fulfillsRequestId={fulfillsRequestId}
         onSaved={load}
       />
     </div>

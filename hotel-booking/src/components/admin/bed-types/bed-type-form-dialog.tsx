@@ -21,11 +21,15 @@ export function BedTypeFormDialog({
   open,
   onOpenChange,
   editing,
+  prefillName,
+  fulfillsRequestId,
   onSaved,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   editing: BedTypeRecord | null
+  prefillName?: string
+  fulfillsRequestId?: number
   onSaved: () => void
 }) {
   const [name, setName] = useState('')
@@ -35,9 +39,9 @@ export function BedTypeFormDialog({
   useEffect(() => {
   if (!open) return;
 
-  setName(editing?.name ?? "");
+  setName(editing?.name ?? prefillName ?? "");
   setError(null);
-}, [open, editing]);
+}, [open, editing, prefillName]);
 
   const handleSave = async () => {
     if (!name.trim()) {
@@ -53,7 +57,11 @@ export function BedTypeFormDialog({
         method,
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), is_active: true }),
+        body: JSON.stringify({
+          name: name.trim(),
+          is_active: true,
+          ...(!editing && fulfillsRequestId ? { fulfills_request_id: fulfillsRequestId } : {}),
+        }),
       })
       const data = await res.json()
       if (!res.ok || !data.success) {

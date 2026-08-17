@@ -149,7 +149,7 @@ export default function CaseReviewPage() {
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-6 py-4 pb-28">
+    <div className="mx-auto max-w-[1200px] px-6 py-4 pb-28">
       {/* Header strip */}
       <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border/60 pb-3">
         <Link href="/dashboard/system/review-queue" className="rounded-sm border border-border/60 bg-secondary/40 p-1 hover:bg-secondary">
@@ -305,7 +305,7 @@ export default function CaseReviewPage() {
       {/* Sticky bottom action bar */}
       {!readOnly && (
         <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/95 backdrop-blur">
-          <div className="mx-auto flex max-w-[1600px] items-center gap-3 px-6 py-3">
+          <div className="mx-auto flex max-w-[1200px] items-center gap-3 px-6 py-3">
             <div className="text-xs text-muted-foreground">
               {rejectedCount > 0
                 ? `${rejectedCount} field${rejectedCount === 1 ? '' : 's'} marked rejected. Remaining ${willPublishCount} will be published on approve.`

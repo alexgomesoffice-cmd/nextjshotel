@@ -412,68 +412,36 @@ const GalleryEditor = ({ hotel, disabled, onChanged, onCommitReady }: { hotel: a
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            {previewUrls.length > 0 ? (
-              previewUrls.map((preview, index) => {
-                const isSelectedCover = pendingPreviewCoverIndex === index
+            {/* Existing live images (excluding those marked for deletion) */}
+            {images
+              .filter((img: any) => !pendingRemoveIds.includes(img.id))
+              .map((img: any) => {
+                const isCover = pendingPreviewCoverIndex === null && (pendingCoverId === img.id || (pendingCoverId === null && img.is_cover))
 
                 return (
-                  <div key={`${preview.name}-${index}`} className="aspect-square rounded-lg bg-secondary/50 border border-border relative overflow-hidden group">
-                    <img src={preview.url} alt={preview.name} className="h-full w-full object-cover" />
-                    <span className="absolute left-1 top-1 rounded-full bg-emerald-500 text-black text-[10px] font-semibold px-1.5 py-0.5">
-                      New
-                    </span>
-                    {isSelectedCover && (
-                      <span className="absolute right-1 top-1 rounded-full bg-amber-500 text-black text-[10px] font-semibold px-1.5 py-0.5 flex items-center gap-1">
+                  <div key={img.id} className="aspect-square rounded-lg bg-secondary/50 border border-border relative overflow-hidden group">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.image_url} alt="" className="h-full w-full object-cover" />
+                    {isCover && (
+                      <span className="absolute left-1 top-1 rounded-full bg-amber-500 text-black text-[10px] font-semibold px-1.5 py-0.5 flex items-center gap-1">
                         <Star className="h-3 w-3 fill-black text-black" />
                         Cover
                       </span>
                     )}
-                    <div className="absolute inset-x-1 top-1 flex items-center justify-end gap-1 opacity-100 transition">
-                      <button
-                        disabled={disabled || busy}
-                        onClick={() => setPreviewCover(index)}
-                        className={cn(
-                          'h-6 w-6 rounded-full border border-white/20 flex items-center justify-center transition',
-                          isSelectedCover
-                            ? 'bg-amber-500 text-black'
-                            : 'bg-black/70 text-white hover:bg-black/90',
-                        )}
-                        title="Set as cover"
-                      >
-                        <Star className={cn('h-3.5 w-3.5', isSelectedCover ? 'fill-black text-black' : 'text-white')} />
-                      </button>
-                      <button
-                        disabled={disabled || busy}
-                        onClick={() => removePreview(index)}
-                        className="h-6 w-6 rounded-full bg-black/70 text-white flex items-center justify-center"
-                        title="Remove preview"
-                      >
-                        <X className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                )
-              })
-            ) : (
-              images
-                .filter((img: any) => !pendingRemoveIds.includes(img.id))
-                .map((img: any) => (
-                  <div key={img.id} className="aspect-square rounded-lg bg-secondary/50 border border-border relative overflow-hidden group">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.image_url} alt="" className="h-full w-full object-cover" />
                     <div className="absolute inset-x-1 top-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition">
                       <button
                         disabled={disabled || busy}
-                        onClick={() => setCover(img.id)}
+                        onClick={() => {
+                          setPendingCoverId(img.id)
+                          setPendingPreviewCoverIndex(null)
+                        }}
                         className={cn(
                           'h-6 w-6 rounded-full border border-white/20 flex items-center justify-center transition',
-                          pendingCoverId === img.id || img.is_cover
-                            ? 'bg-amber-500 text-black'
-                            : 'bg-black/70 text-white hover:bg-black/90',
+                          isCover ? 'bg-amber-500 text-black' : 'bg-black/70 text-white hover:bg-black/90',
                         )}
                         title="Set as cover"
                       >
-                        <Star className={cn('h-3.5 w-3.5', pendingCoverId === img.id || img.is_cover ? 'fill-black text-black' : 'text-white')} />
+                        <Star className={cn('h-3.5 w-3.5', isCover ? 'fill-black text-black' : 'text-white')} />
                       </button>
                       <button
                         disabled={disabled || busy}
@@ -485,11 +453,56 @@ const GalleryEditor = ({ hotel, disabled, onChanged, onCommitReady }: { hotel: a
                       </button>
                     </div>
                   </div>
-                ))
-            )}
+                )
+              })}
+
+            {/* Newly uploaded file previews */}
+            {previewUrls.map((preview, index) => {
+              const isSelectedCover = pendingPreviewCoverIndex === index
+
+              return (
+                <div key={`${preview.name}-${index}`} className="aspect-square rounded-lg bg-secondary/50 border border-border relative overflow-hidden group">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={preview.url} alt={preview.name} className="h-full w-full object-cover" />
+                  <span className="absolute left-1 top-1 rounded-full bg-emerald-500 text-black text-[10px] font-semibold px-1.5 py-0.5">
+                    New
+                  </span>
+                  {isSelectedCover && (
+                    <span className="absolute right-1 top-1 rounded-full bg-amber-500 text-black text-[10px] font-semibold px-1.5 py-0.5 flex items-center gap-1">
+                      <Star className="h-3 w-3 fill-black text-black" />
+                      Cover
+                    </span>
+                  )}
+                  <div className="absolute inset-x-1 top-1 flex items-center justify-end gap-1 opacity-100 transition">
+                    <button
+                      disabled={disabled || busy}
+                      onClick={() => {
+                        setPreviewCover(index)
+                        setPendingCoverId(null)
+                      }}
+                      className={cn(
+                        'h-6 w-6 rounded-full border border-white/20 flex items-center justify-center transition',
+                        isSelectedCover ? 'bg-amber-500 text-black' : 'bg-black/70 text-white hover:bg-black/90',
+                      )}
+                      title="Set as cover"
+                    >
+                      <Star className={cn('h-3.5 w-3.5', isSelectedCover ? 'fill-black text-black' : 'text-white')} />
+                    </button>
+                    <button
+                      disabled={disabled || busy}
+                      onClick={() => removePreview(index)}
+                      className="h-6 w-6 rounded-full bg-black/70 text-white flex items-center justify-center"
+                      title="Remove preview"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
 
-          {previewUrls.length === 0 && images.length === 0 && (
+          {previewUrls.length === 0 && images.filter((img: any) => !pendingRemoveIds.includes(img.id)).length === 0 && (
             <div className="aspect-video rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 bg-secondary/20">
               <Camera className="h-8 w-8 text-muted-foreground" />
               <p className="text-sm font-medium">No photos yet</p>

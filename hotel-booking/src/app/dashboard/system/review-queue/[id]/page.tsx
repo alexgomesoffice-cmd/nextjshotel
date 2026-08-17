@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Check, X, FileText } from 'lucide-react'
+import { ArrowLeft, Check, X, FileText, ExternalLink, ImageIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface FieldChange {
@@ -28,25 +28,161 @@ interface CaseDetail {
   updatedAt: string
   fields: FieldChange[]
   documents: { document_type: string; file_url: string }[]
+  amenitiesMap?: Record<number, string>
 }
 
 const SECTION_TITLE: Record<string, string> = {
   HOTEL: 'Hotel', HOTEL_OWNER: 'Owner', HOTEL_ADMIN: 'Hotel Admin',
   HOTEL_IMAGE: 'Gallery', HOTEL_DOCUMENT: 'Documents', AMENITY: 'Amenities',
   POLICY: 'Policies',
-  // ROOM_TYPE/ROOM_TYPE_IMAGE/ROOM_FACILITY/ROOM_DETAIL removed — Room
-  // Type/Variant/Physical Room management is direct Hotel Admin CRUD now,
-  // never case-reviewed, so these entity types can never appear here.
 }
 
-function displayValue(v: string | null) {
-  if (v === null || v === '') return null
-  try {
-    const parsed = JSON.parse(v)
-    return typeof parsed === 'object' ? JSON.stringify(parsed) : String(parsed)
-  } catch {
-    return v
+function renderDiffValue(
+  field: FieldChange,
+  rawValue: string | null,
+  isProposed: boolean,
+  amenitiesMap: Record<number, string> = {}
+) {
+  if (rawValue === null || rawValue === '' || rawValue === undefined) {
+    return <em className="italic text-muted-foreground/60">(empty)</em>
   }
+
+  let parsed: any = null
+  try {
+    parsed = JSON.parse(rawValue)
+  } catch {
+    parsed = rawValue
+  }
+
+  // 1. HOTEL_IMAGE
+  if (field.entityType === 'HOTEL_IMAGE') {
+    const images: Array<{ image_url?: string; is_cover?: boolean; sort_order?: number }> = Array.isArray(parsed)
+      ? parsed
+      : typeof parsed === 'object' && parsed !== null && parsed.image_url
+      ? [parsed]
+      : typeof rawValue === 'string' && (rawValue.startsWith('/') || rawValue.startsWith('http'))
+      ? [{ image_url: rawValue, is_cover: field.fieldName === 'is_cover' }]
+      : []
+
+    if (images.length > 0) {
+      return (
+        <div className="flex flex-wrap gap-2 py-1">
+          {images.map((img, i) => (
+            <div key={i} className="group relative h-20 w-28 overflow-hidden rounded-md border border-border/60 bg-muted/40 shadow-sm">
+              {img.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={img.image_url} alt={`Preview ${i + 1}`} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">No URL</div>
+              )}
+              {img.is_cover && (
+                <span className="absolute left-1 top-1 rounded bg-amber-500/90 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-white shadow">
+                  Cover
+                </span>
+              )}
+              {img.image_url && (
+                <a
+                  href={img.image_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <ExternalLink className="h-4 w-4 text-white" />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    if (field.fieldName === 'is_cover') {
+      const isCover = parsed === true || rawValue === 'true'
+      return (
+        <span className={cn('inline-flex items-center gap-1 font-semibold text-xs', isCover ? 'text-amber-500' : 'text-muted-foreground')}>
+          {isCover ? '⭐ Set as Cover Image' : 'Not Cover'}
+        </span>
+      )
+    }
+
+    if (field.fieldName === 'deleted') {
+      return <span className="font-semibold text-xs text-red-500">Deleted</span>
+    }
+  }
+
+  // 2. HOTEL_DOCUMENT
+  if (field.entityType === 'HOTEL_DOCUMENT') {
+    const docs: Array<{ document_type?: string; file_url?: string }> = Array.isArray(parsed)
+      ? parsed
+      : typeof parsed === 'object' && parsed !== null
+      ? [parsed]
+      : typeof rawValue === 'string' && (rawValue.startsWith('/') || rawValue.startsWith('http'))
+      ? [{ document_type: 'DOCUMENT', file_url: rawValue }]
+      : []
+
+    if (docs.length > 0) {
+      return (
+        <div className="flex flex-col gap-2 py-1">
+          {docs.map((doc, i) => {
+            const typeLabel = (doc.document_type || 'DOCUMENT').replace(/_/g, ' ')
+            return (
+              <div key={i} className="flex items-center justify-between gap-2 rounded-md border border-border/60 bg-card p-2 text-xs">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileText className="h-4 w-4 text-blue-500 shrink-0" />
+                  <span className="font-semibold truncate">{typeLabel}</span>
+                </div>
+                {doc.file_url ? (
+                  <a
+                    href={doc.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 font-medium text-xs text-primary hover:bg-primary/20 transition-colors shrink-0"
+                  >
+                    <ExternalLink className="h-3 w-3" /> View / Download
+                  </a>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">(No URL)</span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )
+    }
+  }
+
+  // 3. AMENITY
+  if (field.entityType === 'AMENITY' && field.fieldName === 'selection') {
+    const ids: number[] = Array.isArray(parsed) ? parsed : typeof parsed === 'number' ? [parsed] : []
+    if (ids.length === 0) {
+      return <em className="italic text-muted-foreground/60">(no amenities selected)</em>
+    }
+    return (
+      <div className="flex flex-wrap gap-1.5 py-1">
+        {ids.map((id) => (
+          <span key={id} className="inline-flex items-center gap-1 rounded-sm border border-border/80 bg-secondary/80 px-2 py-0.5 text-xs font-medium">
+            {amenitiesMap[id] || `Amenity #${id}`}
+          </span>
+        ))}
+      </div>
+    )
+  }
+
+  // 4. URL string check
+  if (typeof rawValue === 'string' && (rawValue.startsWith('http://') || rawValue.startsWith('https://'))) {
+    return (
+      <a href={rawValue} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-primary underline hover:opacity-80">
+        {rawValue} <ExternalLink className="h-3 w-3 shrink-0" />
+      </a>
+    )
+  }
+
+  // 5. Default text output
+  if (typeof parsed === 'object' && parsed !== null) {
+    return <pre className="whitespace-pre-wrap font-mono text-xs">{JSON.stringify(parsed, null, 2)}</pre>
+  }
+
+  return <span className="whitespace-pre-wrap text-xs">{String(parsed)}</span>
 }
 
 function formatRelative(iso: string) {
@@ -207,11 +343,11 @@ export default function CaseReviewPage() {
                             </div>
                           )}
                         </div>
-                        <div className="border-r border-border/40 bg-red-500/[0.04] px-3 py-2 font-mono text-xs text-muted-foreground">
-                          {displayValue(f.previousValue) ?? <em className="italic">(empty)</em>}
+                        <div className="border-r border-border/40 bg-red-500/[0.04] px-3 py-2 text-xs text-muted-foreground">
+                          {renderDiffValue(f, f.previousValue, false, c.amenitiesMap)}
                         </div>
-                        <div className={cn('bg-emerald-500/[0.06] px-3 py-2 font-mono text-xs', isRejected ? 'text-muted-foreground line-through' : 'text-emerald-500')}>
-                          {displayValue(f.proposedValue) ?? <em className="italic">(empty)</em>}
+                        <div className={cn('bg-emerald-500/[0.06] px-3 py-2 text-xs', isRejected ? 'text-muted-foreground line-through' : 'text-emerald-500')}>
+                          {renderDiffValue(f, f.proposedValue, true, c.amenitiesMap)}
                         </div>
                         <div className="flex items-center gap-1 px-2 py-2">
                           {!readOnly && (

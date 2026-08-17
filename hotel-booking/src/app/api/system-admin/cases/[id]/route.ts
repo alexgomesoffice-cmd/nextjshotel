@@ -38,6 +38,12 @@ export async function GET(req: NextRequest, { params }: Params) {
       rejectionReason: fc.rejection_reason,
     }))
 
+    const amenitiesList = await prisma.amenities.findMany({ select: { id: true, name: true } })
+    const amenitiesMap: Record<number, string> = {}
+    for (const a of amenitiesList) {
+      amenitiesMap[a.id] = a.name
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -50,6 +56,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         updatedAt: c.updated_at,
         fields,
         documents: c.hotel.documents,
+        amenitiesMap,
       },
     })
   } catch (error) {

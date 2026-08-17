@@ -31,9 +31,16 @@ export const VariantCard = ({
   const [editOpen, setEditOpen] = useState(false)
   const cover = variant.variant_images?.find((i: any) => i.is_cover) ?? variant.variant_images?.[0]
 
+  // Filter out any facility that duplicates bed type information
+  const bedNames = (variant.bed_types ?? []).map((b: any) => b.bed_type?.name?.toLowerCase() ?? '')
+  const filteredFacilities = (variant.facilities ?? []).filter((f: any) => {
+    const fName = f.facility?.name?.toLowerCase() ?? ''
+    return !bedNames.some((bName: string) => bName && fName.includes(bName))
+  })
+
   return (
     <Card className="overflow-hidden border border-border/80 bg-card shadow-sm hover:border-border transition-colors">
-      <div className="p-4 sm:p-5 space-y-4">
+      <div className="p-5 space-y-4">
         {/* Top Section: Variant details & image */}
         <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
           <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -49,9 +56,9 @@ export const VariantCard = ({
                 <h3 className="font-bold text-base text-foreground tracking-tight">{variantLabel(variant)}</h3>
               </div>
 
-              {variant.facilities && variant.facilities.length > 0 && (
+              {filteredFacilities.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {variant.facilities.map((f: any) => (
+                  {filteredFacilities.map((f: any) => (
                     <span
                       key={f.facility.id}
                       className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-secondary/80 text-secondary-foreground border border-border/40"
@@ -62,42 +69,48 @@ export const VariantCard = ({
                 </div>
               )}
 
-              <div className="flex items-center gap-3 text-xs text-muted-foreground pt-0.5">
-                <span className="font-bold text-sm text-foreground">
-                  ৳{Number(variant.price).toLocaleString()}
-                  <span className="font-normal text-xs text-muted-foreground"> / night</span>
-                </span>
-                {variant.max_occupancy && <span>• {variant.max_occupancy} guests</span>}
-                {variant.room_size && <span>• {variant.room_size} sq ft</span>}
+              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-0.5">
+                {variant.max_occupancy && <span>{variant.max_occupancy} guests</span>}
+                {variant.max_occupancy && variant.room_size && <span>•</span>}
+                {variant.room_size && <span>{variant.room_size} sq ft</span>}
               </div>
             </div>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
-            <Button variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setEditOpen(true)}>
-              <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-3.5 w-3.5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setImageDialogOpen(true)}>
-                  <ImageIcon className="h-3.5 w-3.5 mr-2" /> Manage Photos
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={onDelete}
-                  disabled={variant.room_details.length > 0}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-2" />
-                  {variant.room_details.length > 0 ? 'Delete unavailable with rooms' : 'Delete Room Variant'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          {/* Right Section: Price & Actions */}
+          <div className="flex sm:flex-col items-end justify-between sm:justify-start gap-3 shrink-0 w-full sm:w-auto">
+            <div className="text-left sm:text-right">
+              <div className="text-lg font-bold text-foreground tracking-tight">
+                ৳{Number(variant.price).toLocaleString()}
+                <span className="text-xs font-normal text-muted-foreground"> / night</span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setEditOpen(true)}>
+                <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setImageDialogOpen(true)}>
+                    <ImageIcon className="h-3.5 w-3.5 mr-2" /> Manage Photos
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={onDelete}
+                    disabled={variant.room_details.length > 0}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                    {variant.room_details.length > 0 ? 'Delete unavailable with rooms' : 'Delete Room Variant'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
 
@@ -116,7 +129,7 @@ export const VariantCard = ({
           </div>
 
           {variant.room_details.length === 0 ? (
-            <p className="text-xs text-muted-foreground py-1">No physical rooms assigned to this configuration yet.</p>
+            <p className="text-xs text-muted-foreground py-1">No physical rooms in this configuration yet.</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {variant.room_details.map((r: any) => (

@@ -97,9 +97,9 @@ export default function RoomTypeDetailPage() {
           </div>
         </div>
         <div className="space-y-1 rounded-md border border-border/60 bg-secondary/80 p-4 text-sm">
-          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Variants</p>
+          <p className="text-xs uppercase text-muted-foreground">Variants</p>
           <p className="text-lg font-semibold">{totals.variants}</p>
-          <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Physical Rooms</p>
+          <p className="text-xs uppercase text-muted-foreground">Physical Rooms</p>
           <p className="text-lg font-semibold">{totals.rooms}</p>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function RoomTypeDetailPage() {
           <section className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Variants</p>
+                <p className="text-xs uppercase text-muted-foreground">Variants</p>
                 <h2 className="text-lg font-semibold">Configuration details and physical rooms</h2>
               </div>
             </div>
@@ -227,7 +227,7 @@ export default function RoomTypeDetailPage() {
                           </div>
 
                           <div className="rounded-md border border-border/60 bg-secondary/80 p-4">
-                            <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">Physical Rooms</p>
+                            <p className="text-xs uppercase text-muted-foreground">Physical Rooms</p>
                             {variant.room_details.length === 0 ? (
                               <p className="mt-3 text-sm text-muted-foreground">No physical rooms found.</p>
                             ) : (

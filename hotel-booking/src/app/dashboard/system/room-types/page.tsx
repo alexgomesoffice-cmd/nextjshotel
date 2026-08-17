@@ -141,15 +141,15 @@ export default function SystemAdminRoomTypesPage() {
 
                 <div className="grid gap-2 sm:grid-cols-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Room Types</p>
+                    <p className="text-xs uppercase text-muted-foreground">Room Types</p>
                     <p className="text-sm font-semibold">{hotel.room_type_count}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Variants</p>
+                    <p className="text-xs uppercase text-muted-foreground">Variants</p>
                     <p className="text-sm font-semibold">{hotel.variant_count}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Physical Rooms</p>
+                    <p className="text-xs uppercase text-muted-foreground">Rooms</p>
                     <p className="text-sm font-semibold">{hotel.room_count}</p>
                   </div>
                 </div>

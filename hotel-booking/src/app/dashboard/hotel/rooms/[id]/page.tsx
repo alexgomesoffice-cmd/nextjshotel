@@ -84,47 +84,95 @@ export default function RoomTypeDetailPage() {
   if (!roomType) return null
 
   const allRooms = roomType.room_variants.flatMap((v: any) => v.room_details)
+  const coverImage = roomType.type_images?.find((i: any) => i.is_cover) ?? roomType.type_images?.[0]
 
   return (
     <div className="space-y-6">
-      <Link href="/dashboard/hotel/rooms" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ChevronLeft className="h-4 w-4" /> Rooms
-      </Link>
+      {/* A. Breadcrumb Navigation */}
+      <div>
+        <Link href="/dashboard/hotel/rooms" className="inline-flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+          <ChevronLeft className="h-4 w-4" /> Rooms
+        </Link>
+      </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">{roomType.name}</h1>
-            <Badge variant={roomType.is_active ? 'default' : 'secondary'}>{roomType.is_active ? 'Active' : 'Inactive'}</Badge>
-          </div>
-          <p className="text-muted-foreground text-sm mt-1 max-w-xl">{roomType.description}</p>
-          <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><Layers className="h-3.5 w-3.5" /> {roomType.room_variants.length} configuration{roomType.room_variants.length === 1 ? '' : 's'}</span>
-            <span className="inline-flex items-center gap-1"><DoorOpen className="h-3.5 w-3.5" /> {allRooms.length} room{allRooms.length === 1 ? '' : 's'}</span>
+      {/* B & C. Room Type Header Card */}
+      <div className="flex flex-col md:flex-row items-start justify-between gap-4 rounded-xl border border-border/80 bg-card p-5 shadow-sm">
+        <div className="flex items-start gap-4 min-w-0 flex-1">
+          {coverImage ? (
+            <div className="h-20 w-28 shrink-0 rounded-lg overflow-hidden border border-border/60 bg-secondary/30">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={coverImage.image_url} alt="" className="h-full w-full object-cover" />
+            </div>
+          ) : (
+            <div className="h-16 w-16 shrink-0 rounded-lg border border-border/60 bg-secondary/40 flex items-center justify-center text-muted-foreground">
+              <ImageIcon className="h-7 w-7 opacity-50" />
+            </div>
+          )}
+
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">{roomType.name}</h1>
+              <Badge variant={roomType.is_active ? 'default' : 'secondary'} className={roomType.is_active ? 'bg-emerald-500/15 text-emerald-500 border border-emerald-500/30' : ''}>
+                {roomType.is_active ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+
+            {roomType.description && (
+              <p className="text-sm text-muted-foreground mt-1 max-w-2xl leading-relaxed">{roomType.description}</p>
+            )}
+
+            <div className="flex items-center gap-3 mt-3 text-xs font-medium text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <Layers className="h-3.5 w-3.5 text-foreground/70" /> {roomType.room_variants.length} Variant{roomType.room_variants.length === 1 ? '' : 's'}
+              </span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1.5">
+                <DoorOpen className="h-3.5 w-3.5 text-foreground/70" /> {allRooms.length} Physical Room{allRooms.length === 1 ? '' : 's'}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={() => setImagesOpen(true)}><ImageIcon className="h-3.5 w-3.5 mr-2" /> Manage Images</Button>
-          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}><Pencil className="h-3.5 w-3.5 mr-2" /> Edit Room Type</Button>
-          <Button size="sm" onClick={() => setAddRoomOpen(true)}><Plus className="h-3.5 w-3.5 mr-2" /> Add Room</Button>
+
+        <div className="flex items-center gap-2 shrink-0 self-start md:self-auto">
+          <Button variant="outline" size="sm" onClick={() => setImagesOpen(true)}>
+            <ImageIcon className="h-3.5 w-3.5 mr-1.5" /> Manage Images
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setEditOpen(true)}>
+            <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit Room Type
+          </Button>
+          <Button size="sm" onClick={() => setAddRoomOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Room
+          </Button>
         </div>
       </div>
 
-      <div>
-        <h2 className="text-sm font-semibold">Room Variants</h2>
-        <p className="text-xs text-muted-foreground mb-3">Configurations of this room type are grouped below.</p>
+      {/* E. Room Variants Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Room Variants</h2>
+            <p className="text-xs text-muted-foreground">Unique configurations available for this room type</p>
+          </div>
+          <Button size="sm" variant="outline" onClick={() => setAddRoomOpen(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Room
+          </Button>
+        </div>
 
         {roomType.room_variants.length === 0 ? (
-          <Card>
+          <Card className="border-dashed">
             <CardContent className="py-12 text-center">
-              <DoorOpen className="h-6 w-6 text-muted-foreground mx-auto" />
-              <p className="text-sm font-medium mt-2">No room configurations yet</p>
-              <p className="text-xs text-muted-foreground mt-1">Create a physical room to automatically create the first configuration.</p>
-              <Button size="sm" className="mt-3" onClick={() => setAddRoomOpen(true)}><Plus className="h-3.5 w-3.5 mr-1.5" /> Add Room</Button>
+              <DoorOpen className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+              <p className="text-sm font-semibold">No room variants yet</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+                Add a physical room to automatically create the first configuration.
+              </p>
+              <Button size="sm" className="mt-4" onClick={() => setAddRoomOpen(true)}>
+                <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Room
+              </Button>
             </CardContent>
           </Card>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {roomType.room_variants.map((v: any) => (
               <VariantCard
                 key={v.id}

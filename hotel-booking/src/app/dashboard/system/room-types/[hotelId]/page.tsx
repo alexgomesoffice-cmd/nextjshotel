@@ -108,20 +108,20 @@ export default function HotelRoomTypesPage() {
           ) : hotel ? (
             <>
               <div className="space-y-1">
-                <p className="text-xs uppercase tracking-[0.24em] text-muted-foreground">{hotel.name}</p>
+                <p className="text-xl uppercase text-foreground">{hotel.name}</p>
                 <p className="text-sm text-muted-foreground">{hotel.detail?.description ?? 'No description available.'}</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-md border border-border/60 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.26em] text-muted-foreground">Room Types</p>
+                  <p className="text-[10px] uppercase text-muted-foreground">Room Types</p>
                   <p className="text-lg font-semibold">{totals.roomTypes}</p>
                 </div>
                 <div className="rounded-md border border-border/60 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.26em] text-muted-foreground">Variants</p>
+                  <p className="text-[10px] uppercase text-muted-foreground">Variants</p>
                   <p className="text-lg font-semibold">{totals.variants}</p>
                 </div>
                 <div className="rounded-md border border-border/60 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.26em] text-muted-foreground">Physical Rooms</p>
+                  <p className="text-[10px] uppercase text-muted-foreground">Physical Rooms</p>
                   <p className="text-lg font-semibold">{totals.rooms}</p>
                 </div>
               </div>

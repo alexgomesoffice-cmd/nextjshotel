@@ -98,38 +98,75 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: true, message: 'No changes', data: unchanged })
     }
 
-    const { resolvedVariant, isNewlyCreated } = await prisma.$transaction(async (tx) => {
-      const { variant: resolvedVariant, isNewlyCreated } = await findOrCreateVariant(tx, config)
+    // Check if another variant with the new signature already exists
+    const existingOtherVariant = await prisma.room_variants.findFirst({
+      where: {
+        room_type_id: variant.room_type_id,
+        signature_hash: newSignature,
+        id: { not: id },
+      },
+    })
 
-      await tx.room_details.updateMany({
-        where: { room_variant_id: id },
-        data: { room_variant_id: resolvedVariant.id },
-      })
+    const targetVariantId = await prisma.$transaction(async (tx) => {
+      if (existingOtherVariant) {
+        // Merge into the existing matching variant
+        await tx.room_details.updateMany({
+          where: { room_variant_id: id },
+          data: { room_variant_id: existingOtherVariant.id },
+        })
 
-      // Only carry images over when this produced a genuinely fresh
-      // variant — merging into someone else's pre-existing variant should
-      // never silently dump this variant's photos into that gallery.
-      if (isNewlyCreated) {
         await tx.room_images.updateMany({
           where: { room_variant_id: id },
-          data: { room_variant_id: resolvedVariant.id },
+          data: { room_variant_id: existingOtherVariant.id },
         })
-      }
 
-      return { resolvedVariant, isNewlyCreated }
+        // Remove the old variant to prevent empty orphaned duplicates
+        await tx.room_variants.delete({ where: { id } })
+
+        return existingOtherVariant.id
+      } else {
+        // Update current variant IN PLACE
+        await tx.room_variants.update({
+          where: { id },
+          data: {
+            signature_hash: newSignature,
+            price: config.price,
+            room_size: config.room_size ?? null,
+            max_occupancy: config.max_occupancy ?? null,
+          },
+        })
+
+        // Update facilities
+        await tx.room_variant_facilities.deleteMany({ where: { room_variant_id: id } })
+        if (config.facility_ids.length > 0) {
+          await tx.room_variant_facilities.createMany({
+            data: config.facility_ids.map((facility_id) => ({ room_variant_id: id, facility_id })),
+          })
+        }
+
+        // Update bed types
+        await tx.room_variant_bed_types.deleteMany({ where: { room_variant_id: id } })
+        if (config.bed_types.length > 0) {
+          await tx.room_variant_bed_types.createMany({
+            data: config.bed_types.map((b) => ({ room_variant_id: id, bed_type_id: b.bed_type_id, count: b.count })),
+          })
+        }
+
+        return id
+      }
     })
 
     await logHotelAdminActivity({
       hotelId, actorId: hotelAdminId, actorType: 'HOTEL_ADMIN',
       action: 'variant.reconfigured', entityType: 'room_variants', entityId: id,
-      metadata: { from_variant_id: id, to_variant_id: resolvedVariant.id, matched_existing_variant: !isNewlyCreated },
+      metadata: { from_variant_id: id, to_variant_id: targetVariantId },
     })
 
-    const updated = await prisma.room_variants.findUnique({ where: { id: resolvedVariant.id }, include: VARIANT_INCLUDE })
+    const updated = await prisma.room_variants.findUnique({ where: { id: targetVariantId }, include: VARIANT_INCLUDE })
 
     return NextResponse.json({
       success: true,
-      message: isNewlyCreated ? 'Configuration updated' : 'Configuration updated — merged into an existing matching variant',
+      message: existingOtherVariant ? 'Configuration updated — merged into an existing matching variant' : 'Configuration updated successfully',
       data: updated,
     })
   } catch (error) {

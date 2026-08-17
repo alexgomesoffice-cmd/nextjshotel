@@ -104,52 +104,111 @@ export const AmenityChanges = ({ changes, canDiscard, onDiscard }: { changes: FC
 }
 
 /* ---- Gallery: thumbnail previews, added vs removed ---- */
-export const GalleryChanges = ({ changes, canDiscard, onDiscard }: { changes: FC[]; canDiscard: boolean; onDiscard: (id: number) => void }) => (
-  <div className="space-y-3">
-    {changes.map((fc) => {
-      const isDeletion = fc.field_name === 'deleted'
-      const parsed = safeParse(fc.proposed_value)
-      const proposedItems = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : [])
-      const urls = isDeletion
-        ? [fc.previous_value]
-        : proposedItems.map((item: any) => typeof item === 'string' ? item : item?.image_url).filter(Boolean)
+export const GalleryChanges = ({ changes, canDiscard, onDiscard }: { changes: FC[]; canDiscard: boolean; onDiscard: (id: number) => void }) => {
+  const nonDeletions = changes.filter((fc) => fc.field_name !== 'deleted')
+  const deletions = changes.filter((fc) => fc.field_name === 'deleted')
 
-      return (
-        <div key={fc.id} className="relative rounded-xl overflow-hidden border border-border/60">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2 bg-secondary/20">
-            {urls.map((url, index) => (
-              <div key={`${fc.id}-${index}`} className="relative aspect-video rounded-lg overflow-hidden border border-border/40 bg-secondary/50">
-                {url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={url} alt="" className={`h-full w-full object-cover ${isDeletion ? 'opacity-40 grayscale' : ''}`} />
-                )}
-                {!isDeletion && proposedItems[index]?.is_cover && (
-                  <span className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-500 text-black">
-                    Cover
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center justify-between px-2 pb-2 pt-1">
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isDeletion ? 'bg-destructive/80 text-white' : 'bg-green-500/80 text-white'}`}>
-              {isDeletion ? 'Removing' : `Adding ${urls.length}`}
-            </span>
-            <div className="flex items-center gap-2">
+  return (
+    <div className="space-y-3">
+      {/* 1. Uploading / Cover pending changes on top */}
+      {nonDeletions.map((fc) => {
+        const parsed = safeParse(fc.proposed_value)
+        const proposedItems = Array.isArray(parsed) ? parsed : (parsed ? [parsed] : [])
+        const items = proposedItems.map((item: any) => typeof item === 'string' ? { url: item, is_cover: false } : { url: item?.image_url, is_cover: !!item?.is_cover }).filter((x: any) => x.url)
+
+        return (
+          <div key={fc.id} className="relative rounded-xl overflow-hidden border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                Adding {items.length} photo{items.length === 1 ? '' : 's'}
+              </span>
               <FieldReviewBadge state={fc.status} />
-              {canDiscard && (
-                <button onClick={() => onDiscard(fc.id)} className="h-5 w-5 rounded-full bg-black/60 text-white flex items-center justify-center">
-                  <X className="h-3 w-3" />
-                </button>
-              )}
             </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+              {items.map((item: any, index: number) => (
+                <div key={`${fc.id}-${index}`} className="group relative aspect-video rounded-lg overflow-hidden border border-border/60 bg-secondary/50">
+                  {item.url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={item.url} alt="" className="h-full w-full object-cover group-hover:opacity-75 transition-opacity" />
+                  )}
+                  {item.is_cover ? (
+                    <span className="absolute top-1.5 left-1.5 text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-amber-500 text-black shadow-sm">
+                      Cover
+                    </span>
+                  ) : (
+                    <span className="absolute bottom-1 left-1 rounded bg-emerald-600/90 px-1.5 py-0.5 text-[9px] font-medium text-white">
+                      Adding
+                    </span>
+                  )}
+
+                  {canDiscard && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => onDiscard(fc.id)}
+                        className="h-8 w-8 rounded-full bg-destructive text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                        title="Remove pending upload"
+                      >
+                        <X className="h-4 w-4 stroke-[2.5]" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {fc.rejection_reason && <p className="text-xs text-destructive pt-1">{fc.rejection_reason}</p>}
           </div>
-          {fc.rejection_reason && <p className="text-xs text-destructive px-2 pb-2">{fc.rejection_reason}</p>}
+        )
+      })}
+
+      {/* 2. Grouped image deletions in a single grid card */}
+      {deletions.length > 0 && (
+        <div className="relative rounded-xl overflow-hidden border border-destructive/30 bg-destructive/5 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-destructive flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+              Removing {deletions.length} photo{deletions.length === 1 ? '' : 's'}
+            </span>
+            <FieldReviewBadge state={deletions[0]?.status ?? 'PENDING'} />
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {deletions.map((fc) => {
+              const url = fc.previous_value
+              return (
+                <div key={fc.id} className="group relative aspect-video rounded-lg overflow-hidden border border-border/60 bg-secondary/50">
+                  {url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={url} alt="Deleted photo" className="h-full w-full object-cover opacity-40 grayscale group-hover:opacity-60 transition-opacity" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">Image</div>
+                  )}
+                  
+                  <span className="absolute bottom-1 left-1 rounded bg-destructive/90 px-1.5 py-0.5 text-[9px] font-medium text-white">
+                    Removing
+                  </span>
+
+                  {canDiscard && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => onDiscard(fc.id)}
+                        className="h-8 w-8 rounded-full bg-destructive text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                        title="Cancel photo deletion"
+                      >
+                        <X className="h-4 w-4 stroke-[2.5]" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
         </div>
-      )
-    })}
-  </div>
-)
+      )}
+    </div>
+  )
+}
 
 /* ---- Policies: proposed / removed policy cards ---- */
 export const PolicyChanges = ({ changes, canDiscard, onDiscard }: { changes: FC[]; canDiscard: boolean; onDiscard: (id: number) => void }) => (

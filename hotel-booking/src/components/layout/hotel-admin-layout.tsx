@@ -165,7 +165,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
           </button>
         </div>
 
-        <nav className="flex-1 space-y-4 overflow-y-auto p-3">
+        <nav className="flex-1 space-y-4 overflow-y-auto p-3 custom-scrollbar"data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch>
           {groups.map((group) => (
             <div key={group.label || 'misc'}>
               {sidebarOpen && group.label && (

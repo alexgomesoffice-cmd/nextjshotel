@@ -143,8 +143,8 @@ export default function HotelWorkspacePage() {
             <div className="grid grid-cols-3 gap-3">
               {[
                 ['Status', STATUS_LABEL[hotel.approval_status]],
-                ['Hotel Type', hotel.hotel_type?.name ?? '—'],
-                ['Star Rating', d?.star_rating ?? '—'],
+                ['Hotel Type', hotel.hotel_type?.name ?? '-'],
+                ['Star Rating', d?.star_rating ?? '-'],
               ].map(([label, value]) => (
                 <div key={label} className="rounded-md border border-border/60 p-3">
                   <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
@@ -176,7 +176,7 @@ export default function HotelWorkspacePage() {
                   </button>
                 </div>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  This only locks Hotel Admin's own editing — your edits below still go live immediately.
+                  This only locks Hotel Admin's own editing - your edits below still go live immediately.
                 </p>
               </div>
             )}

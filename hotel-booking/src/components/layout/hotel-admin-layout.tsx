@@ -7,6 +7,7 @@ import {
   Hotel, LayoutDashboard, BedDouble, Calendar, DollarSign,
   MessageSquare, Settings, LogOut, Menu, X, Bell, Users, ClipboardList,
   UserCog, Sparkles, PackagePlus, Activity,
+  Building,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -181,7 +182,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
                       key={item.path}
                       href={item.path}
                       className={cn(
-                        'group flex items-center gap-3 rounded-lg px-3 py-2 transition-all',
+                        'group flex items-center gap-2 rounded-lg px-3 py-1.5 transition-all',
                         active
                           ? 'border border-green-500/20 bg-gradient-to-r from-green-500/15 to-emerald-500/10 text-foreground'
                           : ' hover:bg-secondary hover:text-foreground',
@@ -229,7 +230,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
                 <Menu className="h-5 w-5" />
               </button>
               <div className="hidden items-center gap-2 text-sm sm:flex">
-                <Sparkles className="h-4 w-4 text-green-500" />
+                <Building className="h-4 w-4 text-green-500" />
                 <span className="text-muted-foreground">{hotelName ?? '—'}</span>
               </div>
             </div>
@@ -248,9 +249,9 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
                   <span className="text-xs font-semibold text-primary-foreground">{initials}</span>
                 </div>
                 <div className="hidden sm:block">
-                  <p className="text-sm font-medium leading-tight">{user?.name ?? '—'}</p>
+                  <p className="text-sm font-medium leading-tight pb-1">{user?.name}</p>
                   <p className="text-xs leading-tight text-muted-foreground">
-                    {user?.email ? 'General Manager' : ''}
+                    {user?.email }
                   </p>
                 </div>
               </div>

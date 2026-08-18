@@ -20,7 +20,7 @@ const STATUS_STYLES: Record<string, string> = {
 }
 
 const ROOM_STATUSES = [
-  { value: 'AVAILABLE', label: 'Available', hint: 'Ready to sell' },
+  { value: 'AVAILABLE', label: 'Available', hint: 'Ready to Book' },
   { value: 'BOOKED', label: 'Booked', hint: 'Reserved for a guest' },
   { value: 'CHECKED_IN', label: 'Checked in', hint: 'Guest currently staying' },
   { value: 'CHECKED_OUT', label: 'Checked out', hint: 'Guest has departed' },

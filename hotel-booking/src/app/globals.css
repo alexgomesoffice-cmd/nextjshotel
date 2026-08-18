@@ -143,32 +143,46 @@
     @apply scale-[1.02];
   }
 
-  /* Hide scrollbar but keep scrollability */
+  /* =========================
+     HIDE SCROLLBAR
+  ========================= */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
 
-  /* Custom styled scrollbar */
+  /* =========================
+     CUSTOM GREY SCROLLBAR
+  ========================= */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--color-primary) / 0.5) transparent;
+    scrollbar-color: #8b9099 transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
+    width: 10px;
+    height: 10px;
   }
+
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--color-primary) / 0.5);
-    border-radius: 3px;
+    background: #8b9099;
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
+
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--color-primary) / 0.8);
+    background: #a6abb3;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 }
 
@@ -280,21 +294,45 @@
   opacity: 0;
 }
 
-/* Scrollbar */
+/* =========================
+   GLOBAL SCROLLBAR
+========================= */
+
+/* Firefox */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: #8b9099 transparent;
+}
+
+/* Chrome / Edge / Safari */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
+/* Transparent track */
 ::-webkit-scrollbar-track {
-  background: hsl(var(--color-background));
+  background: transparent;
 }
 
+/* Thin rounded grey thumb */
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--color-secondary));
-  border-radius: 4px;
+  background: #8b9099;
+  border-radius: 999px;
+
+  /* Creates the inset/floating appearance */
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
+/* Hover */
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--color-muted-foreground));
+  background: #a6abb3;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Scrollbar corner */
+::-webkit-scrollbar-corner {
+  background: transparent;
 }

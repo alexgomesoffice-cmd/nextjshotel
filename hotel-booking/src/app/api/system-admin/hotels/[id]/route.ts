@@ -13,22 +13,33 @@ export async function GET(req: NextRequest, { params }: Params) {
     if (auth.error) return auth.error
 
     const { id } = await params
-    const hotelId = parseInt(id)
+    const hotelId = Number.parseInt(id, 10)
+    if (Number.isNaN(hotelId)) {
+      return NextResponse.json({ success: false, message: 'Invalid ID' }, { status: 400 })
+    }
 
     const hotel = await prisma.hotels.findUnique({
       where: { id: hotelId, deleted_at: null },
       include: {
         detail: true,
-        city: true,
-        hotel_type: true,
+        city: { select: { id: true, name: true } },
+        hotel_type: { select: { id: true, name: true } },
         hotel_admin: {
-          select: { name: true, email: true, is_active: true, is_blocked: true },
+          select: {
+            id: true, name: true, email: true, is_active: true, is_blocked: true,
+            detail: { select: { phone: true, address: true, manager_name: true, manager_phone: true, emergency_contact1: true, emergency_contact2: true } },
+          },
         },
-        owner_detail: true,
-        documents: true,
-        images: {
-          orderBy: { sort_order: 'asc' },
+        owner_detail: {
+          include: { images: { where: { is_active: true }, orderBy: { created_at: 'desc' } } },
         },
+        documents: { orderBy: { created_at: 'desc' } },
+        images: { orderBy: [{ is_cover: 'desc' }, { sort_order: 'asc' }, { created_at: 'asc' }] },
+        hotel_amenities: {
+          include: { amenity: true },
+          orderBy: { amenity: { name: 'asc' } },
+        },
+        policies: { where: { deleted_at: null }, orderBy: [{ is_active: 'desc' }, { name: 'asc' }] },
         cases: {
           where: { status: 'PENDING' },
           include: { field_changes: { select: { id: true } } },
@@ -42,7 +53,46 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: false, message: 'Hotel not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, data: hotel })
+    const [roomTypes, bookingAggregate, bookingStatusRows] = await Promise.all([
+      prisma.room_types.findMany({
+        where: { hotel_id: hotelId },
+        select: {
+          id: true,
+          room_variants: {
+            select: {
+              id: true,
+              price: true,
+              _count: { select: { room_details: { where: { deleted_at: null } } } },
+            },
+          },
+        },
+      }),
+      prisma.user_bookings.aggregate({ where: { hotel_id: hotelId }, _count: { id: true }, _sum: { total_price: true } }),
+      prisma.user_bookings.groupBy({ by: ['status'], where: { hotel_id: hotelId }, _count: { id: true } }),
+    ])
+
+    const variantCount = roomTypes.reduce((sum, type) => sum + type.room_variants.length, 0)
+    const roomCount = roomTypes.reduce((sum, type) => sum + type.room_variants.reduce((variantSum, variant) => variantSum + variant._count.room_details, 0), 0)
+    const bookingsByStatus = Object.fromEntries(bookingStatusRows.map((row) => [row.status, row._count.id]))
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...hotel,
+        stats: {
+          room_type_count: roomTypes.length,
+          variant_count: variantCount,
+          room_count: roomCount,
+          amenity_count: hotel.hotel_amenities.length,
+          gallery_count: hotel.images.length,
+          document_count: hotel.documents.length,
+          policy_count: hotel.policies.length,
+          booking_count: bookingAggregate._count.id,
+          booking_value_total: bookingAggregate._sum.total_price ? Number(bookingAggregate._sum.total_price) : 0,
+          bookings_by_status: bookingsByStatus,
+        },
+      },
+    })
   } catch (error) {
     console.error('Failed to fetch hotel:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })

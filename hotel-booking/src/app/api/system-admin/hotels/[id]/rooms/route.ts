@@ -35,7 +35,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const data = roomTypes.map((rt: (typeof roomTypes)[number]) => {
       const roomCount = rt.room_variants.reduce((sum, variant) => sum + variant._count.room_details, 0)
-      const startingPrice = rt.room_variants.length ? Math.min(...rt.room_variants.map((variant) => Number(variant.price))) : null
+      const prices = rt.room_variants.map((variant) => Number(variant.price))
+      const minPrice = prices.length ? Math.min(...prices) : null
+      const maxPrice = prices.length ? Math.max(...prices) : null
       return {
         id: rt.id,
         name: rt.name,
@@ -43,7 +45,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         is_active: rt.is_active,
         variant_count: rt.room_variants.length,
         room_count: roomCount,
-        starting_price: startingPrice,
+        min_price: minPrice,
+        max_price: maxPrice,
         cover_image_url: rt.type_images?.[0]?.image_url ?? null,
       }
     })

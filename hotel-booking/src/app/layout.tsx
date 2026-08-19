@@ -2,6 +2,13 @@ import { Toaster } from 'sonner'
 import "@/app/globals.css"
 import SmoothScroll from '@/components/ui/SmoothScroll'
 import { SocketProvider } from '@/hooks/useSocket'
+import type { Metadata } from "next";
+
+
+
+export const metadata: Metadata = {
+  title: "GhuriBangla"
+};
 
 export default function RootLayout({
   children,

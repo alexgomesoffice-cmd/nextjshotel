@@ -25,6 +25,7 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<AuthUser | null>(null)
   const pathname = usePathname()
+  const isHome = pathname === '/'
   const router = useRouter()
   const { toast } = useToast()
   const { theme, toggleTheme, isInitialized } = useTheme()
@@ -88,7 +89,9 @@ const Navbar = () => {
         'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
         isScrolled
           ? 'bg-background/80 backdrop-blur-xl border-b border-border/40 shadow-sm shadow-foreground/5'
-          : 'bg-background/30 backdrop-blur-md border-b border-transparent'
+          : isHome
+            ? 'bg-transparent border-b border-transparent'
+            : 'bg-background/30 backdrop-blur-md border-b border-transparent'
       )}
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -102,7 +105,7 @@ const Navbar = () => {
                 <Hotel className="h-6 w-6 text-primary-foreground" />
               </div>
             </div>
-            <span className="text-2xl font-bold text-linear-to-r">GhuriBangla</span>
+            <span className="text-2xl font-bold text-foreground">GhuriBangla</span>
           </Link>
 
           {/* Desktop nav links */}
@@ -113,7 +116,9 @@ const Navbar = () => {
                 href={link.path}
                 className={cn(
                   'relative text-sm font-medium transition-colors duration-300 hover:text-primary',
-                  pathname === link.path ? 'text-primary' : 'text-muted-foreground'
+                  pathname === link.path
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                 )}
               >
                 {link.name}
@@ -129,7 +134,7 @@ const Navbar = () => {
 
             <button
               onClick={toggleTheme}
-              className="relative p-2.5 rounded-xl glass transition-all duration-500 hover:scale-110 hover:bg-primary/10 group overflow-hidden flex items-center justify-center"
+              className="relative p-2.5 rounded-xl transition-all duration-500 hover:scale-110 group overflow-hidden flex items-center justify-center glass hover:bg-primary/10"
               aria-label="Toggle theme"
             >
               {isInitialized && (

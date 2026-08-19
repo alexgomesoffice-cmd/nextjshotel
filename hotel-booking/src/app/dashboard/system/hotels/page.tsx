@@ -6,6 +6,7 @@ import { Plus, Search } from 'lucide-react'
 import { OpsSectionHeader, OpsTable, OpsTh, OpsTd } from '@/components/admin/shared/primitives'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import Image from 'next/image'
 
 interface HotelRow {
   id: number
@@ -17,6 +18,7 @@ interface HotelRow {
   bookings30d: number
   revenue30d: number
   approval_status: 'UNPUBLISHED' | 'PUBLISHED' | 'SUSPENDED'
+  cover_image_url: string | null
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -86,7 +88,26 @@ export default function HotelsPage() {
                 className="cursor-pointer hover:bg-secondary/40"
                 onClick={() => router.push(`/dashboard/system/hotels/${r.id}`)}
               >
-                <OpsTd className="text-[13px] font-medium">{r.name}</OpsTd>
+                <OpsTd>
+  <div className="flex items-center gap-2.5">
+    {r.cover_image_url ? (
+      <Image
+        src={r.cover_image_url}
+        alt={r.name}
+        width={40}
+        height={40}
+        className="h-10 w-10 rounded-sm object-cover"
+      />
+    ) : (
+      <div className="h-10 w-10 rounded-sm bg-muted" />
+    )}
+
+    <span className="text-[13px] font-medium">
+      {r.name}
+    </span>
+  </div>
+</OpsTd>
+
                 <OpsTd className="text-xs text-muted-foreground">{r.city?.name ?? '—'}</OpsTd>
                 <OpsTd className="text-xs text-muted-foreground">{r.owner ?? '—'}</OpsTd>
                 <OpsTd className="text-xs text-muted-foreground">{r.hotelAdmin?.name ?? '—'}</OpsTd>

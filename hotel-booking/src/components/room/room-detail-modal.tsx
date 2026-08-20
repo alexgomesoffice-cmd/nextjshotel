@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { X, Cigarette, PawPrint, Check, Wind, Hash, Layers } from "lucide-react";
+import { X, Check, Hash, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getLenis } from "@/components/ui/SmoothScroll";
 
@@ -11,21 +11,24 @@ interface RoomImage {
   image_url: string;
 }
 
+type ResolvedPricing = {
+  basePrice: number;
+  effectivePrice: number;
+  discount: null | { ruleId: number; name: string; type: 'PERCENTAGE' | 'FIXED_AMOUNT'; value: number; amount: number };
+};
+
 export interface RoomDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   room: {
     id: number;
-    room_number: string;
-    floor: number | null;
-    price: number;
+    room_number?: string;
+    floor?: number | null;
+    pricing: ResolvedPricing;
     room_size: string | null;
-    ac: boolean;
-    smoking_allowed: boolean;
-    pet_allowed: boolean;
-    notes: string | null;
-    room_images: RoomImage[];
-    // Fallback type-level images if room has no own images
+    facilities: { name: string }[];
+    variant_images: RoomImage[];
+    // Fallback type-level images if the variant has no own images
     type_images?: RoomImage[];
     // Room type name for context
     room_type_name?: string;
@@ -54,13 +57,7 @@ const RoomDetailModal = ({ isOpen, onClose, room }: RoomDetailModalProps) => {
 
   if (!isOpen || !room) return null;
 
-  const images = room.room_images.length > 0 ? room.room_images : (room.type_images ?? []);
-
-  const features = [
-    { icon: <Wind className="h-4 w-4" />, label: "Air Conditioning", value: room.ac },
-    { icon: <Cigarette className="h-4 w-4" />, label: "Smoking Allowed", value: room.smoking_allowed },
-    { icon: <PawPrint className="h-4 w-4" />, label: "Pet Friendly", value: room.pet_allowed },
-  ];
+  const images = room.variant_images.length > 0 ? room.variant_images : (room.type_images ?? []);
 
   return (
     <div
@@ -149,38 +146,19 @@ const RoomDetailModal = ({ isOpen, onClose, room }: RoomDetailModalProps) => {
             )}
 
             {/* Features */}
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Room Features</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {features.map((f, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex items-center gap-3 p-3 rounded-xl border ${
-                      f.value
-                        ? "border-primary/30 bg-primary/5 text-primary"
-                        : "border-amber-500/30 bg-amber-500/5 text-amber-600 dark:text-amber-400"
-                    }`}
-                  >
-                    {f.icon}
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium leading-tight">{f.label}</p>
-                      <p className="text-xs opacity-70">{f.value ? "Yes" : "No"}</p>
-                    </div>
-                    {f.value ? (
-                      <Check className="h-3.5 w-3.5 ml-auto shrink-0" />
-                    ) : (
-                      <X className="h-3.5 w-3.5 ml-auto shrink-0 opacity-70" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Notes */}
-            {room.notes && (
-              <div className="p-4 rounded-xl bg-destructive/5 border border-destructive/20">
-                <p className="text-xs font-semibold uppercase tracking-wider text-destructive mb-1">Important Note</p>
-                <p className="text-sm text-foreground">{room.notes}</p>
+            {room.facilities.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3">Room Features</h3>
+                <div className="flex flex-wrap gap-2">
+                  {room.facilities.map((f) => (
+                    <span
+                      key={f.name}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-primary/30 bg-primary/5 text-primary text-xs font-medium"
+                    >
+                      <Check className="h-3.5 w-3.5" /> {f.name}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -190,7 +168,15 @@ const RoomDetailModal = ({ isOpen, onClose, room }: RoomDetailModalProps) => {
         <div className="p-6 border-t border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Price per night</p>
-            <p className="text-2xl font-bold text-foreground">TK {Number(room.price).toLocaleString()}</p>
+            {room.pricing.discount && (
+              <p className="text-sm text-muted-foreground line-through">TK {Number(room.pricing.basePrice).toLocaleString()}</p>
+            )}
+            <p className="text-2xl font-bold text-foreground">TK {Number(room.pricing.effectivePrice).toLocaleString()}</p>
+            {room.pricing.discount && (
+              <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                {room.pricing.discount.name}
+              </span>
+            )}
           </div>
           <Button onClick={onClose} size="lg">
             Done

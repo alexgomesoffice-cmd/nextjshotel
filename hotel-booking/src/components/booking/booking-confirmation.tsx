@@ -18,7 +18,7 @@ interface RoomBooking {
   nights: number;
   subtotal: number;
   room_type: { id: number; name: string };
-  room_detail: { id: number; room_number: string; floor: number | null; ac: boolean };
+  room_detail: { id: number; room_number: string; floor: number | null };
 }
 
 interface Booking {
@@ -152,7 +152,6 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
                     <p className="text-xs text-muted-foreground">
                       Room {rb.room_detail.room_number}
                       {rb.room_detail.floor ? ` · Floor ${rb.room_detail.floor}` : ""}
-                      {rb.room_detail.ac ? " · AC" : ""}
                     </p>
                   </div>
                 </div>

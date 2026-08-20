@@ -861,18 +861,47 @@ model room_images {
 // end_date — after which it reverts to room_variants.price automatically.
 // ═══════════════════════════════════════════════════════
 
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum PricingRuleStatus {
+  ACTIVE
+  PAUSED
+  // EXPIRED is intentionally NOT stored — a rule naturally stops applying
+  // once end_date passes. The resolver checks the date range at query
+  // time; "expired" is a derived, display-only state, never persisted.
+}
+
+// ═══════════════════════════════════════════════════════
+// PRICING RULES  (offers/discounts on a room variant's base price)
+// room_variants.price is the single source of truth for the undiscounted
+// nightly rate. A pricing_rule never stores a replacement price — only a
+// discount to apply against whatever the base price currently is. See
+// src/lib/pricing-resolver.ts for the actual resolution logic (highest-
+// priority ACTIVE rule whose date range covers the stay date wins — no
+// stacking). Direct Hotel Admin CRUD, NOT case-reviewed.
+// ═══════════════════════════════════════════════════════
+
 model pricing_rules {
-  id               Int           @id @default(autoincrement())
-  room_variant_id  Int
-  name             String?       @db.VarChar(150)
-  start_date       DateTime      @db.Date
-  end_date         DateTime      @db.Date
-  discounted_price Decimal       @db.Decimal(12, 2)
-  created_at       DateTime      @default(now())
-  room_variant     room_variants @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
+  id             Int               @id @default(autoincrement())
+  room_variant_id Int
+  name           String            @db.VarChar(150)
+  description    String?           @db.Text
+  discount_type  DiscountType
+  discount_value Decimal           @db.Decimal(12, 2) // percentage (0-100) or a fixed amount, per discount_type
+  status         PricingRuleStatus @default(ACTIVE)
+  priority       Int               @default(0) // higher wins when multiple rules apply to the same date
+  start_date     DateTime          @db.Date
+  end_date       DateTime          @db.Date
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+  room_variant   room_variants     @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
 
   @@index([room_variant_id])
   @@index([start_date, end_date])
+  @@index([status])
   @@map("pricing_rules")
 }
 
@@ -913,6 +942,10 @@ model user_bookings {
   @@map("user_bookings")
 }
 
+// price_per_night stays as an average (subtotal / nights) for quick
+// display in lists/receipts where a full breakdown isn't needed —
+// subtotal itself is always SUM(room_booking_nightly_rates.price), the
+// authoritative total. The real per-night snapshot lives below.
 model room_bookings {
   id              Int          @id @default(autoincrement())
   booking_id      Int
@@ -924,16 +957,46 @@ model room_bookings {
   subtotal        Decimal      @db.Decimal(12, 2)
   created_at      DateTime     @default(now())
 
-  booking      user_bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  room_type    room_types    @relation(fields: [room_type_id], references: [id])
-  room_variant room_variants @relation(fields: [room_variant_id], references: [id])
-  room_detail  room_details  @relation(fields: [room_detail_id], references: [id])
+  booking       user_bookings              @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  room_type     room_types                 @relation(fields: [room_type_id], references: [id])
+  room_variant  room_variants              @relation(fields: [room_variant_id], references: [id])
+  room_detail   room_details               @relation(fields: [room_detail_id], references: [id])
+  nightly_rates room_booking_nightly_rates[]
 
   @@index([booking_id])
   @@index([room_type_id])
   @@index([room_variant_id])
   @@index([room_detail_id])
   @@map("room_bookings")
+}
+
+// ═══════════════════════════════════════════════════════
+// ROOM BOOKING NIGHTLY RATES
+// One row per booked night, snapshotted from the pricing resolver at the
+// moment of booking. This is historical record — it must NEVER be
+// recalculated from current pricing_rules/room_variants.price later.
+// Pricing can change or a rule can be edited/deleted after the fact; this
+// table is what guarantees the guest's original price is preserved
+// exactly, regardless of what happens to pricing afterward.
+// ═══════════════════════════════════════════════════════
+
+model room_booking_nightly_rates {
+  id              Int      @id @default(autoincrement())
+  room_booking_id Int
+  stay_date       DateTime @db.Date
+  price           Decimal  @db.Decimal(12, 2)
+  // Snapshot of what produced this price, purely for admin transparency
+  // (e.g. showing "Weekend Special applied" on a past booking) — never
+  // read by any live calculation, only for display/audit.
+  pricing_rule_id   Int?
+  pricing_rule_name String?  @db.VarChar(150)
+  created_at        DateTime @default(now())
+
+  room_booking room_bookings @relation(fields: [room_booking_id], references: [id], onDelete: Cascade)
+
+  @@unique([room_booking_id, stay_date])
+  @@index([room_booking_id])
+  @@map("room_booking_nightly_rates")
 }
 
 // ═══════════════════════════════════════════════════════

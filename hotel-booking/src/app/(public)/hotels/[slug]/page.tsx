@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import * as LucideIcons from "lucide-react";
 import { MapPin, Star, CheckCircle2 } from "lucide-react";
 import {
@@ -12,7 +13,12 @@ import {
 import HotelImagesGalleryClient from "./hotel-images-client";
 import RoomSelector from "@/components/booking/room-selector";
 import ExpandableDescription from "@/components/hotel/expandable-description";
-import { groupRoomVariants } from "@/lib/room-grouping";
+import { resolvePriceForDate, type ResolvedPrice } from "@/lib/pricing-resolver";
+
+// Local type that satisfies resolvePriceForDate's PricingRuleLike parameter.
+// Derived from the Prisma payload shape — avoids `as any` while keeping the
+// call-site simple. Prisma.Decimal satisfies `Prisma.Decimal | number`.
+type PricingRulePayload = Prisma.pricing_rulesGetPayload<Record<string, never>>;
 
 // Force fresh DB read on every request — availability data must be live
 export const dynamic = 'force-dynamic';
@@ -21,14 +27,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const hotel = await prisma.hotels.findUnique({
     where: { slug },
-    select: { name: true, detail: { select: { short_description: true } } }
+    select: { name: true, detail: { select: { description: true } } }
   });
   
   if (!hotel) return { title: 'Hotel Not Found' };
   
   return {
     title: `${hotel.name} | GhuriBangla`,
-    description: hotel.detail?.short_description || `Book your stay at ${hotel.name} with GhuriBangla.`,
+    description: hotel.detail?.description || `Book your stay at ${hotel.name} with GhuriBangla.`,
   };
 }
 
@@ -73,6 +79,7 @@ export default async function HotelDetailPage({
 }) {
   const { slug } = await params;
   const search = await searchParams;
+  const pricingDate = search.check_in && !isNaN(new Date(search.check_in).getTime()) ? new Date(search.check_in) : new Date();
   
   const hotel = await prisma.hotels.findUnique({
     where: { 
@@ -92,48 +99,60 @@ export default async function HotelDetailPage({
           amenity: true
         }
       },
-      custom_amenities: {
-        where: { is_active: true }
+      // Active policies for the hotel — replaces the old cancellation_policy
+      // string that was removed from hotel_details.
+      policies: {
+        where: { is_active: true, deleted_at: null },
+        orderBy: { created_at: 'asc' },
+        select: { id: true, name: true, description: true },
       },
       room_types: {
         where: { is_active: true },
         include: {
-          room_details: {
-            where: buildRoomDetailWhere(),
-            include: {
-              room_images: {
-                orderBy: { sort_order: 'asc' }
-              },
-              room_trackers: {
-                where: {
-                  status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
-                  ...(search.check_in && search.check_out
-                    ? {
-                        check_in: { lt: new Date(search.check_out) },
-                        check_out: { gt: new Date(search.check_in) },
-                      }
-                    : {}),
-                },
-                select: {
-                  status: true,
-                  check_in: true,
-                  check_out: true,
-                },
-              },
-            }
-          },
-
           type_images: {
             orderBy: { sort_order: 'asc' }
           },
-          room_bed_types: {
-            include: {
-              bed_type: true
-            }
-          },
-          room_properties: {
+          room_type_amenities: {
             include: {
               amenity: true
+            }
+          },
+          room_variants: {
+            where: { is_active: true },
+            include: {
+              variant_images: {
+                orderBy: { sort_order: 'asc' }
+              },
+              facilities: {
+                include: { facility: true }
+              },
+              bed_types: {
+                include: { bed_type: true }
+              },
+              pricing_rules: {
+                where: { status: 'ACTIVE' }
+              },
+              room_details: {
+                where: buildRoomDetailWhere(),
+                include: {
+                  room_trackers: {
+                    where: {
+                      status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
+                      ...(search.check_in && search.check_out
+                        ? {
+                            check_in: { lt: new Date(search.check_out) },
+                            check_out: { gt: new Date(search.check_in) },
+                          }
+                        : {}),
+                    },
+                    select: {
+                      status: true,
+                      check_in: true,
+                      check_out: true,
+                    },
+                  },
+                }
+              },
             }
           }
         }
@@ -145,16 +164,12 @@ export default async function HotelDetailPage({
     notFound();
   }
 
-  const allAmenities = [
-    ...(hotel.hotel_amenities || []).map((ha) => ({
-      name: ha.amenity.name,
-      icon: ha.amenity.icon,
-    })),
-    ...(hotel.custom_amenities || []).map((ca) => ({
-      name: ca.name,
-      icon: ca.icon,
-    }))
-  ];
+  // hotel_amenities is the only amenity source in the current schema.
+  // custom_amenities no longer exists — it was removed in the redesign.
+  const allAmenities = (hotel.hotel_amenities ?? []).map((ha) => ({
+    name: ha.amenity.name,
+    icon: ha.amenity.icon,
+  }));
 
   return (
     <div className="min-h-screen bg-background pt-24 pb-20">
@@ -207,9 +222,27 @@ export default async function HotelDetailPage({
           {hotel.room_types && hotel.room_types.length > 0 ? (
             <RoomSelector
               roomTypes={hotel.room_types.map((room) => {
-                const room_variants = groupRoomVariants(room.room_details, {
-                checkIn: search.check_in,
-                checkOut: search.check_out,
+              const room_variants = room.room_variants.map((v) => {
+                const available_count = v.room_details.filter((r) => r.room_trackers.length === 0).length;
+                // pricing_rules from Prisma satisfies the PricingRuleLike parameter
+                // of resolvePriceForDate — cast via the local PricingRulePayload type
+                // rather than `as any`.
+                const pricing: ResolvedPrice = resolvePriceForDate(
+                  Number(v.price),
+                  v.pricing_rules as PricingRulePayload[],
+                  pricingDate,
+                );
+                return {
+                  id: v.id,
+                  room_size: v.room_size,
+                  max_occupancy: v.max_occupancy,
+                  facilities: v.facilities.map((f) => f.facility),
+                  bed_types: v.bed_types.map((b) => ({ bed_type: b.bed_type, count: b.count })),
+                  variant_images: v.variant_images,
+                  pricing,
+                  total_rooms: v.room_details.length,
+                  available_count,
+                }
               })
               const available_rooms_count = room_variants.reduce((sum, variant) => sum + variant.available_count, 0)
               return {
@@ -217,12 +250,8 @@ export default async function HotelDetailPage({
                 hotel_id: hotel.id,
                 name: room.name,
                 description: room.description,
-                base_price: Number(room.base_price),
-                max_occupancy: room.max_occupancy,
-                room_size: room.room_size,
                 type_images: room.type_images,
-                room_bed_types: room.room_bed_types,
-                room_properties: room.room_properties,
+                room_type_amenities: room.room_type_amenities,
                 available_rooms_count,
                 room_variants,
               }
@@ -250,7 +279,7 @@ export default async function HotelDetailPage({
           <section className="glass mt-24 rounded-2xl shadow-md">
             <h2 className="text-2xl font-bold m-6 rounded ">About this property</h2>
             <ExpandableDescription
-              text={hotel.detail?.description || hotel.detail?.short_description}
+              text={hotel.detail?.description}
               maxLines={3}
             />
           </section>
@@ -277,7 +306,7 @@ export default async function HotelDetailPage({
 {(
   hotel.detail?.check_in_time ||
   hotel.detail?.check_out_time ||
-  hotel.detail?.cancellation_policy ||
+  hotel.policies.length > 0 ||
   hotel.detail?.reception_no1 ||
   hotel.detail?.reception_no2 ||
   hotel.detail?.website
@@ -412,30 +441,33 @@ export default async function HotelDetailPage({
       )}
     </div>
 
-    {/* Cancellation */}
-    {hotel.detail?.cancellation_policy && (
-      <div className="mt-6 rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
-        <div className="mb-5 flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Shield className="h-5 w-5" />
+    {/* Policies — replaces the old single cancellation_policy string.
+        The current schema stores policies as named records on the hotel. */}
+    {hotel.policies.length > 0 && (
+      <div className="mt-6 space-y-4">
+        {hotel.policies.map((policy) => (
+          <div
+            key={policy.id}
+            className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg"
+          >
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Shield className="h-5 w-5" />
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-lg">{policy.name}</h3>
+                <p className="text-sm text-muted-foreground">Hotel policy</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/50 bg-background/50 p-5">
+              <p className="leading-7 text-muted-foreground whitespace-pre-wrap">
+                {policy.description}
+              </p>
+            </div>
           </div>
-
-          <div>
-            <h3 className="font-semibold text-lg">
-              Cancellation Policy
-            </h3>
-
-            <p className="text-sm text-muted-foreground">
-              Booking terms
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-border/50 bg-background/50 p-5">
-          <p className="leading-7 text-muted-foreground">
-            {hotel.detail.cancellation_policy}
-          </p>
-        </div>
+        ))}
       </div>
     )}
   </section>

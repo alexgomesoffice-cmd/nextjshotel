@@ -12,20 +12,15 @@ import RoomDetailModal from "@/components/room/room-detail-modal";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface RoomTypeImage { id: number; image_url: string; }
-interface RoomBedType { bed_type: { name: string }; count: number; }
-interface RoomProperty { amenity: { name: string; icon: string | null }; }
+interface RoomTypeAmenity { amenity: { name: string; icon: string | null }; }
 
 export interface RoomType {
   id: number;
   hotel_id: number;
   name: string;
   description: string | null;
-  base_price: number;
-  max_occupancy: number;
-  room_size: string | null;
   type_images: RoomTypeImage[];
-  room_bed_types: RoomBedType[];
-  room_properties: RoomProperty[];
+  room_type_amenities: RoomTypeAmenity[];
   available_rooms_count: number;
   room_variants: RoomVariant[];
 }
@@ -57,15 +52,15 @@ export default function RoomsSectionClient({
         id: modalRoom.id,
         name: modalRoom.name,
         description: modalRoom.description,
-        base_price: modalRoom.base_price,
-        occupancy_adults: modalRoom.max_occupancy,
-        room_size: modalRoom.room_size,
         type_images: modalRoom.type_images,
-        room_bed_types: modalRoom.room_bed_types,
-        room_properties: modalRoom.room_properties,
+        room_type_amenities: modalRoom.room_type_amenities,
         available_rooms_count: modalRoom.available_rooms_count,
+        room_variants: modalRoom.room_variants,
       }
     : null;
+
+  const maxOccupancyOf = (roomType: RoomType) =>
+    roomType.room_variants.reduce((max, v) => Math.max(max, v.max_occupancy ?? 0), 0);
 
   // Build per-room-type quantity map (only variants belonging to this room type)
   const getQuantitiesForRoomType = (roomType: RoomType): Record<number, number> => {
@@ -78,8 +73,8 @@ export default function RoomsSectionClient({
 
   // Sort room types: available first, mismatched/unavailable last
   const sortedRoomTypes = [...roomTypes].sort((a, b) => {
-    const aMismatch = guests > 1 && a.max_occupancy < guests;
-    const bMismatch = guests > 1 && b.max_occupancy < guests;
+    const aMismatch = guests > 1 && maxOccupancyOf(a) < guests;
+    const bMismatch = guests > 1 && maxOccupancyOf(b) < guests;
     const aUnavailable = a.available_rooms_count === 0 && a.room_variants.length === 0;
     const bUnavailable = b.available_rooms_count === 0 && b.room_variants.length === 0;
     
@@ -94,9 +89,10 @@ export default function RoomsSectionClient({
     <>
       <div className="space-y-6">
         {sortedRoomTypes.map((roomType) => {
-          const isGuestMismatch = guests > 1 && roomType.max_occupancy < guests;
+          const typeMaxOccupancy = maxOccupancyOf(roomType);
+          const isGuestMismatch = guests > 1 && typeMaxOccupancy < guests;
           const guestMismatchReason = isGuestMismatch
-            ? `This room fits up to ${roomType.max_occupancy} guest${roomType.max_occupancy !== 1 ? 's' : ''}. Your search needs ${guests}.`
+            ? `This room fits up to ${typeMaxOccupancy} guest${typeMaxOccupancy !== 1 ? 's' : ''}. Your search needs ${guests}.`
             : undefined;
 
           return (
@@ -105,12 +101,8 @@ export default function RoomsSectionClient({
               id={roomType.id}
               name={roomType.name}
               description={roomType.description}
-              base_price={roomType.base_price}
-              occupancy_adults={roomType.max_occupancy}
-              room_size={roomType.room_size}
               type_images={roomType.type_images}
-              room_bed_types={roomType.room_bed_types}
-              room_properties={roomType.room_properties}
+              room_type_amenities={roomType.room_type_amenities}
               available_rooms_count={roomType.available_rooms_count}
               room_variants={roomType.room_variants}
               onViewDetails={() => setModalRoom(roomType)}
@@ -143,7 +135,6 @@ export default function RoomsSectionClient({
           modalVariant
             ? {
                 ...modalVariant.variant,
-                price: modalVariant.variant.price,
                 room_type_name: modalVariant.roomType.name,
                 type_images: modalVariant.roomType.type_images,
               }

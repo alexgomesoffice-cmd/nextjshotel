@@ -5,7 +5,7 @@ import Image from "next/image";
 import {
   Users, Bed, Check,
   ChevronUp, ChevronLeft, ChevronRight,
-  Maximize2, Cigarette, PawPrint, ShieldAlert, Images,
+  Images,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -13,17 +13,23 @@ import { cn } from "@/lib/utils";
 
 interface RoomTypeImage { id: number; image_url: string; }
 interface RoomBedType { bed_type: { name: string }; count: number; }
-interface RoomProperty { amenity: { name: string; icon: string | null }; }
+interface RoomTypeAmenity { amenity: { name: string; icon: string | null }; }
+
+export type ResolvedPricing = {
+  basePrice: number;
+  effectivePrice: number;
+  discount: null | { ruleId: number; name: string; type: 'PERCENTAGE' | 'FIXED_AMOUNT'; value: number; amount: number };
+};
 
 export interface RoomVariant {
   id: number;
-  room_number: string;
-  price: number;
-  ac: boolean;
-  smoking_allowed: boolean;
-  pet_allowed: boolean;
-  notes: string | null;
-  room_images: { id: number; image_url: string }[];
+  room_size: string | null;
+  max_occupancy: number | null;
+  facilities: { name: string }[];
+  bed_types: RoomBedType[];
+  variant_images: { id: number; image_url: string }[];
+  pricing: ResolvedPricing;
+  total_rooms: number;
   available_count: number;
 }
 
@@ -31,12 +37,8 @@ export interface RoomTypeCardProps {
   id: number;
   name: string;
   description: string | null;
-  base_price: number;
-  occupancy_adults: number;
-  room_size: string | null;
   type_images: RoomTypeImage[];
-  room_bed_types: RoomBedType[];
-  room_properties: RoomProperty[];
+  room_type_amenities: RoomTypeAmenity[];
   available_rooms_count: number;
   room_variants: RoomVariant[];
   onViewDetails?: () => void;
@@ -72,7 +74,7 @@ function VariantRow({
   quantity, available, onQtyChange, onViewDetails, onViewRoomDetails,
   isGuestMismatch, guestMismatchReason,
 }: VariantRowProps) {
-  const images = variant.room_images.length > 0 ? variant.room_images : typeImages;
+  const images = variant.variant_images.length > 0 ? variant.variant_images : typeImages;
   const [imgIdx, setImgIdx] = useState(0);
   const isSelected = quantity > 0;
   const isUnavailable = available <= 0;
@@ -147,51 +149,38 @@ function VariantRow({
             )}
           </div>
 
-          {/* Guest / smoking / pet / AC flags */}
+          {/* Guest count / facilities */}
           <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
             <span className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
-              {occupancy_adults} guest{occupancy_adults > 1 ? 's' : ''}
+              {variant.max_occupancy ?? occupancy_adults} guest{(variant.max_occupancy ?? occupancy_adults) > 1 ? 's' : ''}
             </span>
-            <span className="flex items-center gap-1.5">
-              <Cigarette className="h-3.5 w-3.5" />
-              {variant.smoking_allowed ? "Smoking" : "No smoking"}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <PawPrint className="h-3.5 w-3.5" />
-              {variant.pet_allowed ? "Pet friendly" : "No pets"}
-            </span>
-            {variant.ac && (
-              <span className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-primary/80" /> AC
+            {variant.facilities.slice(0, 4).map((f) => (
+              <span key={f.name} className="flex items-center gap-1.5">
+                <Check className="h-3.5 w-3.5 text-primary/80" /> {f.name}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Middle-right: price */}
+        <div className="flex flex-col items-end justify-start gap-2 shrink-0 min-w-25">
+          <div className="text-right">
+            {variant.pricing.discount && (
+              <p className="text-xs text-muted-foreground line-through">
+                TK {Number(variant.pricing.basePrice).toLocaleString()}
+              </p>
+            )}
+            <p className="text-primary font-bold text-xl leading-tight">
+              TK {Number(variant.pricing.effectivePrice).toLocaleString()}
+            </p>
+            <p className="text-xs text-muted-foreground">per night</p>
+            {variant.pricing.discount && (
+              <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                {variant.pricing.discount.type === 'PERCENTAGE' ? `${variant.pricing.discount.value}% OFF` : `TK ${variant.pricing.discount.amount.toLocaleString()} OFF`}
               </span>
             )}
           </div>
-
-          {/* Notes / policy */}
-          {variant.notes && (
-            <p className="flex items-center gap-1 text-xs text-destructive">
-              <ShieldAlert className="h-3 w-3 shrink-0" /> {variant.notes}
-            </p>
-          )}
-        </div>
-
-        {/* Middle-right: price + policy badge */}
-        <div className="flex flex-col items-end justify-start gap-2 shrink-0 min-w-25">
-          <div className="text-right">
-            <p className="text-primary font-bold text-xl leading-tight">
-              TK {Number(variant.price).toLocaleString()}
-            </p>
-            <p className="text-xs text-muted-foreground">per night</p>
-          </div>
-
-          {/* Cancellation label */}
-          <p className={cn(
-            "text-xs font-medium",
-            variant.notes ? "text-destructive" : "text-muted-foreground"
-          )}>
-            {variant.notes ? "Non-refundable" : "Partially refundable"}
-          </p>
         </div>
 
         {/* Far-right: stepper or mismatch reason */}
@@ -238,8 +227,8 @@ function VariantRow({
 // ─── Room Type Card (Collapsed header) ───────────────────────────────────────
 
 const RoomTypeCard = ({
-  id, name, description, base_price, occupancy_adults, room_size,
-  type_images, room_bed_types, room_properties, available_rooms_count,
+  id, name, description,
+  type_images, room_type_amenities, available_rooms_count,
   room_variants, onViewDetails, selectedQuantities, onQuantityChange,
   isGuestMismatch, guestMismatchReason, forceExpanded = false, isHighlighted = false, onClearHighlight,
   onViewRoomDetails
@@ -250,6 +239,10 @@ const RoomTypeCard = ({
   const isUnavailable = available_rooms_count === 0;
   const isDisabled = isGuestMismatch || isUnavailable;
   const shouldExpand = forceExpanded || isExpanded;
+  // "From" price — the cheapest currently-effective variant price, since
+  // Room Type no longer carries its own price (that moved to Variant).
+  const cheapestVariant = room_variants.reduce<RoomVariant | null>((min, v) =>
+    !min || v.pricing.effectivePrice < min.pricing.effectivePrice ? v : min, null);
 
   return (
     <div
@@ -307,10 +300,20 @@ const RoomTypeCard = ({
               </h3>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">From</p>
+                {cheapestVariant?.pricing.discount && (
+                  <p className="text-xs text-muted-foreground line-through">
+                    TK {Number(cheapestVariant.pricing.basePrice).toLocaleString()}
+                  </p>
+                )}
                 <p className="text-xl font-bold text-primary leading-tight">
-                  TK {Number(base_price).toLocaleString()}
+                  TK {Number(cheapestVariant?.pricing.effectivePrice ?? 0).toLocaleString()}
                   <span className="text-sm font-normal text-muted-foreground ml-1">/ night</span>
                 </p>
+                {cheapestVariant?.pricing.discount && (
+                  <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                    {cheapestVariant.pricing.discount.type === 'PERCENTAGE' ? `${cheapestVariant.pricing.discount.value}% OFF` : `TK ${cheapestVariant.pricing.discount.amount.toLocaleString()} OFF`}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -322,31 +325,14 @@ const RoomTypeCard = ({
             {/* Divider */}
             <hr className="border-border/30 my-3" />
 
-            {/* Stats */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-              {room_size && (
-                <span className="flex items-center gap-1.5">
-                  <Maximize2 className="h-3.5 w-3.5" /> {room_size}
-                </span>
-              )}
-              <span className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" /> Up to {occupancy_adults} guests
-              </span>
-              {room_bed_types?.map((b, i) => (
-                <span key={i} className="flex items-center gap-1.5">
-                  <Bed className="h-3.5 w-3.5" /> {b.bed_type.name}
-                </span>
-              ))}
-            </div>
-
             {/* Top highlights */}
-            {room_properties && room_properties.length > 0 && (
-              <div className="mt-4">
+            {room_type_amenities && room_type_amenities.length > 0 && (
+              <div className="mt-1">
                 <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70 mb-2">
                   Top highlights
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {room_properties.slice(0, 4).map((prop, i) => (
+                  {room_type_amenities.slice(0, 4).map((prop, i) => (
                     <span
                       key={i}
                       className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 rounded-full px-3 py-1"
@@ -355,12 +341,12 @@ const RoomTypeCard = ({
                       {prop.amenity.name}
                     </span>
                   ))}
-                  {room_properties.length > 4 && (
+                  {room_type_amenities.length > 4 && (
                     <button
                       onClick={e => { e.stopPropagation(); if (onViewDetails) onViewDetails(); }}
                       className="inline-flex items-center text-xs font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1 hover:bg-primary/10 transition-colors"
                     >
-                      +{room_properties.length - 4} more
+                      +{room_type_amenities.length - 4} more
                     </button>
                   )}
                 </div>
@@ -421,8 +407,8 @@ const RoomTypeCard = ({
                 variant={variant}
                 roomName={name}
                 typeImages={type_images}
-                bedTypes={room_bed_types}
-                occupancy_adults={occupancy_adults}
+                bedTypes={variant.bed_types}
+                occupancy_adults={variant.max_occupancy ?? 2}
                 quantity={selectedQuantities[variant.id] ?? 0}
                 available={variant.available_count}
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}

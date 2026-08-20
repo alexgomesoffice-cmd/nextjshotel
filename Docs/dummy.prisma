@@ -95,14 +95,14 @@ enum CaseEntityType {
   HOTEL_DOCUMENT     // hotel_documents
   AMENITY            // a hotel's or room type's amenity SELECTION only — amenities themselves are fully global/System-Admin-owned now, same as bed types, so there's no "creating a new custom amenity" case anymore
   POLICY             // policies
-  ROOM_TYPE          // OBSOLETE as of the Room Variant redesign — Room Type creation/editing is now direct Hotel Admin CRUD, never case-reviewed. Left in place rather than removed blindly; see cleanup note below.
-  ROOM_TYPE_IMAGE    // OBSOLETE, same reason as ROOM_TYPE above.
-  ROOM_FACILITY      // OBSOLETE as of the Room Variant redesign — facility selection now lives on room_variants, set directly by Hotel Admin, never case-reviewed.
-  ROOM_DETAIL        // OBSOLETE as of the Room Variant redesign — physical room creation/editing (and the variant matching it triggers) is now direct Hotel Admin CRUD, never case-reviewed. `applyFieldChange`'s ROOM_TYPE/ROOM_TYPE_IMAGE/ROOM_FACILITY/ROOM_DETAIL branches in case-engine.ts are now unreachable dead code — kept for now since removing them (and these four enum values) safely requires first confirming zero existing case_field_changes rows reference them; propose that cleanup as a separate follow-up rather than doing it blindly here.
+  // ROOM_TYPE, ROOM_TYPE_IMAGE, ROOM_FACILITY, ROOM_DETAIL removed —
+  // Room Type / Room Variant / Physical Room management is direct Hotel
+  // Admin CRUD now (see room-variant-matching.ts), never case-reviewed.
+  // Confirmed zero code references before removal — case-engine.ts's
+  // applyFieldChange branches for these were removed in the same pass.
   // BED_TYPE removed — bed types are now fully global/System-Admin-owned (no
   // hotel-custom creation path at all), so there's nothing left for Hotel
-  // Admin to propose here. Bed selection on a room is just part of that
-  // room's own ROOM_DETAIL creation proposal.
+  // Admin to propose here.
 }
 
 enum NotificationType {
@@ -115,6 +115,7 @@ enum NotificationType {
   NEW_REVIEW
   DOCUMENT_EXPIRING
   ACCOUNT_BLOCKED
+  MASTER_DATA_REQUEST  // a Hotel Admin submitted, or a System Admin resolved, a master data request — NOT a case, deliberately separate from CASE_SUBMITTED
   GENERAL
 }
 
@@ -674,6 +675,7 @@ model master_data_requests {
   status            MasterDataRequestStatus @default(PENDING)
   resolved_by       Int?                    // system_admins.id
   resolved_at       DateTime?
+  resolution_note   String?                 @db.Text // dismissal reason; also usable for a short fulfillment note if ever needed
   created_entity_id Int?                    // id of the row created via the normal creation page when this request is fulfilled — not auto-generated. No DB-level FK since it's polymorphic across three tables (amenities/bed_types/room_facilities).
   created_at        DateTime                @default(now())
 
@@ -688,8 +690,10 @@ enum MasterDataCategory {
   AMENITY
   BED_TYPE
   ROOM_FACILITY
-  // ROOM_TYPE removed — Hotel Admin creates their own room type directly
-  // (via case review), there's no global template to request anymore.
+  // ROOM_TYPE is intentionally NOT here — Room Types are hotel-owned and
+  // created/edited directly by Hotel Admin (immediate, no review of any
+  // kind), so there's no global template to request. This is unrelated to
+  // Case Review, which also no longer applies to Room Type management.
 }
 
 enum MasterDataRequestStatus {
@@ -857,18 +861,47 @@ model room_images {
 // end_date — after which it reverts to room_variants.price automatically.
 // ═══════════════════════════════════════════════════════
 
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum PricingRuleStatus {
+  ACTIVE
+  PAUSED
+  // EXPIRED is intentionally NOT stored — a rule naturally stops applying
+  // once end_date passes. The resolver checks the date range at query
+  // time; "expired" is a derived, display-only state, never persisted.
+}
+
+// ═══════════════════════════════════════════════════════
+// PRICING RULES  (offers/discounts on a room variant's base price)
+// room_variants.price is the single source of truth for the undiscounted
+// nightly rate. A pricing_rule never stores a replacement price — only a
+// discount to apply against whatever the base price currently is. See
+// src/lib/pricing-resolver.ts for the actual resolution logic (highest-
+// priority ACTIVE rule whose date range covers the stay date wins — no
+// stacking). Direct Hotel Admin CRUD, NOT case-reviewed.
+// ═══════════════════════════════════════════════════════
+
 model pricing_rules {
-  id               Int           @id @default(autoincrement())
-  room_variant_id  Int
-  name             String?       @db.VarChar(150)
-  start_date       DateTime      @db.Date
-  end_date         DateTime      @db.Date
-  discounted_price Decimal       @db.Decimal(12, 2)
-  created_at       DateTime      @default(now())
-  room_variant     room_variants @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
+  id             Int               @id @default(autoincrement())
+  room_variant_id Int
+  name           String            @db.VarChar(150)
+  description    String?           @db.Text
+  discount_type  DiscountType
+  discount_value Decimal           @db.Decimal(12, 2) // percentage (0-100) or a fixed amount, per discount_type
+  status         PricingRuleStatus @default(ACTIVE)
+  priority       Int               @default(0) // higher wins when multiple rules apply to the same date
+  start_date     DateTime          @db.Date
+  end_date       DateTime          @db.Date
+  created_at     DateTime          @default(now())
+  updated_at     DateTime          @updatedAt
+  room_variant   room_variants     @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
 
   @@index([room_variant_id])
   @@index([start_date, end_date])
+  @@index([status])
   @@map("pricing_rules")
 }
 
@@ -909,6 +942,10 @@ model user_bookings {
   @@map("user_bookings")
 }
 
+// price_per_night stays as an average (subtotal / nights) for quick
+// display in lists/receipts where a full breakdown isn't needed —
+// subtotal itself is always SUM(room_booking_nightly_rates.price), the
+// authoritative total. The real per-night snapshot lives below.
 model room_bookings {
   id              Int          @id @default(autoincrement())
   booking_id      Int
@@ -920,16 +957,46 @@ model room_bookings {
   subtotal        Decimal      @db.Decimal(12, 2)
   created_at      DateTime     @default(now())
 
-  booking      user_bookings @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  room_type    room_types    @relation(fields: [room_type_id], references: [id])
-  room_variant room_variants @relation(fields: [room_variant_id], references: [id])
-  room_detail  room_details  @relation(fields: [room_detail_id], references: [id])
+  booking       user_bookings              @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  room_type     room_types                 @relation(fields: [room_type_id], references: [id])
+  room_variant  room_variants              @relation(fields: [room_variant_id], references: [id])
+  room_detail   room_details               @relation(fields: [room_detail_id], references: [id])
+  nightly_rates room_booking_nightly_rates[]
 
   @@index([booking_id])
   @@index([room_type_id])
   @@index([room_variant_id])
   @@index([room_detail_id])
   @@map("room_bookings")
+}
+
+// ═══════════════════════════════════════════════════════
+// ROOM BOOKING NIGHTLY RATES
+// One row per booked night, snapshotted from the pricing resolver at the
+// moment of booking. This is historical record — it must NEVER be
+// recalculated from current pricing_rules/room_variants.price later.
+// Pricing can change or a rule can be edited/deleted after the fact; this
+// table is what guarantees the guest's original price is preserved
+// exactly, regardless of what happens to pricing afterward.
+// ═══════════════════════════════════════════════════════
+
+model room_booking_nightly_rates {
+  id              Int      @id @default(autoincrement())
+  room_booking_id Int
+  stay_date       DateTime @db.Date
+  price           Decimal  @db.Decimal(12, 2)
+  // Snapshot of what produced this price, purely for admin transparency
+  // (e.g. showing "Weekend Special applied" on a past booking) — never
+  // read by any live calculation, only for display/audit.
+  pricing_rule_id   Int?
+  pricing_rule_name String?  @db.VarChar(150)
+  created_at        DateTime @default(now())
+
+  room_booking room_bookings @relation(fields: [room_booking_id], references: [id], onDelete: Cascade)
+
+  @@unique([room_booking_id, stay_date])
+  @@index([room_booking_id])
+  @@map("room_booking_nightly_rates")
 }
 
 // ═══════════════════════════════════════════════════════

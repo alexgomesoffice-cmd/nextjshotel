@@ -15,11 +15,8 @@ export const reserveBookingSchema = z.object({
   special_request: z.string().optional(),
 })
 
-// Booking confirm schema (payment)
-export const confirmBookingSchema = z.object({
-  payment_method: z.string().min(1, 'Payment method required'),
-  transaction_id: z.string().min(1, 'Transaction ID required'),
-})
+// confirmBookingSchema removed — was payment_method/transaction_id, dead
+// since the no-payment-system decision; confirmed zero importers before removal.
 
 // Booking cancel schema
 export const cancelBookingSchema = z.object({
@@ -27,5 +24,5 @@ export const cancelBookingSchema = z.object({
 })
 
 export type ReserveBookingInput = z.infer<typeof reserveBookingSchema>
-export type ConfirmBookingInput = z.infer<typeof confirmBookingSchema>
+// ConfirmBookingInput type removed alongside confirmBookingSchema — was self-referencing only, zero external importers.
 export type CancelBookingInput = z.infer<typeof cancelBookingSchema>

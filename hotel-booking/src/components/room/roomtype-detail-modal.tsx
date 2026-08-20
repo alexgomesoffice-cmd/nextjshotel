@@ -18,11 +18,25 @@ interface RoomBedType {
   count: number;
 }
 
-interface RoomProperty {
+interface RoomTypeAmenity {
   amenity: {
     name: string;
     icon: string | null;
   };
+}
+
+type ResolvedPricing = {
+  basePrice: number;
+  effectivePrice: number;
+  discount: null | { ruleId: number; name: string; type: 'PERCENTAGE' | 'FIXED_AMOUNT'; value: number; amount: number };
+};
+
+interface RoomTypeVariant {
+  id: number;
+  room_size: string | null;
+  max_occupancy: number | null;
+  bed_types: RoomBedType[];
+  pricing: ResolvedPricing;
 }
 
 export interface RoomTypeDetailModalProps {
@@ -32,13 +46,10 @@ export interface RoomTypeDetailModalProps {
     id: number;
     name: string;
     description: string | null;
-    base_price: number;
-    occupancy_adults: number;
-    room_size: string | null;
     type_images: RoomTypeImage[];
-    room_bed_types: RoomBedType[];
-    room_properties: RoomProperty[];
+    room_type_amenities: RoomTypeAmenity[];
     available_rooms_count: number;
+    room_variants: RoomTypeVariant[];
   } | null;
 }
 
@@ -71,6 +82,12 @@ useEffect(() => {
 }, [isOpen]);
 
   if (!isOpen || !roomType) return null;
+
+  const cheapestVariant = roomType.room_variants.reduce<RoomTypeVariant | null>((min, v) =>
+    !min || v.pricing.effectivePrice < min.pricing.effectivePrice ? v : min, null);
+  const maxOccupancy = roomType.room_variants.reduce((max, v) => Math.max(max, v.max_occupancy ?? 0), 0);
+  const roomSizes = [...new Set(roomType.room_variants.map((v) => v.room_size).filter(Boolean))];
+  const allBedTypes = roomType.room_variants.flatMap((v) => v.bed_types);
 
   return (
     <div
@@ -147,18 +164,18 @@ useEffect(() => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider">Occupancy</p>
-                  <p className="font-semibold text-sm">Up to {roomType.occupancy_adults} Adults</p>
+                  <p className="font-semibold text-sm">Up to {maxOccupancy} Adults</p>
                 </div>
               </div>
 
-              {roomType.room_size && (
+              {roomSizes.length > 0 && (
                 <div className="flex items-center gap-2">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                     <Wind className="h-5 w-5" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Room Size</p>
-                    <p className="font-semibold text-sm">{roomType.room_size} sq ft</p>
+                    <p className="font-semibold text-sm">{roomSizes.join(' / ')} sq ft</p>
                   </div>
                 </div>
               )}
@@ -176,7 +193,7 @@ useEffect(() => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Bed Configuration</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {roomType.room_bed_types?.map((bed, idx) => (
+                {allBedTypes.map((bed, idx) => (
                   <div key={idx} className="flex items-center gap-3 p-4 rounded-2xl border border-border/50 bg-secondary/20">
                     <Bed className="h-6 w-6 text-primary" />
                     <div>
@@ -192,7 +209,7 @@ useEffect(() => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Room Amenities</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6">
-                {roomType.room_properties?.map((prop, idx) => (
+                {roomType.room_type_amenities?.map((prop, idx) => (
                   <div key={idx} className="flex items-center gap-3">
                     <div className="text-primary/70">
                       {getIconForAmenity(prop.amenity.name)}
@@ -209,7 +226,10 @@ useEffect(() => {
         <div className="p-6 border-t border-border/50 bg-secondary/10 flex items-center justify-between shrink-0">
           <div>
             <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Starting from</p>
-            <p className="text-2xl font-bold text-foreground">TK {Number(roomType.base_price).toLocaleString()}</p>
+            {cheapestVariant?.pricing.discount && (
+              <p className="text-sm text-muted-foreground line-through">TK {Number(cheapestVariant.pricing.basePrice).toLocaleString()}</p>
+            )}
+            <p className="text-2xl font-bold text-foreground">TK {Number(cheapestVariant?.pricing.effectivePrice ?? 0).toLocaleString()}</p>
             <p className="text-xs text-muted-foreground">per night</p>
           </div>
           <Button onClick={onClose} size="lg">

@@ -7,7 +7,10 @@ import RoomsSectionClient, { type RoomType } from "@/components/room/rooms-secti
 import BookingSidebar, { type SelectedVariant } from "./booking-sidebar";
 import { useHotelAvailability } from "@/hooks/use-hotel-availability";
 
-type AcFilter = "all" | "ac" | "non-ac";
+// The old AC-only/Non-AC filter was tied to a single boolean field that no
+// longer exists (facilities are now an arbitrary named set per variant).
+// Removed rather than faked — no filter is shown until a real
+// facility-based filter is designed.
 
 interface RoomSelectorProps {
   roomTypes: RoomType[];
@@ -27,7 +30,7 @@ export default function RoomSelector({
   focusRoomTypeId,
 }: RoomSelectorProps) {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
-  const [acFilter, setAcFilter] = useState<AcFilter>("all");
+  // (acFilter state removed alongside the AC-only/Non-AC filter)
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [highlightedRoomTypeId, setHighlightedRoomTypeId] = useState<number | null>(null);
 
@@ -138,10 +141,12 @@ export default function RoomSelector({
       const vid = parseInt(vidStr, 10);
       if (!qty || qty <= 0) continue;
       const parent = roomTypes.find(rt => rt.room_variants.some(v => v.id === vid));
-      if (!parent) continue;
-      if (parent.max_occupancy < newGuests) {
+      const variant = parent?.room_variants.find(v => v.id === vid);
+      if (!parent || !variant) continue;
+      const variantMax = variant.max_occupancy ?? 0;
+      if (variantMax < newGuests) {
         delete newQuantities[vid];
-        dropped.push({ variantId: vid, roomTypeName: parent.name, max: parent.max_occupancy });
+        dropped.push({ variantId: vid, roomTypeName: parent.name, max: variantMax });
       }
     }
 
@@ -160,17 +165,7 @@ export default function RoomSelector({
     return () => clearTimeout(t);
   }, [guestWarning]);
 
-  const filteredRoomTypes = useMemo(() => {
-    if (acFilter === "all") return roomTypes;
-    return roomTypes
-      .map(rt => ({
-        ...rt,
-        room_variants: rt.room_variants.filter(v =>
-          acFilter === "ac" ? v.ac : !v.ac
-        ),
-      }))
-      .filter(rt => rt.room_variants.length > 0);
-  }, [roomTypes, acFilter]);
+  const filteredRoomTypes = roomTypes;
 
   const selectedVariants = useMemo<SelectedVariant[]>(() => {
     const result: SelectedVariant[] = [];
@@ -182,7 +177,7 @@ export default function RoomSelector({
             variantId: variant.id,
             roomTypeId: rt.id,
             roomTypeName: rt.name,
-            price: variant.price,
+            price: variant.pricing.effectivePrice,
             quantity: qty,
           });
         }
@@ -191,16 +186,10 @@ export default function RoomSelector({
     return result;
   }, [quantities, roomTypes]);
 
-  const lowestPrice = useMemo(
-    () => roomTypes.length > 0 ? Math.min(...roomTypes.map(rt => rt.base_price)) : undefined,
-    [roomTypes]
-  );
-
-  const filters: { label: string; value: AcFilter }[] = [
-    { label: "All", value: "all" },
-    { label: "AC", value: "ac" },
-    { label: "Non-AC", value: "non-ac" },
-  ];
+  const lowestPrice = useMemo(() => {
+    const allPrices = roomTypes.flatMap(rt => rt.room_variants.map(v => v.pricing.effectivePrice));
+    return allPrices.length > 0 ? Math.min(...allPrices) : undefined;
+  }, [roomTypes]);
 
   return (
     <div>
@@ -213,23 +202,6 @@ export default function RoomSelector({
             </span>
           )}
         </h2>
-
-        <div className="flex items-center gap-2">
-          {filters.map(f => (
-            <button
-              key={f.value}
-              onClick={() => setAcFilter(f.value)}
-              className={cn(
-                "px-4 py-1.5 rounded-full text-sm font-medium border transition-all duration-150",
-                acFilter === f.value
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-transparent text-muted-foreground border-border/50 hover:border-primary/50 hover:text-foreground"
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
       </div>
 
       {datesChanged && hasAnySelection && (
@@ -258,8 +230,7 @@ export default function RoomSelector({
           />
           {filteredRoomTypes.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border border-border/30 rounded-2xl">
-              <p className="font-medium">No {acFilter === "ac" ? "AC" : acFilter === "non-ac" ? "non-AC" : ""} rooms available{sidebarGuests > 1 ? ` for ${sidebarGuests} guests` : ""}</p>
-              <button onClick={() => setAcFilter("all")} className="text-primary text-sm mt-1 hover:underline">Discover all rooms</button>
+              <p className="font-medium">No rooms available{sidebarGuests > 1 ? ` for ${sidebarGuests} guests` : ""}</p>
             </div>
           )}
         </div>

@@ -2,9 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-middleware";
 import { reserveBookingSchema } from "@/lib/validations/booking";
+import { getEffectivePriceRange } from "@/lib/pricing-resolver";
 import crypto from "crypto";
 import { emitToRoom } from "@/lib/socket-emit";
 
+/**
+ * POST /api/bookings/reserve
+ * Rewritten against the Room Type -> Room Variant -> Physical Room
+ * architecture. `selection.variant_id` is a room_variants.id (the
+ * validation schema always meant this — the old implementation
+ * mistakenly queried room_details with it, and referenced columns
+ * (price/ac/smoking_allowed/pet_allowed/room_type_id) that no longer
+ * exist on room_details at all). Pricing is resolved night-by-night via
+ * the shared pricing resolver and snapshotted into
+ * room_booking_nightly_rates — never recalculated from live pricing
+ * later.
+ */
 export async function POST(req: NextRequest) {
   try {
     const { payload, error } = await requireAuth(req, ["END_USER"]);
@@ -36,22 +49,12 @@ export async function POST(req: NextRequest) {
 
     if (!parsedBody.success) {
       return NextResponse.json(
-        {
-          success: false,
-          message: parsedBody.error.issues[0]?.message || "Invalid booking payload",
-        },
+        { success: false, message: parsedBody.error.issues[0]?.message || "Invalid booking payload" },
         { status: 400 }
       );
     }
 
-    const {
-      hotel_id,
-      room_selections,
-      check_in,
-      check_out,
-      guests,
-      special_request,
-    } = parsedBody.data;
+    const { hotel_id, room_selections, check_in, check_out, guests, special_request } = parsedBody.data;
 
     const checkInDate = new Date(check_in);
     const checkOutDate = new Date(check_out);
@@ -59,103 +62,58 @@ export async function POST(req: NextRequest) {
     today.setHours(0, 0, 0, 0);
 
     if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
-      return NextResponse.json(
-        { success: false, message: "Invalid dates provided" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Invalid dates provided" }, { status: 400 });
     }
-
     if (checkInDate < today) {
-      return NextResponse.json(
-        { success: false, message: "Check-in date cannot be in the past" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Check-in date cannot be in the past" }, { status: 400 });
     }
-
     if (checkOutDate <= checkInDate) {
-      return NextResponse.json(
-        { success: false, message: "Check-out must be after check-in" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Check-out must be after check-in" }, { status: 400 });
     }
 
-    // Enforce 1-year maximum booking window
     const maxAllowedDate = new Date();
     maxAllowedDate.setFullYear(maxAllowedDate.getFullYear() + 1);
-    if (checkInDate > maxAllowedDate) {
-      return NextResponse.json(
-        { success: false, message: "Check-in date cannot be more than 1 year from today" },
-        { status: 400 }
-      );
-    }
-    if (checkOutDate > maxAllowedDate) {
-      return NextResponse.json(
-        { success: false, message: "Check-out date cannot be more than 1 year from today" },
-        { status: 400 }
-      );
+    if (checkInDate > maxAllowedDate || checkOutDate > maxAllowedDate) {
+      return NextResponse.json({ success: false, message: "Dates cannot be more than 1 year from today" }, { status: 400 });
     }
 
-    const nights = Math.ceil(
-      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    const normalizedSelections = room_selections;
-    const roomTypeIds = [...new Set(normalizedSelections.map((selection) => selection.room_type_id))];
-
-    const roomTypes = await prisma.room_types.findMany({
-      where: { id: { in: roomTypeIds } },
+    const variantIds = [...new Set(room_selections.map((s) => s.variant_id))];
+    const variants = await prisma.room_variants.findMany({
+      where: { id: { in: variantIds } },
+      include: { room_type: true },
     });
-
-    if (roomTypes.length !== roomTypeIds.length) {
-      return NextResponse.json(
-        { success: false, message: "Invalid room type or hotel" },
-        { status: 400 }
-      );
+    if (variants.length !== variantIds.length || variants.some((v) => v.room_type.hotel_id !== hotel_id || v.room_type_id === undefined)) {
+      return NextResponse.json({ success: false, message: "Invalid room selection" }, { status: 400 });
+    }
+    const variantMap = new Map(variants.map((v) => [v.id, v]));
+    for (const s of room_selections) {
+      const v = variantMap.get(s.variant_id);
+      if (!v || v.room_type_id !== s.room_type_id) {
+        return NextResponse.json({ success: false, message: "Invalid room selection" }, { status: 400 });
+      }
     }
 
-    const roomTypeMap = new Map(roomTypes.map((rt) => [rt.id, rt]));
-    if (roomTypes.some((rt) => rt.hotel_id !== Number(hotel_id))) {
-      return NextResponse.json(
-        { success: false, message: "Invalid room type or hotel" },
-        { status: 400 }
-      );
+    // Resolve nightly pricing for every distinct variant ONCE, outside the
+    // transaction (pure read, no need to hold it up) — reused per room.
+    const priceRangeByVariant = new Map<number, Awaited<ReturnType<typeof getEffectivePriceRange>>>();
+    for (const variantId of variantIds) {
+      priceRangeByVariant.set(variantId, await getEffectivePriceRange(variantId, checkInDate, checkOutDate));
     }
 
-    const totalQuantity = normalizedSelections.reduce((sum, selection) => sum + selection.quantity, 0);
+    const totalQuantity = room_selections.reduce((sum, s) => sum + s.quantity, 0);
 
-    // Concurrency control via interactive transaction to prevent double booking
     const bookingResult = await prisma.$transaction(async (tx) => {
       let totalPrice = 0;
-      const selectedRoomsByType: Array<{ roomTypeId: number; rooms: any[] }> = [];
+      const selectedRoomsByVariant: Array<{ roomTypeId: number; variantId: number; rooms: any[] }> = [];
 
-      for (const selection of normalizedSelections) {
-        const roomType = roomTypeMap.get(selection.room_type_id);
-        if (!roomType) {
-          throw new Error("Invalid room type or hotel");
-        }
-
-        const variantRoom = await tx.room_details.findUnique({
-          where: { id: selection.variant_id },
-        });
-
-        if (!variantRoom || variantRoom.room_type_id !== selection.room_type_id) {
-          throw new Error("Invalid room variant");
-        }
-
+      for (const selection of room_selections) {
         const physicalRooms = await tx.room_details.findMany({
-          where: {
-            room_type_id: roomType.id,
-            status: "AVAILABLE",
-            deleted_at: null,
-            price: variantRoom.price,
-            ac: variantRoom.ac,
-            smoking_allowed: variantRoom.smoking_allowed,
-            pet_allowed: variantRoom.pet_allowed,
-          },
+          where: { room_variant_id: selection.variant_id, status: "AVAILABLE", deleted_at: null },
         });
-
         if (physicalRooms.length < selection.quantity) {
-          throw new Error(`Not enough physical rooms configured for the selected variant of ${roomType.name}`);
+          throw new Error(`Not enough physical rooms configured for the selected room configuration`);
         }
 
         const bookedRooms = await tx.room_trackers.findMany({
@@ -167,17 +125,15 @@ export async function POST(req: NextRequest) {
           },
           select: { room_detail_id: true },
         });
-
         const bookedRoomIds = new Set(bookedRooms.map((r) => r.room_detail_id));
         const availableRooms = physicalRooms.filter((r) => !bookedRoomIds.has(r.id));
-
         if (availableRooms.length < selection.quantity) {
           throw new Error("Rooms are sold out for the selected dates");
         }
 
         const selectedRooms = availableRooms.slice(0, selection.quantity);
 
-        // Re-confirm no tracker was inserted between our read and this write (race condition guard)
+        // Race-condition guard: re-confirm no tracker landed between our read and this write.
         const conflictCheck = await tx.room_trackers.findFirst({
           where: {
             room_detail_id: { in: selectedRooms.map((r) => r.id) },
@@ -186,12 +142,11 @@ export async function POST(req: NextRequest) {
             check_out: { gt: checkInDate },
           },
         });
-        if (conflictCheck) {
-          throw new Error("Rooms are sold out for the selected dates");
-        }
+        if (conflictCheck) throw new Error("Rooms are sold out for the selected dates");
 
-        totalPrice += selectedRooms.reduce((sum, room) => sum + Number(room.price) * nights, 0);
-        selectedRoomsByType.push({ roomTypeId: roomType.id, rooms: selectedRooms });
+        const priceRange = priceRangeByVariant.get(selection.variant_id)!;
+        totalPrice += priceRange.subtotal * selectedRooms.length;
+        selectedRoomsByVariant.push({ roomTypeId: selection.room_type_id, variantId: selection.variant_id, rooms: selectedRooms });
       }
 
       const refCode = "SV-" + crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -202,42 +157,49 @@ export async function POST(req: NextRequest) {
         data: {
           booking_reference: refCode,
           end_user_id: payload.actor_id,
-          hotel_id: Number(hotel_id),
+          hotel_id,
           check_in: checkInDate,
           check_out: checkOutDate,
-          guests: Number(guests),
+          guests,
           rooms_count: totalQuantity,
           special_request: special_request || null,
           status: "RESERVED",
           reserved_until: reservedUntil,
           total_price: totalPrice,
-          advance_amount: 0,
         },
       });
 
-      for (const selection of selectedRoomsByType) {
-        for (const room of selection.rooms) {
-          const subtotal = Number(room.price) * nights;
+      for (const group of selectedRoomsByVariant) {
+        const priceRange = priceRangeByVariant.get(group.variantId)!;
+        const avgPricePerNight = Math.round((priceRange.subtotal / nights) * 100) / 100;
 
-          await tx.room_bookings.create({
+        for (const room of group.rooms) {
+          const roomBooking = await tx.room_bookings.create({
             data: {
               booking_id: booking.id,
-              room_type_id: selection.roomTypeId,
+              room_type_id: group.roomTypeId,
+              room_variant_id: group.variantId,
               room_detail_id: room.id,
-              price_per_night: room.price,
-              nights: nights,
-              subtotal: subtotal,
+              price_per_night: avgPricePerNight,
+              nights,
+              subtotal: priceRange.subtotal,
             },
           });
 
+          // One row per booked night — the historical snapshot. Never
+          // recalculated from pricing_rules later, per design.
+          await tx.room_booking_nightly_rates.createMany({
+            data: priceRange.nights.map((n) => ({
+              room_booking_id: roomBooking.id,
+              stay_date: n.date,
+              price: n.resolved.effectivePrice,
+              pricing_rule_id: n.resolved.discount?.ruleId ?? null,
+              pricing_rule_name: n.resolved.discount?.name ?? null,
+            })),
+          });
+
           await tx.room_trackers.create({
-            data: {
-              booking_id: booking.id,
-              room_detail_id: room.id,
-              check_in: checkInDate,
-              check_out: checkOutDate,
-              status: "RESERVED",
-            },
+            data: { booking_id: booking.id, room_detail_id: room.id, check_in: checkInDate, check_out: checkOutDate, status: "RESERVED" },
           });
         }
       }
@@ -245,50 +207,24 @@ export async function POST(req: NextRequest) {
       return booking;
     });
 
-    // ── Live updates (fire-and-forget, non-blocking) ──────────────────────
-    void emitToRoom(
-      `hotel:${hotel_id}:availability`,
-      "room:availability_changed",
-      { hotel_id }
-    );
-    void emitToRoom(
-      `hotel-admin:${hotel_id}`,
-      "booking:created",
-      {
-        reference: bookingResult.booking_reference,
-        hotel_id,
-        status: "RESERVED",
-        reserved_until: bookingResult.reserved_until,
-      }
-    );
-    void emitToRoom(
-      "hotel-admin:all",
-      "booking:created",
-      {
-        reference: bookingResult.booking_reference,
-        hotel_id,
-        status: "RESERVED",
-        reserved_until: bookingResult.reserved_until,
-      }
-    );
+    void emitToRoom(`hotel:${hotel_id}:availability`, "room:availability_changed", { hotel_id });
+    void emitToRoom(`hotel-admin:${hotel_id}`, "booking:created", {
+      reference: bookingResult.booking_reference, hotel_id, status: "RESERVED", reserved_until: bookingResult.reserved_until,
+    });
+    void emitToRoom("hotel-admin:all", "booking:created", {
+      reference: bookingResult.booking_reference, hotel_id, status: "RESERVED", reserved_until: bookingResult.reserved_until,
+    });
 
     return NextResponse.json({
       success: true,
       message: "Reservation successful",
-      data: {
-        booking_reference: bookingResult.booking_reference,
-        reserved_until: bookingResult.reserved_until,
-      },
+      data: { booking_reference: bookingResult.booking_reference, reserved_until: bookingResult.reserved_until },
     });
   } catch (error: any) {
     console.error("Booking Error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: error.message || "Failed to process reservation",
-      },
+      { success: false, message: error.message || "Failed to process reservation" },
       { status: error.message?.includes("sold out") ? 409 : 500 }
     );
   }
 }
-

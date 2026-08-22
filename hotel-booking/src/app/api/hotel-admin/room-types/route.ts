@@ -25,7 +25,15 @@ export async function GET(req: NextRequest) {
         type_images: { where: { is_cover: true }, take: 1 },
         room_variants: {
           where: { is_active: true },
-          select: { price: true, _count: { select: { room_details: { where: { deleted_at: null } } } } },
+          select: {
+            id: true,
+            price: true,
+            _count: {
+              select: {
+                room_details: { where: { deleted_at: null } },
+              },
+            },
+          },
         },
       },
       orderBy: { created_at: 'desc' },
@@ -35,7 +43,17 @@ export async function GET(req: NextRequest) {
       const { room_variants, ...rest } = rt
       const roomCount = room_variants.reduce((sum, v) => sum + v._count.room_details, 0)
       const startingPrice = room_variants.length > 0 ? Math.min(...room_variants.map((v) => Number(v.price))) : null
-      return { ...rest, variant_count: room_variants.length, room_count: roomCount, starting_price: startingPrice }
+      return {
+        ...rest,
+        variant_count: room_variants.length,
+        room_count: roomCount,
+        starting_price: startingPrice,
+        variants: room_variants.map((variant) => ({
+          id: variant.id,
+          price: Number(variant.price),
+          room_count: variant._count.room_details,
+        })),
+      }
     })
 
     return NextResponse.json({ success: true, data: summarized })

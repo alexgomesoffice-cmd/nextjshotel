@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { findOrCreateVariant, computeVariantSignature } from '@/lib/room-variant-matching'
 import { logHotelAdminActivity } from '@/lib/hotel-admin-activity'
+import { resolvePriceForDate } from '@/lib/pricing-resolver'
 import { z } from 'zod'
 
 const updateVariantSchema = z.object({
@@ -21,6 +22,7 @@ const VARIANT_INCLUDE = {
   bed_types: { include: { bed_type: true } },
   variant_images: { orderBy: { sort_order: 'asc' as const } },
   room_details: { where: { deleted_at: null }, orderBy: { room_number: 'asc' as const } },
+  pricing_rules: { where: { status: 'ACTIVE' as const } },
 }
 
 export async function GET(req: NextRequest, { params }: Params) {
@@ -38,7 +40,10 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: false, message: 'Variant not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, data: variant })
+    return NextResponse.json({
+      success: true,
+      data: { ...variant, pricing: resolvePriceForDate(Number(variant.price), variant.pricing_rules, new Date()) },
+    })
   } catch (error) {
     console.error('Fetch variant error:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })

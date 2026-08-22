@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { getEffectivePriceRange } from "@/lib/pricing-resolver";
 import BookingClient from "./booking-client";
 import { format } from "date-fns";
 import { Metadata } from "next";
@@ -96,14 +97,11 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
       type_images: {
         take: 1,
       },
-      room_bed_types: {
-        include: { bed_type: true },
-      },
-      room_properties: {
-        include: { amenity: true },
-      },
-      room_details: {
-        where: { status: "AVAILABLE", deleted_at: null },
+      room_variants: {
+        where: { id: { in: variantIdsNum }, is_active: true },
+        include: {
+          pricing_rules: { where: { status: "ACTIVE" } },
+        },
       },
     },
   });
@@ -111,18 +109,28 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
   if (roomTypes.length !== roomTypeIdsUnique.length) redirect("/");
 
   const roomTypeMap = new Map(roomTypes.map(rt => [rt.id, rt]));
+  const pricingByVariant = new Map(
+    await Promise.all(variantIdsNum.map(async (variantId) => {
+      const variant = roomTypes.flatMap((roomType) => roomType.room_variants).find((item) => item.id === variantId);
+      if (!variant) redirect("/");
+      return [variantId, await getEffectivePriceRange(variantId, checkIn, checkOut)] as const;
+    }))
+  );
   const roomSelections = roomTypeIdsNum.map((roomTypeId, index) => {
     const roomType = roomTypeMap.get(roomTypeId);
-    if (!roomType) redirect("/");
+    const variant = roomType?.room_variants.find((item) => item.id === variantIdsNum[index]);
+    if (!roomType || !variant) redirect("/");
     return {
       roomType,
-      variantId: variantIdsNum[index],
+      variant,
+      variantId: variant.id,
       quantity: quantitiesNum[index],
+      pricing: pricingByVariant.get(variant.id)!,
     };
   });
 
   const totalPrice = roomSelections.reduce(
-    (sum, selection) => sum + Number(selection.roomType.base_price) * nights * selection.quantity,
+    (sum, selection) => sum + selection.pricing.subtotal * selection.quantity,
     0
   );
 
@@ -202,9 +210,9 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                   {roomSelections.map((selection, index) => (
                     <div key={`${selection.roomType.id}-${selection.variantId}-${index}`} className="flex justify-between">
                       <span>
-                        {selection.roomType.name} · TK {Number(selection.roomType.base_price).toLocaleString()} × {nights} night{nights !== 1 ? "s" : ""} × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
+                        {selection.roomType.name} · TK {selection.pricing.subtotal.toLocaleString()} / room × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
                       </span>
-                      <span>TK {(Number(selection.roomType.base_price) * nights * selection.quantity).toLocaleString()}</span>
+                      <span>TK {(selection.pricing.subtotal * selection.quantity).toLocaleString()}</span>
                     </div>
                   ))}
                   <div className="flex justify-between text-muted-foreground">

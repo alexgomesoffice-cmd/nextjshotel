@@ -191,18 +191,18 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Confirming Reservation...
+              Reserving Rooms...
             </>
           ) : !hasValidId ? (
             "NID/Passport Required"
           ) : (
-            "Confirm Reservation"
+            "Reserve Booking"
           )}
         </Button>
       </div>
       
       <p className="text-xs text-center text-muted-foreground mt-4">
-        By clicking &quot;Confirm Reservation&quot;, you agree to our Terms of Service and Privacy Policy.
+        By clicking &quot;Reserve Booking&quot;, you agree to our Terms of Service and Privacy Policy.
       </p>
     </div>
   );

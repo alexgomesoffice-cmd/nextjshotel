@@ -51,7 +51,6 @@ export async function GET(
       created_at: booking.created_at.toISOString(),
       reserved_until: booking.reserved_until?.toISOString() || null,
       total_price: Number(booking.total_price),
-      advance_amount: Number(booking.advance_amount),
       room_bookings: booking.room_bookings.map(rb => ({
         ...rb,
         price_per_night: Number(rb.price_per_night),

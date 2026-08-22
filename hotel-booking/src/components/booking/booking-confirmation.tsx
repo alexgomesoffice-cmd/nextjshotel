@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useBookingStatus } from "@/hooks/use-booking-status";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { formatBDT } from "@/lib/utils";
 import ReservationTimer from "@/components/booking/reservation-timer";
 
@@ -19,6 +20,7 @@ interface RoomBooking {
   subtotal: number;
   room_type: { id: number; name: string };
   room_detail: { id: number; room_number: string; floor: number | null };
+  nightly_rates: { stay_date: string; price: number | string; pricing_rule_name: string | null }[];
 }
 
 interface Booking {
@@ -28,7 +30,6 @@ interface Booking {
   check_in: string;
   check_out: string;
   total_price: string;
-  advance_amount: string;
   guests: number;
   rooms_count: number;
   special_request: string | null;
@@ -60,6 +61,9 @@ interface BookingConfirmationProps {
 
 export default function BookingConfirmation({ booking }: BookingConfirmationProps) {
   const [currentTime, setCurrentTime] = useState(() => Date.now());
+  const [confirming, setConfirming] = useState(false);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [confirmed, setConfirmed] = useState(booking.status === "BOOKED");
   const liveStatus = useBookingStatus(booking.booking_reference, booking.status);
 
   useEffect(() => {
@@ -67,7 +71,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
     return () => clearInterval(interval);
   }, []);
 
-  const effectiveStatus = liveStatus === "RESERVED"
+  const effectiveStatus = confirmed || liveStatus === "BOOKED" ? "BOOKED" : liveStatus === "RESERVED"
     ? booking.reserved_until && new Date(booking.reserved_until).getTime() <= currentTime
       ? "EXPIRED"
       : "RESERVED"
@@ -80,6 +84,24 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
   );
   const isReserved = effectiveStatus === "RESERVED";
   const reservedUntilFuture = isReserved && booking.reserved_until && new Date(booking.reserved_until).getTime() > currentTime;
+
+  async function confirmBooking() {
+    setConfirming(true);
+    setConfirmError(null);
+    try {
+      const response = await fetch(`/api/bookings/${booking.booking_reference}/confirm`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || "Unable to confirm booking");
+      setConfirmed(true);
+    } catch (error) {
+      setConfirmError(error instanceof Error ? error.message : "Unable to confirm booking");
+    } finally {
+      setConfirming(false);
+    }
+  }
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-10 space-y-6">
@@ -102,6 +124,21 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
 
       {reservedUntilFuture && (
         <ReservationTimer reservedUntil={booking.reserved_until!} reference={booking.booking_reference} />
+      )}
+
+      {isReserved && reservedUntilFuture && (
+        <Card>
+          <CardContent className="p-6 space-y-3">
+            <div>
+              <h2 className="font-bold text-lg">Reservation held</h2>
+              <p className="text-sm text-muted-foreground">Confirm before the timer expires to keep these rooms.</p>
+            </div>
+            {confirmError && <p className="text-sm text-destructive">{confirmError}</p>}
+            <Button className="w-full sm:w-auto" onClick={confirmBooking} disabled={confirming}>
+              {confirming ? "Confirming Booking..." : "Confirm Booking"}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       <Card className="overflow-hidden">
@@ -163,6 +200,21 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="pt-4 mt-2 border-t border-border/50">
+            <h4 className="font-semibold text-sm mb-3">Nightly price breakdown</h4>
+            <div className="space-y-2">
+              {booking.room_bookings.flatMap((rb) => rb.nightly_rates.map((rate) => (
+                <div key={`${rb.id}-${rate.stay_date}`} className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    {new Date(rate.stay_date).toLocaleDateString("en-BD", { day: "numeric", month: "short", year: "numeric" })}
+                    {rate.pricing_rule_name ? ` · ${rate.pricing_rule_name}` : ""}
+                  </span>
+                  <span className="font-medium">{formatBDT(Number(rate.price))}</span>
+                </div>
+              ))) }
+            </div>
           </div>
 
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/50">

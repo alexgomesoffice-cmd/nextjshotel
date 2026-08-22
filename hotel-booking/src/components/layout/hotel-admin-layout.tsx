@@ -96,6 +96,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
         { icon: Calendar, label: 'Bookings', path: '/dashboard/hotel/bookings' },
         { icon: Users, label: 'Guests', path: '/dashboard/hotel/guests' },
         { icon: BedDouble, label: 'Rooms', path: '/dashboard/hotel/rooms' },
+        { icon: Sparkles, label: 'Room-Pricing', path: '/dashboard/hotel/pricing' },
       ],
     },
     {

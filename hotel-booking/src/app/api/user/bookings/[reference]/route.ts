@@ -34,12 +34,15 @@ export async function GET(
         room_bookings: {
           include: {
             room_type: { select: { id: true, name: true } },
+            nightly_rates: {
+              orderBy: { stay_date: "asc" },
+              select: { stay_date: true, price: true, pricing_rule_name: true },
+            },
             room_detail: {
               select: {
                 id: true,
                 room_number: true,
                 floor: true,
-                ac: true,
               },
             },
           },
@@ -69,7 +72,7 @@ export async function GET(
     }
 
     return NextResponse.json({ success: true, data: booking });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Fetch booking error:", error);
     return NextResponse.json(
       { success: false, message: "Failed to fetch booking" },

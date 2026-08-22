@@ -32,10 +32,10 @@ const CONFIG_ITEMS = [
     color: 'text-amber-500',
     bg: 'bg-amber-500/10',
     items: [
-      { label: 'Reservation Hold Window', value: '10 minutes', description: 'Rooms are held for 10 minutes after a reservation before auto-expiring' },
+      { label: 'Reservation Hold Window', value: '5 minutes', description: 'Rooms are held for 5 minutes after a reservation before auto-expiring' },
       { label: 'Advance Deposit', value: 'Per hotel config', description: 'Set per hotel as advance_deposit_percent in hotel_details' },
-      { label: 'Pricing Resolution', value: 'Rule → Room Price', description: 'pricing_rules override room_details.price; room_types.base_price is display-only' },
-      { label: 'Booking Reference Format', value: 'HBD-YYYYMMDD-XXXX', description: 'Generated at reservation time (not at payment)' },
+      { label: 'Pricing Resolution', value: 'Variant Price → Rule', description: 'pricing_rules apply to room_variants.price; physical rooms do not have commercial pricing' },
+      { label: 'Booking Reference Format', value: 'SV-XXXXXX', description: 'Generated at reservation time (not at payment)' },
     ],
   },
   {

@@ -72,7 +72,6 @@ export async function GET(req: NextRequest) {
     const serialized = bookings.map(b => ({
       ...b,
       total_price:    Number(b.total_price),
-      advance_amount: Number(b.advance_amount),
       check_in:       b.check_in.toISOString(),
       check_out:      b.check_out.toISOString(),
       created_at:     b.created_at.toISOString(),

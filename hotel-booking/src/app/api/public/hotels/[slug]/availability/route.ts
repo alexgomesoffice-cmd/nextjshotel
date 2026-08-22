@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { resolvePriceForDate } from '@/lib/pricing-resolver';
+import { resolvePriceRange, type PricingRuleLike } from '@/lib/pricing-resolver';
 
 /**
  * GET /api/public/hotels/[slug]/availability
  * Rewritten against Room Type -> Room Variant -> Physical Room. Real
  * variants are queried directly — nothing is grouped/recreated at query
  * time anymore (room-grouping.ts is retired). Effective pricing is
- * resolved via the same shared resolver bookings use, for the first
- * night of the requested stay (or today, if no dates were given) — the
- * booking flow itself still resolves every individual night correctly;
- * this is just the representative price shown in a listing card.
+ * resolved via the same shared resolver bookings use for every requested
+ * stay night. `pricing` remains the first-night representative for existing
+ * cards; `pricing_nights` and `pricing_subtotal` expose the full stay quote.
  */
 export async function GET(
   req: NextRequest,
@@ -26,9 +25,16 @@ export async function GET(
       return NextResponse.json({ success: false, message: 'Hotel slug is required' }, { status: 400 });
     }
 
+    if (!!checkIn !== !!checkOut) {
+      return NextResponse.json({ success: false, message: 'Both check_in and check_out are required' }, { status: 400 });
+    }
+
     if (checkIn && checkOut) {
       const ci = new Date(checkIn);
       const co = new Date(checkOut);
+      if (isNaN(ci.getTime()) || isNaN(co.getTime()) || co <= ci) {
+        return NextResponse.json({ success: false, message: 'Invalid stay dates' }, { status: 400 });
+      }
       const maxAllowed = new Date();
       maxAllowed.setFullYear(maxAllowed.getFullYear() + 1);
       if (!isNaN(ci.getTime()) && ci > maxAllowed) {
@@ -39,7 +45,8 @@ export async function GET(
       }
     }
 
-    const pricingDate = checkIn && !isNaN(new Date(checkIn).getTime()) ? new Date(checkIn) : new Date();
+    const pricingCheckIn = checkIn ? new Date(checkIn) : new Date();
+    const pricingCheckOut = checkOut ? new Date(checkOut) : new Date(pricingCheckIn.getTime() + 24 * 60 * 60 * 1000);
 
     const hotel = await prisma.hotels.findUnique({
       where: { slug, approval_status: 'PUBLISHED', deleted_at: null },
@@ -84,7 +91,8 @@ export async function GET(
     const roomTypes = hotel.room_types.map((rt) => {
       const variants = rt.room_variants.map((v) => {
         const availableCount = v.room_details.filter((r) => r.room_trackers.length === 0).length;
-        const resolved = resolvePriceForDate(Number(v.price), v.pricing_rules as any, pricingDate);
+        const pricingRange = resolvePriceRange(Number(v.price), v.pricing_rules as PricingRuleLike[], pricingCheckIn, pricingCheckOut);
+        const resolved = pricingRange.nights[0]?.resolved;
         return {
           id: v.id,
           room_size: v.room_size,
@@ -93,6 +101,11 @@ export async function GET(
           bed_types: v.bed_types.map((b) => ({ bed_type: b.bed_type, count: b.count })),
           variant_images: v.variant_images,
           pricing: resolved,
+          pricing_nights: pricingRange.nights.map((night) => ({
+            stay_date: night.date,
+            ...night.resolved,
+          })),
+          pricing_subtotal: pricingRange.subtotal,
           total_rooms: v.room_details.length,
           available_count: availableCount,
         };

@@ -37,6 +37,8 @@ export const VariantCard = ({
     const fName = f.facility?.name?.toLowerCase() ?? ''
     return !bedNames.some((bName: string) => bName && fName.includes(bName))
   })
+  const pricing = variant.pricing
+  const discount = pricing?.discount
 
   return (
     <Card className="overflow-hidden border border-border/80 bg-card shadow-sm hover:border-border transition-colors">
@@ -80,13 +82,16 @@ export const VariantCard = ({
           {/* Right Section: Price & Actions */}
           <div className="flex sm:flex-col items-end justify-between sm:justify-start gap-3 shrink-0 w-full sm:w-auto">
             <div className="text-left sm:text-right">
+              {discount ? <p className="text-xs text-muted-foreground line-through">Base: ৳{Number(pricing.basePrice).toLocaleString()}</p> : <p className="text-xs text-muted-foreground">Base</p>}
               <div className="text-lg font-bold text-foreground tracking-tight">
-                ৳{Number(variant.price).toLocaleString()}
+                ৳{Number(pricing?.effectivePrice ?? variant.price).toLocaleString()}
                 <span className="text-xs font-normal text-muted-foreground"> / night</span>
               </div>
+              {discount && <p className="text-xs font-medium text-emerald-600">{discount.name} · {discount.type === 'PERCENTAGE' ? `${discount.value}% OFF` : `৳${discount.amount.toLocaleString()} OFF`}</p>}
             </div>
 
             <div className="flex items-center gap-2">
+              <Link href="/dashboard/hotel/pricing" className="text-xs font-medium text-primary hover:underline">Manage Pricing</Link>
               <Button variant="outline" size="sm" className="h-8 text-xs font-medium" onClick={() => setEditOpen(true)}>
                 <Pencil className="h-3.5 w-3.5 mr-1.5" /> Edit
               </Button>

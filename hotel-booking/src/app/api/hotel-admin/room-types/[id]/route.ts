@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { updateRoomTypeSchema } from '@/lib/validations/room-type'
 import { logHotelAdminActivity } from '@/lib/hotel-admin-activity'
+import { resolvePriceForDate } from '@/lib/pricing-resolver'
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -27,6 +28,7 @@ export async function GET(req: NextRequest, { params }: Params) {
             bed_types: { include: { bed_type: true } },
             variant_images: { orderBy: { sort_order: 'asc' } },
             room_details: { where: { deleted_at: null } },
+            pricing_rules: { where: { status: 'ACTIVE' } },
           },
         },
       },
@@ -36,7 +38,16 @@ export async function GET(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: false, message: 'Room type not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ success: true, data: roomType })
+    const today = new Date()
+    const data = {
+      ...roomType,
+      room_variants: roomType.room_variants.map((variant) => ({
+        ...variant,
+        pricing: resolvePriceForDate(Number(variant.price), variant.pricing_rules, today),
+      })),
+    }
+
+    return NextResponse.json({ success: true, data })
   } catch (error) {
     console.error('Fetch room type error:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })

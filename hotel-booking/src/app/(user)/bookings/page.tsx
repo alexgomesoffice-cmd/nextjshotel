@@ -25,7 +25,7 @@ interface RoomBooking {
   nights: number
   subtotal: number
   room_type: { id: number; name: string }
-  room_detail: { id: number; room_number: string; floor: number | null; ac: boolean }
+  room_detail: { id: number; room_number: string; floor: number | null }
 }
 
 interface Booking {
@@ -35,7 +35,6 @@ interface Booking {
   check_in: string
   check_out: string
   total_price: string
-  advance_amount: string
   guests: number
   reserved_until: string | null
   created_at: string

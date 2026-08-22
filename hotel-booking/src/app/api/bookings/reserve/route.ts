@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-middleware";
 import { reserveBookingSchema } from "@/lib/validations/booking";
 import { getEffectivePriceRange } from "@/lib/pricing-resolver";
+import { Prisma } from "@prisma/client";
 import crypto from "crypto";
 import { emitToRoom } from "@/lib/socket-emit";
 
@@ -30,11 +31,14 @@ export async function POST(req: NextRequest) {
       check_out: body.check_out,
       guests: Number(body.guests),
       room_selections: Array.isArray(body.room_selections)
-        ? body.room_selections.map((selection: any) => ({
-            room_type_id: Number(selection?.room_type_id ?? selection?.roomTypeId),
-            variant_id: Number(selection?.variant_id ?? selection?.variantId),
-            quantity: Number(selection?.quantity),
-          }))
+        ? body.room_selections.map((selection: unknown) => {
+            const candidate = selection as Record<string, unknown>;
+            return {
+              room_type_id: Number(candidate.room_type_id ?? candidate.roomTypeId),
+              variant_id: Number(candidate.variant_id ?? candidate.variantId),
+              quantity: Number(candidate.quantity),
+            };
+          })
         : body.room_type_id !== undefined && body.quantity !== undefined
         ? [
             {
@@ -95,6 +99,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const normalizedSelections = [...room_selections.reduce((groups, selection) => {
+      const existing = groups.get(selection.variant_id);
+      groups.set(selection.variant_id, existing
+        ? { ...existing, quantity: existing.quantity + selection.quantity }
+        : selection);
+      return groups;
+    }, new Map<number, (typeof room_selections)[number]>()).values()];
+
     // Resolve nightly pricing for every distinct variant ONCE, outside the
     // transaction (pure read, no need to hold it up) — reused per room.
     const priceRangeByVariant = new Map<number, Awaited<ReturnType<typeof getEffectivePriceRange>>>();
@@ -102,18 +114,18 @@ export async function POST(req: NextRequest) {
       priceRangeByVariant.set(variantId, await getEffectivePriceRange(variantId, checkInDate, checkOutDate));
     }
 
-    const totalQuantity = room_selections.reduce((sum, s) => sum + s.quantity, 0);
+    const totalQuantity = normalizedSelections.reduce((sum, s) => sum + s.quantity, 0);
 
     const bookingResult = await prisma.$transaction(async (tx) => {
       let totalPrice = 0;
-      const selectedRoomsByVariant: Array<{ roomTypeId: number; variantId: number; rooms: any[] }> = [];
+      const selectedRoomsByVariant: Array<{ roomTypeId: number; variantId: number; rooms: Array<{ id: number }> }> = [];
 
-      for (const selection of room_selections) {
+      for (const selection of normalizedSelections) {
         const physicalRooms = await tx.room_details.findMany({
           where: { room_variant_id: selection.variant_id, status: "AVAILABLE", deleted_at: null },
         });
         if (physicalRooms.length < selection.quantity) {
-          throw new Error(`Not enough physical rooms configured for the selected room configuration`);
+          throw new Error("Rooms are sold out for the selected room configuration");
         }
 
         const bookedRooms = await tx.room_trackers.findMany({
@@ -205,7 +217,7 @@ export async function POST(req: NextRequest) {
       }
 
       return booking;
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     void emitToRoom(`hotel:${hotel_id}:availability`, "room:availability_changed", { hotel_id });
     void emitToRoom(`hotel-admin:${hotel_id}`, "booking:created", {
@@ -220,11 +232,12 @@ export async function POST(req: NextRequest) {
       message: "Reservation successful",
       data: { booking_reference: bookingResult.booking_reference, reserved_until: bookingResult.reserved_until },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Booking Error:", error);
+    const message = error instanceof Error ? error.message : "Failed to process reservation";
     return NextResponse.json(
-      { success: false, message: error.message || "Failed to process reservation" },
-      { status: error.message?.includes("sold out") ? 409 : 500 }
+      { success: false, message },
+      { status: message.includes("sold out") ? 409 : 500 }
     );
   }
 }

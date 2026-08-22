@@ -39,7 +39,6 @@ interface BookingDetail {
   guests: number
   rooms_count: number
   total_price: number
-  advance_amount: number
   special_request: string | null
   payment_method: string | null
   created_at: string
@@ -392,12 +391,6 @@ export default function SubAdminBookingDetailPage() {
                 <span className="text-muted-foreground">Total</span>
                 <span className="font-semibold">TK {booking.total_price.toLocaleString()}</span>
               </div>
-              {booking.advance_amount > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Advance Paid</span>
-                  <span>TK {booking.advance_amount.toLocaleString()}</span>
-                </div>
-              )}
               {booking.payment_method && (
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Method</span>

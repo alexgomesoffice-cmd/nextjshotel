@@ -27,7 +27,7 @@ type BookingStatus = 'RESERVED' | 'BOOKED' | 'EXPIRED' | 'CANCELLED' | 'CHECKED_
 interface BookingDetail {
   id: number; booking_reference: string; status: BookingStatus
   check_in: string; check_out: string; guests: number; rooms_count: number
-  total_price: number; advance_amount: number; special_request: string | null
+  total_price: number; special_request: string | null
   payment_method: string | null; created_at: string; reserved_until: string | null
   hotel: { id: number; name: string; city: { name: string } | null; images: { image_url: string }[] }
   end_user: {
@@ -229,7 +229,6 @@ export default function HotelAdminBookingDetailPage() {
               <div className="flex justify-between"><span className="text-muted-foreground">Service fee</span><span>TK{svcFee.toLocaleString()}</span></div>
               <Separator />
               <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">TK {booking.total_price.toLocaleString()}</span></div>
-              {booking.advance_amount > 0 && <div className="flex justify-between text-green-600"><span>Paid</span><span>TK {booking.advance_amount.toLocaleString()}</span></div>}
             </CardContent>
           </Card>
 

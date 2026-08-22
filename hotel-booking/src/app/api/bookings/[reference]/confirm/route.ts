@@ -1,6 +1,6 @@
 // filepath: src/app/api/bookings/[reference]/confirm/route.ts
-// PATCH: Upgrade booking from RESERVED → BOOKED.
-// Called when payment is confirmed or hotel manually confirms.
+// POST: Upgrade booking from RESERVED → BOOKED.
+// Called when the guest confirms the temporary reservation.
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -9,7 +9,7 @@ import { emitToRoom } from '@/lib/socket-emit';
 
 type Params = { params: Promise<{ reference: string }> };
 
-export async function PATCH(req: NextRequest, { params }: Params) {
+export async function POST(req: NextRequest, { params }: Params) {
   const { payload, error } = await requireAuth(req, ['END_USER', 'HOTEL_ADMIN', 'HOTEL_SUB_ADMIN']);
   if (error) return error;
 

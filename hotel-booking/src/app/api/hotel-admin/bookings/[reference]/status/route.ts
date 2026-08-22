@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
+import { BookingStatus } from '@prisma/client'
 import { requireAuth } from '@/lib/auth-middleware'
 import { emitToRoom } from '@/lib/socket-emit'
 
@@ -73,14 +74,25 @@ export async function PATCH(
     await prisma.$transaction([
       prisma.user_bookings.update({
         where: { id: booking.id },
-        data: { status: newStatus as any },
+        data: { status: newStatus as BookingStatus },
       }),
       isTerminal
         ? prisma.room_trackers.deleteMany({ where: { booking_id: booking.id } })
         : prisma.room_trackers.updateMany({
             where: { booking_id: booking.id },
-            data: { status: newStatus as any },
+            data: { status: 'CHECKED_IN' },
           }),
+        ...(action === 'check_in'
+          ? booking.room_bookings.map((roomBooking) => prisma.room_details.update({
+              where: { id: roomBooking.room_detail_id },
+              data: { status: 'CHECKED_IN' },
+            }))
+          : action === 'check_out'
+          ? booking.room_bookings.map((roomBooking) => prisma.room_details.update({
+              where: { id: roomBooking.room_detail_id },
+              data: { status: 'AVAILABLE' },
+            }))
+          : []),
     ])
 
     // ── Live updates ─────────────────────────────────────────────────────────

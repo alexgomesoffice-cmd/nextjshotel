@@ -25,7 +25,6 @@ interface RoomBooking {
   nights: number
   subtotal: number
   room_type: { id: number; name: string }
-  room_detail: { id: number; room_number: string; floor: number | null }
 }
 
 interface Booking {

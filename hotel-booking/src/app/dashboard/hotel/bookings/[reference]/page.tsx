@@ -168,7 +168,7 @@ export default function HotelAdminBookingDetailPage() {
                 booking.end_user.end_user_details?.nid_no ? ['NID', booking.end_user.end_user_details.nid_no] : null,
                 booking.end_user.end_user_details?.passport ? ['Passport', booking.end_user.end_user_details.passport] : null,
                 booking.end_user.end_user_details?.country ? ['Country', booking.end_user.end_user_details.country] : null,
-              ].filter(Boolean).map(([label, value]) => (
+              ].filter((item): item is [string, string] => item !== null).map(([label, value]) => (
                 <div key={label as string}>
                   <p className="text-xs text-muted-foreground mb-0.5">{label}</p>
                   <p className="font-medium">{value}</p>

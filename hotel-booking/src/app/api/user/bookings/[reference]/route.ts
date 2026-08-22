@@ -34,19 +34,23 @@ export async function GET(
         room_bookings: {
           include: {
             room_type: { select: { id: true, name: true } },
+            room_variant: {
+              select: {
+                id: true,
+                room_size: true,
+                max_occupancy: true,
+                variant_images: { orderBy: { sort_order: "asc" }, select: { image_url: true, is_cover: true } },
+                bed_types: { select: { count: true, bed_type: { select: { name: true } } } },
+                facilities: { select: { facility: { select: { name: true } } } },
+              },
+            },
             nightly_rates: {
               orderBy: { stay_date: "asc" },
               select: { stay_date: true, price: true, pricing_rule_name: true },
             },
-            room_detail: {
-              select: {
-                id: true,
-                room_number: true,
-                floor: true,
-              },
-            },
           },
         },
+        end_user: { select: { name: true, email: true } },
       },
     });
 

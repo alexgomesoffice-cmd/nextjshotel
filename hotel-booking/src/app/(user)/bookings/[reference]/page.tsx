@@ -13,7 +13,15 @@ interface RoomBooking {
   nights: number;
   subtotal: number;
   room_type: { id: number; name: string };
-  room_detail: { id: number; room_number: string; floor: number | null };
+  room_variant: {
+    id: number;
+    room_size: string | null;
+    max_occupancy: number | null;
+    variant_images: { image_url: string; is_cover: boolean }[];
+    bed_types: { count: number; bed_type: { name: string } }[];
+    facilities: { facility: { name: string } }[];
+  };
+  nightly_rates: { stay_date: string; price: number | string; pricing_rule_name: string | null }[];
 }
 
 interface Booking {
@@ -36,6 +44,7 @@ interface Booking {
     images: { image_url: string }[];
   };
   room_bookings: RoomBooking[];
+  end_user: { name: string; email: string };
 }
 
 export default function BookingDetailPage() {

@@ -89,13 +89,6 @@ export async function GET(req: NextRequest) {
               room_type: {
                 select: { id: true, name: true },
               },
-              room_detail: {
-                select: {
-                  id: true,
-                  room_number: true,
-                  floor: true,
-                },
-              },
             },
           },
         },

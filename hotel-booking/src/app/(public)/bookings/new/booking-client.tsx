@@ -14,6 +14,8 @@ interface BookingClientProps {
       roomTypeId: number;
       variantId: number;
       quantity: number;
+      variantLabel: string;
+      nightlyRates: { date: string; price: number; offerName: string | null }[];
     }[];
     checkIn: string;
     checkOut: string;
@@ -88,7 +90,6 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
         throw new Error(data.message || "Something went wrong while booking.");
       }
 
-      // Redirect to booking detail page — NOT /profile
       router.push(`/bookings/${data.data.booking_reference}`);
 
     } catch (err: unknown) {
@@ -196,13 +197,13 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
           ) : !hasValidId ? (
             "NID/Passport Required"
           ) : (
-            "Reserve Booking"
+            "Reserve Now"
           )}
         </Button>
       </div>
       
       <p className="text-xs text-center text-muted-foreground mt-4">
-        By clicking &quot;Reserve Booking&quot;, you agree to our Terms of Service and Privacy Policy.
+        By clicking &quot;Reserve Now&quot;, you agree to our Terms of Service and Privacy Policy.
       </p>
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Hotel, Clock, BedDouble,
   CheckCircle2, XCircle, AlertCircle,
@@ -19,7 +20,14 @@ interface RoomBooking {
   nights: number;
   subtotal: number;
   room_type: { id: number; name: string };
-  room_detail: { id: number; room_number: string; floor: number | null };
+  room_variant: {
+    id: number;
+    room_size: string | null;
+    max_occupancy: number | null;
+    variant_images: { image_url: string; is_cover: boolean }[];
+    bed_types: { count: number; bed_type: { name: string } }[];
+    facilities: { facility: { name: string } }[];
+  };
   nightly_rates: { stay_date: string; price: number | string; pricing_rule_name: string | null }[];
 }
 
@@ -43,6 +51,7 @@ interface Booking {
     images: { image_url: string }[];
   };
   room_bookings: RoomBooking[];
+  end_user: { name: string; email: string };
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ElementType }> = {
@@ -141,9 +150,18 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
         </Card>
       )}
 
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="mb-4 text-xl font-bold">Guest Details</h2>
+          <p className="text-sm font-medium">{booking.end_user.name}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{booking.end_user.email}</p>
+        </CardContent>
+      </Card>
+
       <Card className="overflow-hidden">
         <CardContent className="p-6 space-y-4">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-3 mb-1">
+            {booking.hotel.images[0] && <Image src={booking.hotel.images[0].image_url} alt={booking.hotel.name} width={88} height={64} className="h-16 w-[88px] rounded-lg object-cover" />}
             <Hotel className="h-5 w-5 text-primary" />
             <h2 className="text-xl font-bold">{booking.hotel.name}</h2>
           </div>
@@ -183,13 +201,22 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
             {booking.room_bookings.map(rb => (
               <div key={rb.id} className="flex items-center justify-between py-3 border-b border-border/30 last:border-0">
                 <div className="flex items-start gap-3">
+                  {(() => {
+                    const image = rb.room_variant.variant_images.find((item) => item.is_cover) ?? rb.room_variant.variant_images[0];
+                    return image ? <Image src={image.image_url} alt={rb.room_type.name} width={72} height={56} className="h-14 w-[72px] rounded-lg object-cover" /> : null;
+                  })()}
                   <BedDouble className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                   <div>
                     <p className="font-medium text-sm">{rb.room_type.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      Room {rb.room_detail.room_number}
-                      {rb.room_detail.floor ? ` · Floor ${rb.room_detail.floor}` : ""}
+                      {rb.room_variant.room_size || "Room configuration"}
+                      {rb.room_variant.max_occupancy ? ` · Up to ${rb.room_variant.max_occupancy} guests` : ""}
                     </p>
+                    {(rb.room_variant.bed_types.length > 0 || rb.room_variant.facilities.length > 0) && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {[...rb.room_variant.bed_types.map((bed) => `${bed.count} × ${bed.bed_type.name}`), ...rb.room_variant.facilities.map((item) => item.facility.name)].join(" · ")}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
@@ -220,6 +247,16 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
           <div className="flex items-center justify-between pt-4 mt-4 border-t border-border/50">
             <span className="font-bold text-lg">Total</span>
             <span className="font-bold text-xl text-primary">{formatBDT(Number(booking.total_price))}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <h3 className="mb-3 text-lg font-bold">Good to know</h3>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>Secure booking. Your reservation details are protected.</p>
+            <p>Payment is handled directly with the hotel upon arrival.</p>
           </div>
         </CardContent>
       </Card>

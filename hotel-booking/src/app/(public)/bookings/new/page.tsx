@@ -156,6 +156,12 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                 roomTypeId: selection.roomType.id,
                 variantId: selection.variantId,
                 quantity: selection.quantity,
+                variantLabel: selection.variant.room_size || `Variant #${selection.variant.id}`,
+                nightlyRates: selection.pricing.nights.map((night) => ({
+                  date: night.date.toISOString(),
+                  price: night.resolved.effectivePrice,
+                  offerName: night.resolved.discount?.name || null,
+                })),
               })),
               checkIn: params.check_in as string,
               checkOut: params.check_out as string,
@@ -210,7 +216,7 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                   {roomSelections.map((selection, index) => (
                     <div key={`${selection.roomType.id}-${selection.variantId}-${index}`} className="flex justify-between">
                       <span>
-                        {selection.roomType.name} · TK {selection.pricing.subtotal.toLocaleString()} / room × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
+                        {selection.roomType.name} · {selection.variant.room_size || `Variant #${selection.variant.id}`} · TK {selection.pricing.subtotal.toLocaleString()} / room × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
                       </span>
                       <span>TK {(selection.pricing.subtotal * selection.quantity).toLocaleString()}</span>
                     </div>
@@ -218,6 +224,20 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                   <div className="flex justify-between text-muted-foreground">
                     <span>Taxes & fees</span>
                     <span>Included</span>
+                  </div>
+                </div>
+                <div className="mt-5 border-t border-border/50 pt-4">
+                  <h4 className="mb-3 text-sm font-semibold">Nightly price breakdown</h4>
+                  <div className="space-y-2 text-sm">
+                    {roomSelections.flatMap((selection, selectionIndex) => selection.pricing.nights.map((night) => (
+                      <div key={`${selection.variantId}-${night.date.toISOString()}-${selectionIndex}`} className="flex items-center justify-between gap-3">
+                        <span className="text-muted-foreground">
+                          {format(night.date, "EEE, MMM d")}
+                          {night.resolved.discount?.name ? ` · ${night.resolved.discount.name}` : ""}
+                        </span>
+                        <span className="font-medium">TK {night.resolved.effectivePrice.toLocaleString()}</span>
+                      </div>
+                    )))}
                   </div>
                 </div>
               </div>

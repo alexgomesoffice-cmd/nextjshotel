@@ -11,8 +11,10 @@ import { DateRange } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { format, differenceInCalendarDays, addDays } from "date-fns";
+import { Loader2 } from "lucide-react";
 
 export interface SelectedVariant {
   variantId: number;
@@ -23,7 +25,7 @@ export interface SelectedVariant {
 }
 
 interface BookingSidebarProps {
-  hotelSlug: string;
+  hotelId: number;
   selectedVariants: SelectedVariant[];
   initialCheckIn?: string;
   initialCheckOut?: string;
@@ -34,10 +36,8 @@ interface BookingSidebarProps {
   guestWarning?: string | null;
 }
 
-const SERVICE_FEE_PERCENT = 0.1;
-
 export default function BookingSidebar({
-  hotelSlug,
+  hotelId,
   selectedVariants,
   initialCheckIn,
   initialCheckOut,
@@ -48,6 +48,9 @@ export default function BookingSidebar({
   guestWarning,
 }: BookingSidebarProps) {
   const router = useRouter();
+  const [isReserving, setIsReserving] = useState(false);
+  const [reserveError, setReserveError] = useState<string | null>(null);
+  const [specialRequest, setSpecialRequest] = useState("");
 
   const parseDate = (s?: string) => {
     if (!s) return undefined;
@@ -90,22 +93,41 @@ export default function BookingSidebar({
     }
   };
 
-  const handleReserve = () => {
+  const handleReserve = async () => {
     if (!hasSelections || !date?.from || !date?.to) return;
 
-    const params = new URLSearchParams();
-    params.set("hotel", hotelSlug);
-    params.set("check_in", format(date.from, "yyyy-MM-dd"));
-    params.set("check_out", format(date.to, "yyyy-MM-dd"));
-    params.set("guests", guests.toString());
+    setIsReserving(true);
+    setReserveError(null);
 
-    selectedVariants.forEach((variant) => {
-      params.append("room_type_ids[]", String(variant.roomTypeId));
-      params.append("variant_ids[]", String(variant.variantId));
-      params.append("quantities[]", String(variant.quantity));
-    });
+    try {
+      const response = await fetch("/api/bookings/reserve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          hotel_id: hotelId,
+          check_in: format(date.from, "yyyy-MM-dd"),
+          check_out: format(date.to, "yyyy-MM-dd"),
+          guests,
+          special_request: specialRequest.trim() || undefined,
+          room_selections: selectedVariants.map((variant) => ({
+            room_type_id: variant.roomTypeId,
+            variant_id: variant.variantId,
+            quantity: variant.quantity,
+          })),
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to reserve the selected rooms.");
+      }
 
-    router.push(`/bookings/new?${params.toString()}`);
+      router.push(`/bookings/${data.data.booking_reference}`);
+    } catch (error) {
+      setReserveError(error instanceof Error ? error.message : "Unable to reserve the selected rooms.");
+    } finally {
+      setIsReserving(false);
+    }
   };
 
   return (
@@ -272,13 +294,29 @@ export default function BookingSidebar({
           </div>
         )}
 
+        <div className="space-y-2">
+          <label htmlFor="booking-special-request" className="text-sm font-medium text-foreground">
+            Special request <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+          <Textarea
+            id="booking-special-request"
+            value={specialRequest}
+            onChange={(event) => setSpecialRequest(event.target.value)}
+            placeholder="Quiet room, high floor, or another request"
+            className="min-h-20 resize-y"
+            maxLength={1000}
+            disabled={isReserving}
+          />
+        </div>
+
         <Button
           className="w-full h-12 text-base font-semibold rounded-xl"
-          disabled={!hasSelections || !date?.from || !date?.to || nights < 1}
+          disabled={isReserving || !hasSelections || !date?.from || !date?.to || nights < 1}
           onClick={handleReserve}
         >
-          Reserve now
+          {isReserving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reserving...</> : "Reserve Now"}
         </Button>
+        {reserveError && <p className="text-sm text-destructive">{reserveError}</p>}
       </div>
     </div>
   );

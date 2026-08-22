@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { cn } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
 import RoomsSectionClient, { type RoomType } from "@/components/room/rooms-section-client";
 import BookingSidebar, { type SelectedVariant } from "./booking-sidebar";
@@ -38,6 +37,7 @@ export default function RoomSelector({
   const [sidebarCheckOut, setSidebarCheckOut] = useState(checkOut);
   const [sidebarGuests, setSidebarGuests] = useState(guests);
   const [guestWarning, setGuestWarning] = useState<string | null>(null);
+  const [internalRoomTypes, setInternalRoomTypes] = useState(initialRoomTypes);
 
   // ── Scroll to #rooms then to the specific card and animate it ──
   useEffect(() => {
@@ -106,12 +106,6 @@ export default function RoomSelector({
 
   // Wire up the socket hook to auto-refresh when someone else changes availability
   // (e.g. they booked the last room, or admin changed the price)
-  const [internalRoomTypes, setInternalRoomTypes] = useState(initialRoomTypes);
-  
-  useEffect(() => {
-    setInternalRoomTypes(initialRoomTypes);
-  }, [initialRoomTypes]);
-
   const onRefreshNeeded = useCallback(() => {
     // Only refresh if we have dates selected
     if (sidebarCheckIn && sidebarCheckOut) {
@@ -237,7 +231,7 @@ export default function RoomSelector({
 
         <div className="lg:col-span-1 sticky top-24">
           <BookingSidebar
-            hotelSlug={hotelSlug}
+            hotelId={hotelIdNum}
             selectedVariants={selectedVariants}
             initialCheckIn={checkIn}
             initialCheckOut={checkOut}

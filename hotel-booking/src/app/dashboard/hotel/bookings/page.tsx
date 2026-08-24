@@ -11,12 +11,12 @@ import {
   Search, ChevronLeft, ChevronRight, Eye,
   CalendarDays, Users, Hash, LogIn, LogOut,
   XCircle, UserX, CheckCircle2, Clock,
-  AlertCircle, RefreshCw,
+  AlertCircle, RefreshCw, FilterX, Copy, BedDouble
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import {
   Select, SelectContent, SelectItem,
   SelectTrigger, SelectValue,
@@ -30,6 +30,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { useHotelAdminFeed } from '@/hooks/use-hotel-admin-feed'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 type BookingStatus = 'RESERVED' | 'BOOKED' | 'EXPIRED' | 'CANCELLED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW'
 
@@ -55,13 +57,13 @@ interface Pagination {
 }
 
 const STATUS_CONFIG: Record<BookingStatus, { label: string; badge: string; icon: React.ElementType }> = {
-  RESERVED: { label: 'Reserved', badge: 'bg-amber-500/20  text-amber-700  border-amber-500/30', icon: Clock },
-  BOOKED: { label: 'Confirmed', badge: 'bg-blue-500/20   text-blue-700   border-blue-500/30', icon: CheckCircle2 },
-  CHECKED_IN: { label: 'Checked In', badge: 'bg-green-500/20  text-green-700  border-green-500/30', icon: LogIn },
-  CHECKED_OUT: { label: 'Checked Out', badge: 'bg-purple-500/20 text-purple-700 border-purple-500/30', icon: LogOut },
-  CANCELLED: { label: 'Cancelled', badge: 'bg-red-500/20    text-red-700    border-red-500/30', icon: XCircle },
-  EXPIRED: { label: 'Expired', badge: 'bg-gray-500/20   text-gray-600   border-gray-500/30', icon: AlertCircle },
-  NO_SHOW: { label: 'No Show', badge: 'bg-orange-500/20 text-orange-700 border-orange-500/30', icon: UserX },
+  RESERVED: { label: 'Reserved', badge: 'bg-amber-500/10 text-amber-500 border-amber-500/20', icon: Clock },
+  BOOKED: { label: 'Confirmed', badge: 'bg-blue-500/10 text-blue-500 border-blue-500/20', icon: CheckCircle2 },
+  CHECKED_IN: { label: 'Checked In', badge: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20', icon: LogIn },
+  CHECKED_OUT: { label: 'Checked Out', badge: 'bg-purple-500/10 text-purple-500 border-purple-500/20', icon: LogOut },
+  CANCELLED: { label: 'Cancelled', badge: 'bg-red-500/10 text-red-500 border-red-500/20', icon: XCircle },
+  EXPIRED: { label: 'Expired', badge: 'bg-gray-500/10 text-gray-400 border-gray-500/20', icon: AlertCircle },
+  NO_SHOW: { label: 'No Show', badge: 'bg-orange-500/10 text-orange-500 border-orange-500/20', icon: UserX },
 }
 
 function nights(ci: string, co: string) {
@@ -123,7 +125,6 @@ export default function HotelAdminBookingsPage() {
         // ignore
       }
     }
-
     void loadHotelId()
   }, [])
   
@@ -156,150 +157,274 @@ export default function HotelAdminBookingsPage() {
     }
   }
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+    toast({ title: 'Copied', description: 'Booking reference copied to clipboard.' })
+  }
+
+  const clearFilters = () => {
+    setSearch('')
+    setStatus('all')
+    setSortBy('created_at')
+    setOrder('desc')
+    setDateFrom('')
+    setDateTo('')
+    resetPage()
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-[1400px] mx-auto w-full">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Bookings</h1>
-          <p className="text-muted-foreground mt-1">{pagination.total} total bookings</p>
+          <h1 className="text-3xl font-bold tracking-tight">Bookings</h1>
+          <p className="text-muted-foreground mt-1.5">Manage reservations, guest stays and booking status.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchBookings} className="gap-2">
-          <RefreshCw className="h-4 w-4" /> Refresh
-        </Button>
+        <div className="flex items-center gap-3">
+          {pagination.total > 0 && !loading && (
+            <div className="bg-secondary/50 px-3 py-1.5 rounded-md border border-border/50 flex items-center gap-2">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total Bookings</span>
+              <span className="font-semibold text-sm">{pagination.total}</span>
+            </div>
+          )}
+          <Button variant="outline" onClick={fetchBookings} className="gap-2">
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </Button>
+        </div>
       </div>
 
-      <Card className="glass-strong">
-        <CardContent className="pt-6 space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="relative sm:col-span-2 lg:col-span-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Reference or guest..." value={search} onChange={e => { setSearch(e.target.value); resetPage() }} className="pl-10 h-10" />
-            </div>
-            <Select value={status} onValueChange={v => { setStatus(v); resetPage() }}>
-              <SelectTrigger className="h-10"><SelectValue placeholder="All statuses" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                {(Object.keys(STATUS_CONFIG) as BookingStatus[]).map(s => (
-                  <SelectItem key={s} value={s}>{STATUS_CONFIG[s].label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={`${sortBy}-${order}`} onValueChange={v => { const [by, ord] = v.split('-'); setSortBy(by); setOrder(ord); resetPage() }}>
-              <SelectTrigger className="h-10"><SelectValue placeholder="Sort by" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="created_at-desc">Newest First</SelectItem>
-                <SelectItem value="created_at-asc">Oldest First</SelectItem>
-                <SelectItem value="check_in-asc">Check-in ↑</SelectItem>
-                <SelectItem value="check_in-desc">Check-in ↓</SelectItem>
-                <SelectItem value="total_price-desc">Price High→Low</SelectItem>
-                <SelectItem value="total_price-asc">Price Low→High</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" className="h-10" onClick={() => { setSearch(''); setStatus('all'); setSortBy('created_at'); setOrder('desc'); setDateFrom(''); setDateTo(''); resetPage() }}>
-              Clear Filters
+      <Card className="border-border/50 shadow-sm bg-card/40">
+        <div className="p-3 flex flex-col md:flex-row gap-3 items-center">
+          <div className="relative flex-1 w-full md:max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search reference or guest..." 
+              value={search} 
+              onChange={e => { setSearch(e.target.value); resetPage() }} 
+              className="pl-9 h-10 bg-background/50 border-border/50" 
+            />
+          </div>
+          
+          <Select value={status} onValueChange={v => { setStatus(v); resetPage() }}>
+            <SelectTrigger className="h-10 w-full md:w-[160px] bg-background/50 border-border/50">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {(Object.keys(STATUS_CONFIG) as BookingStatus[]).map(s => (
+                <SelectItem key={s} value={s}>{STATUS_CONFIG[s].label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Input 
+              type="date" 
+              value={dateFrom} 
+              onChange={e => { setDateFrom(e.target.value); resetPage() }} 
+              className="h-10 w-full md:w-[140px] bg-background/50 border-border/50" 
+            />
+            <span className="text-muted-foreground text-sm">—</span>
+            <Input 
+              type="date" 
+              value={dateTo} 
+              onChange={e => { setDateTo(e.target.value); resetPage() }} 
+              className="h-10 w-full md:w-[140px] bg-background/50 border-border/50" 
+            />
+          </div>
+          
+          <Select value={`${sortBy}-${order}`} onValueChange={v => { const [by, ord] = v.split('-'); setSortBy(by); setOrder(ord); resetPage() }}>
+            <SelectTrigger className="h-10 w-full md:w-[150px] bg-background/50 border-border/50">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_at-desc">Newest First</SelectItem>
+              <SelectItem value="created_at-asc">Oldest First</SelectItem>
+              <SelectItem value="check_in-asc">Check-in ↑</SelectItem>
+              <SelectItem value="check_in-desc">Check-in ↓</SelectItem>
+              <SelectItem value="total_price-desc">Price High→Low</SelectItem>
+              <SelectItem value="total_price-asc">Price Low→High</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {(search || status !== 'all' || dateFrom || dateTo || sortBy !== 'created_at' || order !== 'desc') && (
+            <Button variant="ghost" className="h-10 px-3 text-muted-foreground hover:text-foreground shrink-0" onClick={clearFilters}>
+              <FilterX className="h-4 w-4 mr-2" /> Clear
             </Button>
-          </div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="text-sm text-muted-foreground">Check-in range:</span>
-            <Input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); resetPage() }} className="h-9 w-40" />
-            <span className="text-muted-foreground text-sm">→</span>
-            <Input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); resetPage() }} className="h-9 w-40" />
-          </div>
-        </CardContent>
+          )}
+        </div>
       </Card>
 
-      <Card className="glass-strong overflow-hidden">
+      <Card className="border-border/50 shadow-sm overflow-hidden bg-card/20">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-secondary/50">
-              <TableRow>
-                <TableHead>Reference</TableHead>
-                <TableHead>Guest</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead>Rooms</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+            <TableHeader className="bg-secondary/30">
+              <TableRow className="border-border/30 hover:bg-transparent">
+                <TableHead className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground h-11">Reference</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground h-11">Guest</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground h-11">Stay</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground h-11">Rooms</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground h-11">Total</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground h-11">Status</TableHead>
+                <TableHead className="text-[11px] uppercase tracking-wider font-medium text-muted-foreground h-11 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                Array.from({ length: 8 }).map((_, i) => (
-                  <TableRow key={i}>{Array.from({ length: 7 }).map((_, j) => (<TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>))}</TableRow>
+                Array.from({ length: 10 }).map((_, i) => (
+                  <TableRow key={i} className="border-border/30">
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="space-y-1.5"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-32" /></div>
+                      </div>
+                    </TableCell>
+                    <TableCell><div className="space-y-1.5"><Skeleton className="h-4 w-32" /><Skeleton className="h-3 w-20" /></div></TableCell>
+                    <TableCell><div className="space-y-1.5"><Skeleton className="h-4 w-24" /><Skeleton className="h-3 w-16" /></div></TableCell>
+                    <TableCell><div className="space-y-1.5"><Skeleton className="h-4 w-16" /><Skeleton className="h-3 w-8" /></div></TableCell>
+                    <TableCell><Skeleton className="h-6 w-24 rounded-full" /></TableCell>
+                    <TableCell><div className="flex justify-end gap-2"><Skeleton className="h-8 w-8 rounded-md" /><Skeleton className="h-8 w-8 rounded-md" /></div></TableCell>
+                  </TableRow>
                 ))
               ) : bookings.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-16 text-muted-foreground">
-                    <Hash className="h-10 w-10 mx-auto mb-3 opacity-20" />
-                    <p>No bookings found</p>
+                  <TableCell colSpan={7} className="h-64 text-center">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <Hash className="h-10 w-10 mb-4 opacity-20" />
+                      <p className="text-base font-medium text-foreground">No bookings found</p>
+                      <p className="text-sm mt-1 mb-4">Try adjusting your search or filters.</p>
+                      {(search || status !== 'all' || dateFrom || dateTo) && (
+                        <Button variant="outline" size="sm" onClick={clearFilters}>Clear Filters</Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : bookings.map(booking => {
                 const cfg = STATUS_CONFIG[booking.status]
-                const Icon = cfg.icon
+                const StatusIcon = cfg.icon
                 const n = nights(booking.check_in, booking.check_out)
-                const rooms = [...new Set(booking.room_bookings.map(rb => rb.room_type.name))].join(', ')
                 const isActing = actionLoading?.startsWith(booking.booking_reference)
+                
+                const roomTypes = [...new Set(booking.room_bookings.map(rb => rb.room_type.name))]
+                const roomTypeText = roomTypes.length > 1 ? 'Multiple Types' : (roomTypes[0] || 'Unknown Room')
 
                 return (
-                  <TableRow key={booking.id} className="hover:bg-secondary/30">
-                    <TableCell>
-                      <span className="font-mono text-xs font-medium">{booking.booking_reference}</span>
+                  <TableRow key={booking.id} className="border-border/30 hover:bg-secondary/20 transition-colors group">
+                    <TableCell className="align-top py-4">
+                      <div className="flex items-center gap-1.5 group/ref cursor-pointer" onClick={() => copyToClipboard(booking.booking_reference)}>
+                        <span className="font-mono text-[13px] font-medium text-muted-foreground group-hover/ref:text-foreground transition-colors">{booking.booking_reference}</span>
+                        <Copy className="h-3 w-3 opacity-0 group-hover/ref:opacity-100 text-muted-foreground transition-opacity" />
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <TableCell className="align-top py-4">
+                      <div className="flex items-start gap-3">
+                        <Avatar className="h-9 w-9 border border-border/50">
+                          <AvatarFallback className="bg-secondary text-secondary-foreground text-xs font-medium">
+                            {booking.end_user.name.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
-                          <p className="text-sm font-medium leading-tight">{booking.end_user.name}</p>
-                          <p className="text-xs text-muted-foreground">{booking.end_user.email}</p>
+                          <p className="text-[14px] font-semibold text-foreground leading-none mb-1.5">{booking.end_user.name}</p>
+                          <p className="text-[13px] text-muted-foreground leading-none">{booking.end_user.email}</p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <CalendarDays className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <TableCell className="align-top py-4">
+                      <div className="flex items-start gap-2.5">
+                        <CalendarDays className="h-4 w-4 text-muted-foreground/70 shrink-0 mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium">{format(new Date(booking.check_in), 'MMM d')} – {format(new Date(booking.check_out), 'MMM d, yyyy')}</p>
-                          <p className="text-xs text-muted-foreground">{n} night{n !== 1 ? 's' : ''} · {booking.guests} guest{booking.guests !== 1 ? 's' : ''}</p>
+                          <p className="text-[14px] font-medium text-foreground leading-none mb-1.5">
+                            {format(new Date(booking.check_in), 'MMM d')} – {format(new Date(booking.check_out), 'MMM d, yyyy')}
+                          </p>
+                          <p className="text-[13px] text-muted-foreground leading-none">
+                            {n} night{n !== 1 ? 's' : ''} · {booking.guests} guest{booking.guests !== 1 ? 's' : ''}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <p className="text-xs text-muted-foreground max-w-32 truncate" title={rooms}>{rooms || '—'}</p>
-                      <p className="text-xs text-muted-foreground">{booking.rooms_count} room{booking.rooms_count !== 1 ? 's' : ''}</p>
-                    </TableCell>
-                    <TableCell className="font-semibold text-sm">TK {booking.total_price.toLocaleString()}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <Icon className="h-3.5 w-3.5" />
-                        <Badge variant="outline" className={cn('text-xs', cfg.badge)}>{cfg.label}</Badge>
+                    <TableCell className="align-top py-4">
+                      <div className="flex items-start gap-2.5">
+                        <BedDouble className="h-4 w-4 text-muted-foreground/70 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[14px] font-medium text-foreground leading-none mb-1.5 max-w-[160px] truncate" title={roomTypes.join(', ')}>
+                            {roomTypeText}
+                          </p>
+                          <p className="text-[13px] text-muted-foreground leading-none">
+                            {booking.rooms_count} room{booking.rooms_count !== 1 ? 's' : ''}
+                          </p>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1">
-                        <Link href={`/dashboard/hotel/bookings/${booking.booking_reference}`}>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" title="View"><Eye className="h-4 w-4" /></Button>
-                        </Link>
-                        {booking.status === 'BOOKED' && (
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-green-600 hover:bg-green-50" title="Check in" disabled={!!isActing} onClick={() => performAction(booking.booking_reference, 'check_in')}>
-                            <LogIn className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {booking.status === 'CHECKED_IN' && (
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-blue-600 hover:bg-blue-50" title="Check out" disabled={!!isActing} onClick={() => performAction(booking.booking_reference, 'check_out')}>
-                            <LogOut className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {booking.status === 'BOOKED' && (
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-orange-600 hover:bg-orange-50" title="No Show" disabled={!!isActing} onClick={() => performAction(booking.booking_reference, 'no_show')}>
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {['RESERVED', 'BOOKED', 'CHECKED_IN'].includes(booking.status) && (
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:bg-red-50" title="Cancel" disabled={!!isActing} onClick={() => performAction(booking.booking_reference, 'cancel')}>
-                            <XCircle className="h-4 w-4" />
-                          </Button>
-                        )}
+                    <TableCell className="align-top py-4">
+                      <p className="text-[14px] font-semibold text-foreground leading-none mb-1.5">৳{booking.total_price.toLocaleString()}</p>
+                      <p className="text-[11px] uppercase tracking-wider text-muted-foreground/70 font-medium leading-none">Total</p>
+                    </TableCell>
+                    <TableCell className="align-top py-4">
+                      <Badge variant="outline" className={cn('text-[11px] font-semibold px-2 py-0.5 h-6 uppercase tracking-wider', cfg.badge)}>
+                        <StatusIcon className="h-3 w-3 mr-1.5" />
+                        {cfg.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="align-top py-4">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <TooltipProvider delayDuration={300}>
+                          
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground" asChild>
+                                <Link href={`/dashboard/hotel/bookings/${booking.booking_reference}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>View Details</TooltipContent>
+                          </Tooltip>
+
+                          {booking.status === 'BOOKED' && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10" disabled={!!isActing} onClick={() => performAction(booking.booking_reference, 'check_in')}>
+                                  <LogIn className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Check In</TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {booking.status === 'CHECKED_IN' && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-purple-500 hover:text-purple-600 hover:bg-purple-500/10" disabled={!!isActing} onClick={() => performAction(booking.booking_reference, 'check_out')}>
+                                  <LogOut className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Check Out</TooltipContent>
+                            </Tooltip>
+                          )}
+
+                          {booking.status === 'BOOKED' && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-orange-500 hover:text-orange-600 hover:bg-orange-500/10" disabled={!!isActing} onClick={() => performAction(booking.booking_reference, 'no_show')}>
+                                  <UserX className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Mark No Show</TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                          {['RESERVED', 'BOOKED', 'CHECKED_IN'].includes(booking.status) && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10" disabled={!!isActing} onClick={() => performAction(booking.booking_reference, 'cancel')}>
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Cancel</TooltipContent>
+                            </Tooltip>
+                          )}
+                          
+                        </TooltipProvider>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -311,21 +436,17 @@ export default function HotelAdminBookingsPage() {
       </Card>
 
       {!loading && pagination.totalPages > 1 && (
-        <Card className="glass-strong">
-          <CardContent className="pt-4 pb-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">Page {pagination.page} of {pagination.totalPages} · {pagination.total} total</p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={pagination.page === 1} onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))} className="gap-1">
-                  <ChevronLeft className="h-4 w-4" /> Previous
-                </Button>
-                <Button variant="outline" size="sm" disabled={pagination.page === pagination.totalPages} onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))} className="gap-1">
-                  Next <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-between px-1">
+          <p className="text-sm text-muted-foreground">Showing page <span className="font-medium text-foreground">{pagination.page}</span> of <span className="font-medium text-foreground">{pagination.totalPages}</span></p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled={pagination.page === 1} onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))} className="h-9 gap-1.5 shadow-sm">
+              <ChevronLeft className="h-4 w-4" /> Previous
+            </Button>
+            <Button variant="outline" size="sm" disabled={pagination.page === pagination.totalPages} onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))} className="h-9 gap-1.5 shadow-sm">
+              Next <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       )}
     </div>
   )

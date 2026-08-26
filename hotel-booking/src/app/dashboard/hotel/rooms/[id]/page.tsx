@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Toggle } from '@/components/ui/toggle'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -49,6 +50,22 @@ export default function RoomTypeDetailPage() {
     const data = await res.json()
     if (data.success) { toast({ title: 'Status updated' }); fetchRoomType() }
     else toast({ title: 'Could not update status', description: data.message, variant: 'destructive' })
+  }
+
+  const toggleRoomType = async (isActive: boolean) => {
+    const res = await fetch(`/api/hotel-admin/room-types/${roomTypeId}`, {
+      method: 'PATCH',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: isActive }),
+    })
+    const data = await res.json()
+    if (data.success) {
+      setRoomType((current: any) => current ? { ...current, is_active: isActive } : current)
+      toast({ title: isActive ? 'Room type activated' : 'Room type deactivated' })
+    } else {
+      toast({ title: 'Could not update room type status', description: data.message, variant: 'destructive' })
+    }
   }
 
   const deleteVariant = async (variantId: number) => {
@@ -107,12 +124,22 @@ export default function RoomTypeDetailPage() {
           ) : null}
 
           <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">{roomType.name}</h1>
-              <Badge variant="outline" className={cn('text-xs font-semibold px-2.5 py-0.5 rounded-full border inline-flex items-center gap-1.5', roomType.is_active ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/30' : 'bg-muted text-muted-foreground')}>
-                <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', roomType.is_active ? 'bg-emerald-500' : 'bg-slate-400')} />
-                {roomType.is_active ? 'Active' : 'Inactive'}
-              </Badge>
+              <div className="flex min-w-0 items-center gap-2 flex-wrap">
+                <h1 className="min-w-0 flex-1 text-2xl font-bold tracking-tight text-foreground">{roomType.name}</h1>
+              <div className="ml-auto inline-flex shrink-0 items-center gap-2">
+                <Toggle
+                  type="button"
+                  pressed={roomType.is_active}
+                  onPressedChange={(pressed) => void toggleRoomType(pressed)}
+                  className={`relative h-6 w-11 shrink-0 rounded-full border p-0 transition-colors ${roomType.is_active ? 'border-emerald-600 bg-emerald-500 hover:bg-emerald-600' : 'border-slate-600 bg-slate-700 hover:bg-slate-600'}`}
+                  aria-label={`${roomType.is_active ? 'Deactivate' : 'Activate'} ${roomType.name}`}
+                >
+                  <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${roomType.is_active ? 'translate-x-5' : ''}`} />
+                </Toggle>
+                <span className={`text-xs font-semibold ${roomType.is_active ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                  {roomType.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
             </div>
 
             {roomType.hotel?.name && (

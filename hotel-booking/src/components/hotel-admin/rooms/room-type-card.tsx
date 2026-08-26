@@ -3,13 +3,13 @@
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { Toggle } from '@/components/ui/toggle'
 import { MoreVertical, Pencil, ImageIcon, ArrowRight, Layers, DoorOpen, Trash2 } from 'lucide-react'
 
 export const RoomTypeCard = ({
-  roomType, onEdit, onManageImages, onDelete,
-}: { roomType: any; onEdit: () => void; onManageImages: () => void; onDelete: () => void }) => {
+  roomType, onEdit, onManageImages, onDelete, onToggleActive,
+}: { roomType: any; onEdit: () => void; onManageImages: () => void; onDelete: () => void; onToggleActive?: (isActive: boolean) => void }) => {
   const cover = roomType.type_images?.[0]
 
   return (
@@ -30,11 +30,22 @@ export const RoomTypeCard = ({
         <div className="min-w-0 flex-1 flex flex-col">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold truncate">{roomType.name}</h3>
-                <Badge variant={roomType.is_active ? 'default' : 'secondary'} className="shrink-0">
-                  {roomType.is_active ? 'Active' : 'Inactive'}
-                </Badge>
+              <div className="flex min-w-0 items-center gap-2">
+                <h3 className="min-w-0 flex-1 truncate font-semibold">{roomType.name}</h3>
+                {onToggleActive && <div className="ml-auto flex shrink-0 items-center gap-2">
+                  <Toggle
+                    type="button"
+                    pressed={roomType.is_active}
+                    onPressedChange={onToggleActive}
+                    className={`relative h-6 w-11 shrink-0 rounded-full border p-0 transition-colors ${roomType.is_active ? 'border-emerald-600 bg-emerald-500 hover:bg-emerald-600' : 'border-slate-600 bg-slate-700 hover:bg-slate-600'}`}
+                    aria-label={`${roomType.is_active ? 'Deactivate' : 'Activate'} ${roomType.name}`}
+                  >
+                    <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${roomType.is_active ? 'translate-x-5' : ''}`} />
+                  </Toggle>
+                  <span className={`text-xs font-semibold ${roomType.is_active ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                    {roomType.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>}
               </div>
               <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{roomType.description}</p>
             </div>

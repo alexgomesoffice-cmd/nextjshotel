@@ -137,7 +137,11 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     const roomType = await prisma.room_types.findUnique({
       where: { id: roomTypeId },
-      select: { hotel_id: true, name: true, _count: { select: { room_variants: true } } },
+      select: {
+        hotel_id: true,
+        name: true,
+        _count: { select: { room_variants: { where: { is_active: true } } } },
+      },
     })
     if (!roomType || roomType.hotel_id !== hotelId) {
       return NextResponse.json({ success: false, message: 'Room type not found' }, { status: 404 })
@@ -146,11 +150,23 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json({ success: false, message: 'Room types with room variants cannot be deleted.' }, { status: 409 })
     }
 
-    await prisma.room_types.delete({ where: { id: roomTypeId } })
+    let deletedPermanently = true
+    try {
+      await prisma.room_types.delete({ where: { id: roomTypeId } })
+    } catch (error) {
+      if (!(error && typeof error === 'object' && 'code' in error && error.code === 'P2003')) {
+        throw error
+      }
+
+      // Historical bookings or inactive variants still reference this row.
+      // Hide the room type without breaking those audit records.
+      await prisma.room_types.update({ where: { id: roomTypeId }, data: { is_active: false } })
+      deletedPermanently = false
+    }
     await logHotelAdminActivity({
       hotelId, actorId: hotelAdminId, actorType: 'HOTEL_ADMIN',
       action: 'room_type.deleted', entityType: 'room_types', entityId: roomTypeId,
-      metadata: { name: roomType.name },
+      metadata: { name: roomType.name, soft_deleted: !deletedPermanently },
     })
 
     return NextResponse.json({ success: true, message: 'Room type deleted' })

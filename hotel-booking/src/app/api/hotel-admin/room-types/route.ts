@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
     if (!hotelId) return NextResponse.json({ success: false, message: 'No hotel assigned' }, { status: 400 })
 
     const roomTypes = await prisma.room_types.findMany({
-      where: { hotel_id: hotelId, is_active: true },
+      where: { hotel_id: hotelId },
       include: {
         type_images: { where: { is_cover: true }, take: 1 },
         room_variants: {
@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
         hotel_id: hotelId,
         name,
         description: description ?? null,
+        is_active: false,
         room_type_amenities: amenity_ids.length > 0
           ? { create: amenity_ids.map((amenity_id) => ({ amenity_id })) }
           : undefined,

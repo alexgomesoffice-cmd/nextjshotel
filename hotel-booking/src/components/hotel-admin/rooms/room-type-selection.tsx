@@ -56,6 +56,26 @@ export const RoomTypesSection = () => {
     }
   }, [fetchRoomTypes, toast])
 
+  const toggleRoomType = useCallback(async (id: number, isActive: boolean) => {
+    try {
+      const res = await fetch(`/api/hotel-admin/room-types/${id}`, {
+        method: 'PATCH',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_active: isActive }),
+      })
+      const data = await res.json()
+      if (!data.success) {
+        toast({ title: 'Could not update room type status', description: data.message, variant: 'destructive' })
+        return
+      }
+      setRoomTypes((current) => current.map((roomType) => roomType.id === id ? { ...roomType, is_active: isActive } : roomType))
+      toast({ title: isActive ? 'Room type activated' : 'Room type deactivated' })
+    } catch {
+      toast({ title: 'Could not update room type status', description: 'Please try again.', variant: 'destructive' })
+    }
+  }, [toast])
+
   useEffect(() => { fetchRoomTypes() }, [fetchRoomTypes])
 
   const filtered = useMemo(() => {
@@ -123,7 +143,7 @@ export const RoomTypesSection = () => {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {filtered.map((rt) => (
-            <RoomTypeCard key={rt.id} roomType={rt} onEdit={() => setEditType(rt)} onManageImages={() => setImageType(rt)} onDelete={() => deleteRoomType(rt.id)} />
+            <RoomTypeCard key={rt.id} roomType={rt} onEdit={() => setEditType(rt)} onManageImages={() => setImageType(rt)} onDelete={() => deleteRoomType(rt.id)} onToggleActive={(isActive) => void toggleRoomType(rt.id, isActive)} />
           ))}
         </div>
       )}

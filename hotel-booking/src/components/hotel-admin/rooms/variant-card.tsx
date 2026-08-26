@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { MoreVertical, ImageIcon, Pencil, Plus, Trash2 } from 'lucide-react'
+import { MoreVertical, ImageIcon, Pencil, Plus, Trash2, ArrowRight } from 'lucide-react'
 import { ImageManager } from './image-manager'
 import { VariantFormDialog } from './variant-form-dialog'
 
@@ -137,11 +137,21 @@ export const VariantCard = ({
           {variant.room_details.length === 0 ? (
             <p className="text-xs text-muted-foreground py-1">No physical rooms in this configuration yet.</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {variant.room_details.map((r: any) => (
-                <RoomChip key={r.id} room={r} variantId={variant.id} />
-              ))}
-            </div>
+            <>
+              <div className="flex flex-wrap gap-2">
+                {variant.room_details.map((r: any) => (
+                  <RoomChip key={r.id} room={r} />
+                ))}
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Link
+                  href={`/dashboard/hotel/rooms/variants/${variant.id}/rooms/${variant.room_details[0].id}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary transition-colors hover:text-primary/80"
+                >
+                  Manage Physical Rooms <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -167,12 +177,9 @@ export const VariantCard = ({
   )
 }
 
-const RoomChip = ({ room, variantId }: { room: any; variantId: number }) => (
-  <Link
-    href={`/dashboard/hotel/rooms/variants/${variantId}/rooms/${room.id}`}
-    className="inline-flex items-center gap-1.5 rounded-lg border border-border/80 bg-secondary/40 px-2.5 py-1 text-xs font-semibold text-foreground transition-all hover:border-emerald-500/60 hover:bg-emerald-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-  >
+const RoomChip = ({ room }: { room: any }) => (
+  <div className="inline-flex items-center gap-1.5 rounded-lg border border-border/80 bg-secondary/40 px-2.5 py-1 text-xs font-semibold text-foreground">
     <span className={cn('h-1.5 w-1.5 rounded-full shrink-0', STATUS_DOT[room.status] ?? 'bg-slate-400')} />
     <span>{room.room_number}</span>
-  </Link>
+  </div>
 )

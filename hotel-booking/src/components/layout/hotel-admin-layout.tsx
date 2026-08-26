@@ -95,7 +95,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
         { icon: LayoutDashboard, label: 'Overview', path: '/dashboard/hotel', end: true },
         { icon: Calendar, label: 'Bookings', path: '/dashboard/hotel/bookings' },
         { icon: Users, label: 'Guests', path: '/dashboard/hotel/guests' },
-        { icon: BedDouble, label: 'Rooms', path: '/dashboard/hotel/rooms' },
+        { icon: BedDouble, label: 'Rooms & Types', path: '/dashboard/hotel/rooms' },
         { icon: Sparkles, label: 'Room-Pricing', path: '/dashboard/hotel/pricing' },
       ],
     },
@@ -167,7 +167,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
           </button>
         </div>
 
-        <nav className="flex-1 space-y-4 overflow-y-auto p-3 custom-scrollbar"data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch>
+        <nav className="flex-1 space-y-2 overflow-y-auto p-3 custom-scrollbar"data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch>
           {groups.map((group) => (
             <div key={group.label || 'misc'}>
               {sidebarOpen && group.label && (

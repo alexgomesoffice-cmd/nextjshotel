@@ -3,10 +3,11 @@
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import { ArrowLeft, CalendarDays, CheckCircle2, DoorOpen, Hotel, MapPin } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CheckCircle2, DoorOpen, Hotel, MapPin, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
@@ -38,6 +39,8 @@ export default function VariantRoomPage() {
   const [variant, setVariant] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [updatingRoomId, setUpdatingRoomId] = useState<number | null>(null)
+  const [roomToDelete, setRoomToDelete] = useState<any>(null)
+  const [deletingRoomId, setDeletingRoomId] = useState<number | null>(null)
 
   useEffect(() => {
     const loadVariant = async () => {
@@ -84,6 +87,34 @@ export default function VariantRoomPage() {
       toast({ title: 'Could not update room status', description: 'Please try again.', variant: 'destructive' })
     } finally {
       setUpdatingRoomId(null)
+    }
+  }
+
+  const deleteRoom = async () => {
+    if (!roomToDelete) return
+
+    setDeletingRoomId(roomToDelete.id)
+    try {
+      const response = await fetch(`/api/hotel-admin/rooms/${roomToDelete.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+      const result = await response.json()
+      if (!result.success) {
+        toast({ title: 'Could not delete room', description: result.message, variant: 'destructive' })
+        return
+      }
+
+      setVariant((current: any) => current ? {
+        ...current,
+        room_details: current.room_details.filter((room: any) => room.id !== roomToDelete.id),
+      } : current)
+      setRoomToDelete(null)
+      toast({ title: 'Room deleted' })
+    } catch {
+      toast({ title: 'Could not delete room', description: 'Please try again.', variant: 'destructive' })
+    } finally {
+      setDeletingRoomId(null)
     }
   }
 
@@ -151,15 +182,14 @@ export default function VariantRoomPage() {
           </CardHeader>
           <CardContent className="p-0">
             {variant.room_details.map((room: any) => {
-              const isSelected = String(room.id) === String(params.roomId)
               const currentStatus = ROOM_STATUSES.find((status) => status.value === room.status)
               return (
                 <div
                   key={room.id}
-                  className={`flex flex-col gap-4 border-b border-border/60 p-4 last:border-b-0 sm:flex-row sm:items-center sm:justify-between sm:p-5 ${isSelected ? 'bg-primary/5' : 'hover:bg-secondary/20'}`}
+                  className="flex flex-col gap-4 border-b border-border/60 p-4 last:border-b-0 hover:bg-secondary/20 sm:flex-row sm:items-center sm:justify-between sm:p-5"
                 >
                   <Link href={`/dashboard/hotel/rooms/variants/${variant.id}/rooms/${room.id}`} className="flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}`}>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
                       <DoorOpen className="h-4 w-4" />
                     </div>
                     <div className="min-w-0">
@@ -186,6 +216,18 @@ export default function VariantRoomPage() {
                         {ROOM_STATUSES.map((status) => <SelectItem key={status.value} value={status.value}>{status.label}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => setRoomToDelete(room)}
+                      disabled={deletingRoomId === room.id}
+                      aria-label={`Delete room ${room.room_number}`}
+                      title="Delete room"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
               )
@@ -212,6 +254,23 @@ export default function VariantRoomPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={!!roomToDelete} onOpenChange={(open) => !open && setRoomToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Room {roomToDelete?.room_number}?</DialogTitle>
+            <DialogDescription>This will remove this physical room from the current Room Variant.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={deletingRoomId !== null}>Cancel</Button>
+            </DialogClose>
+            <Button variant="destructive" onClick={() => void deleteRoom()} disabled={deletingRoomId !== null}>
+              <Trash2 className="mr-1.5 h-4 w-4" /> Delete Room
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

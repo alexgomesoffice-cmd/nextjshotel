@@ -182,7 +182,9 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
 /**
  * DELETE /api/hotel-admin/room-variants/[variantId]
- * A room variant can only be removed when it has no physical rooms.
+ * Direct Hotel Admin deletion. Inventory must be completely free before a
+ * variant can be removed. Physical rooms without booking history are
+ * removed with the variant; historical booking records are never removed.
  */
 export async function DELETE(req: NextRequest, { params }: Params) {
   try {
@@ -199,17 +201,108 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       where: { id },
       select: {
         room_type: { select: { hotel_id: true } },
-        room_details: { where: { deleted_at: null }, select: { id: true } },
+        room_details: {
+          select: {
+            id: true,
+            room_number: true,
+            status: true,
+            deleted_at: true,
+            room_bookings: {
+              select: {
+                booking: {
+                  select: {
+                    status: true,
+                    check_in: true,
+                    check_out: true,
+                    reserved_until: true,
+                  },
+                },
+              },
+            },
+            room_trackers: {
+              select: {
+                status: true,
+                check_in: true,
+                check_out: true,
+              },
+            },
+          },
+        },
       },
     })
     if (!variant || variant.room_type.hotel_id !== hotelId) {
       return NextResponse.json({ success: false, message: 'Variant not found' }, { status: 404 })
     }
-    if (variant.room_details.length > 0) {
-      return NextResponse.json({ success: false, message: 'Room variants with physical rooms cannot be deleted.' }, { status: 409 })
+
+    const now = new Date()
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+    const activeBookingStatuses = new Set(['RESERVED', 'BOOKED', 'CHECKED_IN'])
+    const activeTrackerStatuses = new Set(['RESERVED', 'BOOKED', 'CHECKED_IN'])
+    const affectsCurrentOrFutureInventory = (checkOut: Date) => checkOut > today
+
+    const liveRooms = variant.room_details.filter((room) => room.deleted_at === null)
+    const unavailableRoom = liveRooms.find((room) => room.status !== 'AVAILABLE')
+    if (unavailableRoom) {
+      return NextResponse.json({
+        success: false,
+        message: `Room ${unavailableRoom.room_number} is ${unavailableRoom.status.toLowerCase().replace('_', ' ')} and is not available for deletion.`,
+      }, { status: 409 })
     }
 
-    await prisma.room_variants.delete({ where: { id } })
+    const hasActiveBooking = liveRooms.some((room) => room.room_bookings.some(({ booking }) => {
+      if (!activeBookingStatuses.has(booking.status)) return false
+      if (booking.status === 'RESERVED' && booking.reserved_until && booking.reserved_until <= now) return false
+      return affectsCurrentOrFutureInventory(booking.check_out)
+    }))
+    if (hasActiveBooking) {
+      return NextResponse.json({
+        success: false,
+        message: 'This room variant cannot be deleted because at least one physical room has an active or ongoing booking.',
+      }, { status: 409 })
+    }
+
+    const hasActiveTracker = liveRooms.some((room) => room.room_trackers.some((tracker) => (
+      activeTrackerStatuses.has(tracker.status) && affectsCurrentOrFutureInventory(tracker.check_out)
+    )))
+    if (hasActiveTracker) {
+      return NextResponse.json({
+        success: false,
+        message: 'This room variant cannot be deleted because at least one physical room has an active inventory lock.',
+      }, { status: 409 })
+    }
+
+    try {
+      await prisma.$transaction(async (tx) => {
+        const now = new Date()
+        let hasAnyHistory = false
+
+        for (const room of variant.room_details) {
+          const hasHistory = room.room_bookings.length > 0
+          if (hasHistory) {
+            hasAnyHistory = true
+            await tx.room_details.update({ where: { id: room.id }, data: { deleted_at: now } })
+            await tx.room_trackers.deleteMany({ where: { room_detail_id: room.id } })
+          } else {
+            await tx.room_trackers.deleteMany({ where: { room_detail_id: room.id } })
+            await tx.room_details.delete({ where: { id: room.id } })
+          }
+        }
+
+        if (hasAnyHistory) {
+          await tx.room_variants.update({ where: { id }, data: { is_active: false } })
+        } else {
+          await tx.room_variants.delete({ where: { id } })
+        }
+      })
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2003') {
+        return NextResponse.json({
+          success: false,
+          message: 'This room variant still has inventory or booking records and cannot be deleted safely.',
+        }, { status: 409 })
+      }
+      throw error
+    }
     await logHotelAdminActivity({
       hotelId, actorId: hotelAdminId, actorType: 'HOTEL_ADMIN',
       action: 'variant.deleted', entityType: 'room_variants', entityId: id,

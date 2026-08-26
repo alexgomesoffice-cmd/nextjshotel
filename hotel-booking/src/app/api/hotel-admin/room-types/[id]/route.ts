@@ -23,6 +23,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         room_type_amenities: { include: { amenity: true } },
         type_images: { orderBy: { sort_order: 'asc' } },
         room_variants: {
+          where: { is_active: true },
           include: {
             facilities: { include: { facility: true } },
             bed_types: { include: { bed_type: true } },

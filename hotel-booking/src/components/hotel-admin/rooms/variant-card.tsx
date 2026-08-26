@@ -39,6 +39,7 @@ export const VariantCard = ({
   })
   const pricing = variant.pricing
   const discount = pricing?.discount
+  const hasUnavailableRoom = variant.room_details.some((room: any) => room.status !== 'AVAILABLE')
 
   return (
     <Card className="overflow-hidden border border-border/80 bg-card shadow-sm hover:border-border transition-colors">
@@ -107,11 +108,11 @@ export const VariantCard = ({
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={onDelete}
-                    disabled={variant.room_details.length > 0}
+                    disabled={hasUnavailableRoom}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5 mr-2" />
-                    {variant.room_details.length > 0 ? 'Delete unavailable with rooms' : 'Delete Room Variant'}
+                    {hasUnavailableRoom ? 'Delete unavailable while rooms are in use' : 'Delete Room Variant'}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

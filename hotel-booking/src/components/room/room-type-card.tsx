@@ -98,7 +98,7 @@ function VariantRow({
 
   return (
     <div className={cn(
-      "flex min-h-32.5 border-t border-border/20 transition-colors",
+      "grid grid-cols-1 sm:grid-cols-[8.5rem_minmax(0,1fr)_8.5rem] gap-0 border-t border-border/20 transition-colors",
       isSelected ? "bg-primary/5" : "bg-transparent",
       isUnavailable && "opacity-60 bg-muted/30"
     )}>
@@ -106,7 +106,7 @@ function VariantRow({
       <div
         onClick={onViewRoomDetails ?? onViewDetails}
         tabIndex={-1}
-        className="relative w-32.5 sm:w-37.5 shrink-0 group overflow-hidden bg-muted self-stretch cursor-pointer"
+        className="relative aspect-[4/3] sm:aspect-auto sm:min-h-32.5 sm:h-full group overflow-hidden bg-muted cursor-pointer"
       >
         {images.length > 0 ? (
           <>
@@ -146,122 +146,118 @@ function VariantRow({
       </div>
 
       {/* ── Content (middle) ── */}
-      <div className="flex flex-1 min-w-0 gap-4 p-4">
-        {/* Left: info */}
-        <div className="flex-1 min-w-0 space-y-2">
-          {/* Title + available badge */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-sm text-foreground">{title}</span>
+      <div className="min-w-0 px-4 py-3 sm:px-5 sm:py-4">
+        {/* Title + available badge */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-semibold text-base text-foreground leading-tight">{title}</span>
             {available > 0 ? (
-              <span className="text-xs text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
+              <span className="text-[11px] text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
                 {available} available
               </span>
             ) : (
-              <span className="text-xs text-muted-foreground bg-secondary/60 rounded-md px-2 py-0.5 border border-border/30 shrink-0">
+              <span className="text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-2 py-0.5 border border-border/30 shrink-0">
                 Unavailable for selected dates
               </span>
             )}
-          </div>
-
-          {/* Guest count / facilities + recommendation */}
-          <div className="flex items-start gap-4 text-xs text-muted-foreground flex-wrap">
-            <div className="space-y-1">
-              <div className="flex items-center gap-1.5">
-                <Users className="h-3.5 w-3.5" />
-                {formatCapacityMessage(maxOccupancy)}
-              </div>
-              {guests > 1 && canAccommodate && recommendedQuantity > 0 && (
-                <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-medium">
-                  <Check className="h-3.5 w-3.5" />
-                  {formatRecommendationMessage(recommendedQuantity, guests)}
-                </div>
-              )}
-              {guests > 1 && !canAccommodate && (
-                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
-                  <AlertCircle className="h-3.5 w-3.5" />
-                  Cannot accommodate {guests} guests
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {variant.facilities.slice(0, 3).map((f) => (
-                <span key={f.name} className="flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5 text-primary/80" /> {f.name}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
 
-        {/* Middle-right: price */}
-        <div className="flex flex-col items-end justify-start gap-2 shrink-0 min-w-25">
-          <div className="text-right">
-            {variant.pricing.discount && (
-              <p className="text-xs text-muted-foreground line-through">
-                TK {Number(variant.pricing.basePrice).toLocaleString()}
-              </p>
-            )}
-            <p className="text-primary font-bold text-xl leading-tight">
-              TK {Number(variant.pricing.effectivePrice).toLocaleString()}
+        {/* Capacity */}
+        <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+          <Users className="h-3.5 w-3.5 shrink-0" />
+          {formatCapacityMessage(maxOccupancy)}
+        </div>
+
+        {/* Facilities */}
+        <div className="flex items-center gap-x-3 gap-y-1 flex-wrap mt-2 text-xs text-muted-foreground">
+          {variant.facilities.slice(0, 3).map((f) => (
+            <span key={f.name} className="inline-flex items-center gap-1">
+              <Check className="h-3 w-3 text-primary/80" /> {f.name}
+            </span>
+          ))}
+        </div>
+
+        {/* Recommendation */}
+        {guests > 1 && canAccommodate && recommendedQuantity > 0 && (
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-green-600 dark:text-green-400 font-medium">
+            <Check className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{formatRecommendationMessage(recommendedQuantity, guests)}</span>
+          </div>
+        )}
+        {guests > 1 && !canAccommodate && (
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">
+            <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>Cannot accommodate {guests} guests</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Price and quantity ── */}
+      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 px-4 pb-3 sm:px-5 sm:py-4 border-t sm:border-t-0 border-border/20">
+        <div className="text-left sm:text-right shrink-0">
+          {variant.pricing.discount && (
+            <p className="text-[11px] text-muted-foreground line-through">
+              TK {Number(variant.pricing.basePrice).toLocaleString()}
             </p>
-            <p className="text-xs text-muted-foreground">per night</p>
-            {variant.pricing.discount && (
-              <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                {variant.pricing.discount.type === 'PERCENTAGE' ? `${variant.pricing.discount.value}% OFF` : `TK ${variant.pricing.discount.amount.toLocaleString()} OFF`}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Far-right: stepper or message */}
-        <div className="flex flex-col items-center justify-center gap-2 shrink-0">
-          {isUnavailable ? (
-            <div className="text-xs text-muted-foreground bg-secondary/50 border border-border/40 rounded-lg px-3 py-2 max-w-45 text-right">
-              Not available for selected dates
-            </div>
-          ) : !canAccommodate ? (
-            <div className="text-xs text-muted-foreground bg-secondary/50 border border-border/40 rounded-lg px-3 py-2 max-w-45 text-right">
-              Insufficient capacity alone
-            </div>
-          ) : (
-            <>
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => onQtyChange(Math.max(0, quantity - 1))}
-                  disabled={quantity === 0}
-                  className={cn(
-                    "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                    quantity > 0
-                      ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
-                      : "border-border/20 text-border/30 cursor-not-allowed"
-                  )}
-                >
-                  −
-                </button>
-                <span className="w-5 text-center text-sm font-semibold tabular-nums">{quantity}</span>
-                <button
-                  onClick={() => onQtyChange(Math.min(available, quantity + 1))}
-                  disabled={quantity >= available}
-                  className={cn(
-                    "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                    quantity < available
-                      ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
-                      : "border-border/20 text-border/30 cursor-not-allowed"
-                  )}
-                >
-                  +
-                </button>
-              </div>
-
-              {/* Warning if selected quantity is insufficient */}
-              {isInsufficientQuantity && (
-                <div className="text-[10px] text-amber-600 dark:text-amber-400 text-center px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded">
-                  Not enough for {guests} guests
-                </div>
-              )}
-            </>
+          )}
+          <p className="text-primary font-bold text-lg leading-tight">
+            TK {Number(variant.pricing.effectivePrice).toLocaleString()}
+          </p>
+          <p className="text-[11px] text-muted-foreground">per night</p>
+          {variant.pricing.discount && (
+            <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+              {variant.pricing.discount.type === 'PERCENTAGE' ? `${variant.pricing.discount.value}% OFF` : `TK ${variant.pricing.discount.amount.toLocaleString()} OFF`}
+            </span>
           )}
         </div>
+
+        {isUnavailable ? (
+          <div className="text-[11px] text-muted-foreground bg-secondary/50 border border-border/40 rounded-lg px-2.5 py-1.5 text-right">
+            Not available for selected dates
+          </div>
+        ) : !canAccommodate ? (
+          <div className="text-[11px] text-muted-foreground bg-secondary/50 border border-border/40 rounded-lg px-2.5 py-1.5 text-right">
+            Insufficient capacity alone
+          </div>
+        ) : (
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-1 rounded-lg border border-border/50 bg-background/40 p-0.5">
+              <button
+                onClick={() => onQtyChange(Math.max(0, quantity - 1))}
+                disabled={quantity === 0}
+                aria-label={`Decrease ${title} quantity`}
+                className={cn(
+                  "h-7 w-7 rounded-md flex items-center justify-center text-sm font-bold transition-colors",
+                  quantity > 0
+                    ? "text-foreground hover:bg-primary/10 hover:text-primary"
+                    : "text-border/30 cursor-not-allowed"
+                )}
+              >
+                −
+              </button>
+              <span className="w-6 text-center text-sm font-semibold tabular-nums">{quantity}</span>
+              <button
+                onClick={() => onQtyChange(Math.min(available, quantity + 1))}
+                disabled={quantity >= available}
+                aria-label={`Increase ${title} quantity`}
+                className={cn(
+                  "h-7 w-7 rounded-md flex items-center justify-center text-sm font-bold transition-colors",
+                  quantity < available
+                    ? "text-foreground hover:bg-primary/10 hover:text-primary"
+                    : "text-border/30 cursor-not-allowed"
+                )}
+              >
+                +
+              </button>
+            </div>
+
+            {/* Warning if selected quantity is insufficient */}
+            {isInsufficientQuantity && (
+              <div className="text-[10px] text-amber-600 dark:text-amber-400 text-center px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded">
+                Not enough for {guests} guests
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

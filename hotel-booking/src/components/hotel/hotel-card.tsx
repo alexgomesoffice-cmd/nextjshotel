@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {
   MapPin, Star, Building2, Heart,
   Users, BedDouble, ArrowUpRight,
+  CheckCircle2, AlertTriangle, Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,16 @@ export interface RoomTypeStrip {
   bed_types:       { name: string; count: number }[];
   available_count: number;
   dates_filtered:  boolean;
+}
+
+export interface AccommodationContext {
+  requestedGuests:          number;
+  requestedRooms:           number | null;
+  matchType:                'PRIMARY' | 'SUGGESTED' | 'ALTERNATIVE';
+  minimumRoomsRequired:     number | null;
+  canAccommodateGuests:     boolean;
+  withinRequestedRoomLimit: boolean;
+  suggestedMessage:         string;
 }
 
 export interface HotelCardProps {
@@ -43,6 +54,8 @@ export interface HotelCardProps {
   roomListMaxHeight?: string;
   minPrice?:         number;
   maxPrice?:         number;
+  /** Populated by the capacity engine when a guests param was supplied. */
+  accommodation?:    AccommodationContext | null;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -54,6 +67,51 @@ function buildRoomUrl(slug: string, roomTypeId: number, checkIn?: string, checkO
   if (guests)   p.set('guests',    String(guests));
   p.set('room_type', String(roomTypeId));
   return `/hotels/${slug}?${p.toString()}#available-rooms`;
+}
+
+// ─── Accommodation Badge ──────────────────────────────────────────────────────
+
+function AccommodationBadge({ ctx }: { ctx: AccommodationContext }) {
+  if (ctx.matchType === 'PRIMARY') {
+    return (
+      <div className="flex items-center gap-1.5 mt-1.5">
+        <span className="inline-flex items-center gap-1 rounded-md bg-green-500/10 text-green-600 dark:bg-green-500/20 dark:text-green-400 px-2 py-0.5 text-[10px] font-semibold">
+          <CheckCircle2 className="size-3 shrink-0" />
+          Fits your search
+        </span>
+        <span className="text-[10px] text-muted-foreground">
+          {ctx.requestedGuests} guest{ctx.requestedGuests !== 1 ? 's' : ''}
+          {ctx.requestedRooms !== null ? ` · up to ${ctx.requestedRooms} room${ctx.requestedRooms !== 1 ? 's' : ''}` : ''}
+          {ctx.minimumRoomsRequired !== null ? ` · ${ctx.minimumRoomsRequired} needed` : ''}
+        </span>
+      </div>
+    );
+  }
+
+  if (ctx.matchType === 'SUGGESTED') {
+    return (
+      <div className="flex items-center gap-1.5 mt-1.5">
+        <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 px-2 py-0.5 text-[10px] font-semibold">
+          <AlertTriangle className="size-3 shrink-0" />
+          Requires {ctx.minimumRoomsRequired} room{ctx.minimumRoomsRequired !== 1 ? 's' : ''} instead of {ctx.requestedRooms}
+        </span>
+        
+      </div>
+    );
+  }
+
+  // ALTERNATIVE
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5">
+      <span className="inline-flex items-center gap-1 rounded-md bg-muted text-muted-foreground px-2 py-0.5 text-[10px] font-semibold">
+        <Info className="size-3 shrink-0" />
+        Partial capacity
+      </span>
+      <span className="text-[10px] text-muted-foreground truncate">
+        {ctx.suggestedMessage}
+      </span>
+    </div>
+  );
 }
 
 // ─── Premium Styled Room Row Component ──────────────────────────────────────
@@ -198,6 +256,7 @@ const HotelCard = ({
   roomListMaxHeight,
   minPrice,
   maxPrice,
+  accommodation,
 }: HotelCardProps) => {
   const dateParams = checkIn && checkOut
     ? `?check_in=${checkIn}&check_out=${checkOut}&guests=${guests || 1}`
@@ -206,7 +265,6 @@ const HotelCard = ({
   const guestNum  = guests ?? 0;
 
   const hasRoomStrip = !!room_types && room_types.length > 0;
-  const showRoomHint = !has_dates && !!total_room_types && total_room_types > 0;
 
   const availableCount = hasRoomStrip
   ? room_types!.filter(rt => !rt.dates_filtered || rt.available_count > 0).length
@@ -314,20 +372,24 @@ const HotelCard = ({
       {hasRoomStrip && (
         <div className="flex min-w-0 flex-col bg-card border-t border-border/60 relative z-20">
           <header className="flex items-center justify-between border-b border-border/60 px-5 py-3 bg-muted/20">
-            <div>
+            <div className="min-w-0 flex-1 mr-3">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 Available rooms
               </p>
               <p className="text-[11px] text-muted-foreground/80">
                 {has_dates
-  ? `${availableCount}/${room_types!.length} room type open`
-  : `${room_types!.length} room type${room_types!.length !== 1 ? 's' : ''} available`
-}
+                  ? `${availableCount}/${room_types!.length} room type open`
+                  : `${room_types!.length} room type${room_types!.length !== 1 ? 's' : ''} available`
+                }
               </p>
+              {/* Accommodation badge — only when capacity params were supplied */}
+              {accommodation && (
+                <AccommodationBadge ctx={accommodation} />
+              )}
             </div>
             <Link 
               href={hotelUrl} 
-              className="flex items-center gap-1 text-[11px] font-medium text-foreground hover:text-primary transition-colors"
+              className="flex items-center gap-1 text-[11px] font-medium text-foreground hover:text-primary transition-colors shrink-0"
             >
               View hotel <ArrowUpRight className="size-3.5" />
             </Link>
@@ -380,6 +442,13 @@ const HotelCard = ({
             ))}
           </div>
 
+        </div>
+      )}
+
+      {/* Accommodation badge when there is no room strip (edge case) */}
+      {!hasRoomStrip && accommodation && (
+        <div className="px-5 py-3 border-t border-border/60 bg-muted/10">
+          <AccommodationBadge ctx={accommodation} />
         </div>
       )}
     </article>

@@ -321,11 +321,11 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                     >
                       <Minus className="h-4 w-4" />
                     </button>
-                    <span className="w-6 text-center font-semibold">{guests}</span>
+                    <span className="w-8 text-center font-semibold">{guests}</span>
                     <button
                       type="button"
-                      onClick={() => setGuests(Math.min(10, guests + 1))}
-                      disabled={guests >= 10}
+                      onClick={() => setGuests(Math.min(30, guests + 1))}
+                      disabled={guests >= 30}
                       className="w-8 h-8 rounded-full border border-border flex items-center justify-center hover:bg-secondary transition-colors disabled:opacity-40"
                     >
                       <Plus className="h-4 w-4" />

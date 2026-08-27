@@ -59,9 +59,6 @@ export default function RoomsSectionClient({
       }
     : null;
 
-  const maxOccupancyOf = (roomType: RoomType) =>
-    roomType.room_variants.reduce((max, v) => Math.max(max, v.max_occupancy ?? 0), 0);
-
   // Build per-room-type quantity map (only variants belonging to this room type)
   const getQuantitiesForRoomType = (roomType: RoomType): Record<number, number> => {
     const result: Record<number, number> = {};
@@ -71,30 +68,19 @@ export default function RoomsSectionClient({
     return result;
   };
 
-  // Sort room types: available first, mismatched/unavailable last
+  // Sort room types: ones with available variants first, unavailable last
   const sortedRoomTypes = [...roomTypes].sort((a, b) => {
-    const aMismatch = guests > 1 && maxOccupancyOf(a) < guests;
-    const bMismatch = guests > 1 && maxOccupancyOf(b) < guests;
     const aUnavailable = a.available_rooms_count === 0 && a.room_variants.length === 0;
     const bUnavailable = b.available_rooms_count === 0 && b.room_variants.length === 0;
-    
-    const aDisabled = aMismatch || aUnavailable;
-    const bDisabled = bMismatch || bUnavailable;
 
-    if (aDisabled === bDisabled) return 0;
-    return aDisabled ? 1 : -1;
+    if (aUnavailable === bUnavailable) return 0;
+    return aUnavailable ? 1 : -1;
   });
 
   return (
     <>
       <div className="space-y-6">
         {sortedRoomTypes.map((roomType) => {
-          const typeMaxOccupancy = maxOccupancyOf(roomType);
-          const isGuestMismatch = guests > 1 && typeMaxOccupancy < guests;
-          const guestMismatchReason = isGuestMismatch
-            ? `This room fits up to ${typeMaxOccupancy} guest${typeMaxOccupancy !== 1 ? 's' : ''}. Your search needs ${guests}.`
-            : undefined;
-
           return (
             <RoomTypeCard
               key={roomType.id}
@@ -112,8 +98,7 @@ export default function RoomsSectionClient({
               }}
               selectedQuantities={getQuantitiesForRoomType(roomType)}
               onQuantityChange={onQuantityChange}
-              isGuestMismatch={isGuestMismatch}
-              guestMismatchReason={guestMismatchReason}
+              guests={guests}
               forceExpanded={roomType.id === highlightedRoomTypeId}
               isHighlighted={roomType.id === highlightedRoomTypeId}
               onClearHighlight={onClearHighlight}

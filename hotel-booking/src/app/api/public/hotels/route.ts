@@ -1,10 +1,113 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// ─── Accommodation types ───────────────────────────────────────────────────────
+
+interface VariantCapacity {
+  max_occupancy: number;
+  available_count: number;
+}
+
+export interface AccommodationResult {
+  requestedGuests:          number;
+  requestedRooms:           number | null;
+  matchType:                'PRIMARY' | 'SUGGESTED' | 'ALTERNATIVE';
+  minimumRoomsRequired:     number | null;
+  canAccommodateGuests:     boolean;
+  withinRequestedRoomLimit: boolean;
+  suggestedMessage:         string;
+}
+
 /**
- * Builds the `where` clause for room_details availability filtering.
- * room_details are accessed via room_variants now (not directly from room_types).
+ * Greedy capacity engine.
+ * Flattens variant slots into a descending pool, fills greedily until
+ * requestedGuests is met, then classifies the result into one of three tiers.
+ *
+ * requestedRooms = null  →  unbounded (user gave guests but no room limit)
  */
+function computeAccommodation(
+  variantCapacities: VariantCapacity[],
+  requestedGuests:   number,
+  requestedRooms:    number | null,
+): AccommodationResult {
+  // Build pool of individual room slots from each available variant
+  const pool: number[] = [];
+  for (const v of variantCapacities) {
+    if (v.max_occupancy > 0 && v.available_count > 0) {
+      for (let i = 0; i < v.available_count; i++) {
+        pool.push(v.max_occupancy);
+      }
+    }
+  }
+
+  // Sort descending — largest rooms first (greedy)
+  pool.sort((a, b) => b - a);
+
+  const totalCapacity = pool.reduce((s, c) => s + c, 0);
+
+  if (pool.length === 0 || totalCapacity < requestedGuests) {
+    return {
+      requestedGuests,
+      requestedRooms,
+      matchType:                'ALTERNATIVE',
+      minimumRoomsRequired:     null,
+      canAccommodateGuests:     false,
+      withinRequestedRoomLimit: false,
+      suggestedMessage:         `Can accommodate up to ${totalCapacity} guest${totalCapacity !== 1 ? 's' : ''} on your selected dates.`,
+    };
+  }
+
+  // Greedy fill
+  let cumulative = 0;
+  let roomsUsed  = 0;
+  for (const cap of pool) {
+    if (cumulative >= requestedGuests) break;
+    cumulative += cap;
+    roomsUsed++;
+  }
+
+  const minimumRoomsRequired = roomsUsed;
+  const withinLimit = requestedRooms === null || minimumRoomsRequired <= requestedRooms;
+
+  if (withinLimit) {
+    const rw = minimumRoomsRequired === 1 ? 'room' : 'rooms';
+    const limitNote = requestedRooms !== null
+      ? ` · up to ${requestedRooms} ${requestedRooms === 1 ? 'room' : 'rooms'}`
+      : '';
+    return {
+      requestedGuests,
+      requestedRooms,
+      matchType:                'PRIMARY',
+      minimumRoomsRequired,
+      canAccommodateGuests:     true,
+      withinRequestedRoomLimit: true,
+      suggestedMessage:         `Fits your search · ${requestedGuests} guest${requestedGuests !== 1 ? 's' : ''}${limitNote} · ${minimumRoomsRequired} ${rw} needed.`,
+    };
+  }
+
+  return {
+    requestedGuests,
+    requestedRooms,
+    matchType:                'SUGGESTED',
+    minimumRoomsRequired,
+    canAccommodateGuests:     true,
+    withinRequestedRoomLimit: false,
+    suggestedMessage:         `Can accommodate ${requestedGuests} guest${requestedGuests !== 1 ? 's' : ''} with ${minimumRoomsRequired} room${minimumRoomsRequired !== 1 ? 's' : ''} instead of ${requestedRooms}.`,
+  };
+}
+
+/**
+ * Accommodation tier sort order (PRIMARY < SUGGESTED < ALTERNATIVE).
+ * Within the same tier, fewer rooms required comes first.
+ */
+const TIER_ORDER: Record<AccommodationResult['matchType'], number> = {
+  PRIMARY:     0,
+  SUGGESTED:   1,
+  ALTERNATIVE: 2,
+};
+
+// ─── Room-detail availability WHERE ───────────────────────────────────────────
+
 function buildRoomDetailWhere(checkIn?: string | null, checkOut?: string | null) {
   const base: Record<string, unknown> = { status: 'AVAILABLE', deleted_at: null };
   if (checkIn && checkOut) {
@@ -13,7 +116,7 @@ function buildRoomDetailWhere(checkIn?: string | null, checkOut?: string | null)
     if (!isNaN(ci.getTime()) && !isNaN(co.getTime())) {
       base.room_trackers = {
         none: {
-          status: { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
+          status:    { in: ['RESERVED', 'BOOKED', 'CHECKED_IN'] },
           check_in:  { lt: co },
           check_out: { gt: ci },
         },
@@ -22,6 +125,8 @@ function buildRoomDetailWhere(checkIn?: string | null, checkOut?: string | null)
   }
   return base;
 }
+
+// ─── Route handler ─────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   try {
@@ -35,7 +140,8 @@ export async function GET(req: NextRequest) {
     const amenitiesStr  = searchParams.get('amenities');
     const minPrice      = searchParams.get('min_price');
     const maxPrice      = searchParams.get('max_price');
-    const guests        = searchParams.get('guests');
+    const guestsParam   = searchParams.get('guests');
+    const roomsParam    = searchParams.get('rooms');
     const sort          = searchParams.get('sort') || 'newest';
     const page          = parseInt(searchParams.get('page') || '1');
     const limit         = parseInt(searchParams.get('limit') || '12');
@@ -45,8 +151,12 @@ export async function GET(req: NextRequest) {
     const checkOut      = searchParams.get('check_out');
     const hasDates      = !!(checkIn && checkOut);
 
+    // Parse capacity parameters
+    const requestedGuests: number | null = guestsParam ? parseInt(guestsParam) : null;
+    // null = unbounded (guest supplied no room limit)
+    const requestedRooms:  number | null = roomsParam  ? parseInt(roomsParam)  : null;
+
     // ─── Hotel-level WHERE ────────────────────────────────────────────────────
-    // Only return hotels that are PUBLISHED (hotel admin has published them).
     const where: Record<string, unknown> = { approval_status: 'PUBLISHED', deleted_at: null };
 
     if (location) {
@@ -65,10 +175,10 @@ export async function GET(req: NextRequest) {
     }
 
     // ─── Room-type / variant filters ──────────────────────────────────────────
-    // Pricing, occupancy, and bed types now live on room_variants (not room_types).
-    // We must filter via:  room_types.some { room_variants.some { ... } }
-    if (roomTypesStr || bedTypesStr || minPrice || maxPrice || guests) {
-      // Start building the room_type filter clause.
+    // NOTE: max_occupancy >= guests is intentionally NOT included here.
+    // Guest capacity is now evaluated post-fetch via the greedy capacity engine,
+    // which supports multi-room combinations and correct SUGGESTED tier logic.
+    if (roomTypesStr || bedTypesStr || minPrice || maxPrice) {
       const roomTypeFilter: Record<string, unknown> = { is_active: true };
 
       if (roomTypesStr) {
@@ -77,7 +187,6 @@ export async function GET(req: NextRequest) {
         };
       }
 
-      // Variant-level filters
       const variantFilter: Record<string, unknown> = { is_active: true };
 
       if (bedTypesStr) {
@@ -97,11 +206,6 @@ export async function GET(req: NextRequest) {
         variantFilter.price = priceClause;
       }
 
-      if (guests) {
-        variantFilter.max_occupancy = { gte: parseInt(guests) };
-      }
-
-      // Attach variant filter only if we have variant-level constraints
       if (Object.keys(variantFilter).length > 1) {
         roomTypeFilter.room_variants = { some: variantFilter };
       }
@@ -117,8 +221,6 @@ export async function GET(req: NextRequest) {
     }
 
     // ─── Amenity filter ───────────────────────────────────────────────────────
-    // Hotel-level amenities: hotel_amenities.amenity_id
-    // Room-level amenities:  room_types.room_type_amenities.amenity_id
     if (amenitiesStr) {
       const amenityIds = amenitiesStr.split(',').map(Number).filter(Boolean);
       const existingAnd = ((where['AND'] as Array<Record<string, unknown>>) ?? []);
@@ -134,12 +236,14 @@ export async function GET(req: NextRequest) {
     // ─── Ordering ─────────────────────────────────────────────────────────────
     let orderBy: Record<string, unknown> | undefined = { created_at: 'desc' };
     const isPriceSort = sort === 'price_asc' || sort === 'price_desc';
-    if (isPriceSort) orderBy = undefined; // sorted in memory after fetch
+    if (isPriceSort) orderBy = undefined;
     if (sort === 'rating') orderBy = { detail: { guest_rating: 'desc' } };
 
+    // Fetch all rows (skip DB pagination) when we need to sort in memory —
+    // either for price sort, or when accommodation sort is active.
+    const needsMemorySort = isPriceSort || (requestedGuests !== null && includeRooms);
+
     // ─── Room-types include shape ─────────────────────────────────────────────
-    // When include_rooms=true we resolve the cheapest variant per room type
-    // and count available physical rooms via room_variants → room_details.
     const roomTypesInclude = includeRooms
       ? {
           where:  { is_active: true },
@@ -152,8 +256,6 @@ export async function GET(req: NextRequest) {
               take:   1,
               select: { image_url: true },
             },
-            // Fetch active variants to derive cheapest price, occupancy, beds,
-            // and available room count.
             room_variants: {
               where:  { is_active: true },
               select: {
@@ -176,7 +278,6 @@ export async function GET(req: NextRequest) {
           },
         }
       : {
-          // Minimal select: just enough to compute starting_price from variants.
           where:  { is_active: true },
           select: {
             room_variants: {
@@ -187,7 +288,7 @@ export async function GET(req: NextRequest) {
         };
 
     // ─── Query ────────────────────────────────────────────────────────────────
-    const [total, allHotelsOrPage] = await Promise.all([
+    const [total, allHotels] = await Promise.all([
       prisma.hotels.count({ where }),
       prisma.hotels.findMany({
         where,
@@ -201,15 +302,15 @@ export async function GET(req: NextRequest) {
             include: { amenity: { select: { name: true } } },
           },
         },
-        skip:    isPriceSort ? undefined : skip,
-        take:    isPriceSort ? undefined : limit,
+        skip:    needsMemorySort ? undefined : skip,
+        take:    needsMemorySort ? undefined : limit,
         orderBy,
       }),
     ]);
 
-    let hotels = allHotelsOrPage;
+    let hotels = allHotels;
 
-    // ─── In-memory price sort ─────────────────────────────────────────────────
+    // ─── In-memory price sort (existing behaviour) ────────────────────────────
     if (isPriceSort) {
       hotels.sort((a, b) => {
         const rtsA = a.room_types as Array<Record<string, unknown>>;
@@ -228,14 +329,12 @@ export async function GET(req: NextRequest) {
         const priceB = minVariantPrice(rtsB);
         return sort === 'price_asc' ? priceA - priceB : priceB - priceA;
       });
-      hotels = hotels.slice(skip, skip + limit);
     }
 
     // ─── Format response ──────────────────────────────────────────────────────
     const formattedHotels = hotels.map((hotel) => {
       const rts = hotel.room_types as Array<Record<string, unknown>>;
 
-      // Derive the cheapest base price across all room type variants.
       const allVariantPrices: number[] = [];
       for (const rt of rts) {
         const variants = (rt.room_variants as Array<Record<string, unknown>> | undefined) ?? [];
@@ -259,18 +358,19 @@ export async function GET(req: NextRequest) {
           .map((ha) => String(((ha as Record<string, unknown>).amenity as Record<string, unknown>).name)),
       };
 
-      if (!includeRooms) return base;
+      if (!includeRooms) return { ...base, accommodation: null };
 
-      // Build the full room_types array with variant-derived fields.
+      // ─── Build room_types array ───────────────────────────────────────────
+      // Collect variant capacities for the accommodation engine in the same pass.
+      const variantCapacities: VariantCapacity[] = [];
+
       const room_types = rts.map((rt) => {
         const rtRec    = rt as Record<string, unknown>;
         const variants = (rtRec.room_variants as Array<Record<string, unknown>> | undefined) ?? [];
 
-        // Pick cheapest variant for display price, occupancy, size, and beds.
-        const sorted = [...variants].sort((a, b) => Number(String(a.price)) - Number(String(b.price)));
+        const sorted   = [...variants].sort((a, b) => Number(String(a.price)) - Number(String(b.price)));
         const cheapest = sorted[0] as Record<string, unknown> | undefined;
 
-        // Collect bed types from the cheapest variant (representative config).
         const bedTypes = cheapest
           ? ((cheapest.bed_types as Array<Record<string, unknown>>) ?? []).map((rbt) => ({
               name:  String(((rbt as Record<string, unknown>).bed_type as Record<string, unknown>).name),
@@ -278,13 +378,19 @@ export async function GET(req: NextRequest) {
             }))
           : [];
 
-        // Sum up available physical room count across ALL active variants.
-        const availableCount = variants.reduce((sum, v) => {
-          const details = (v.room_details as Array<unknown> | undefined) ?? [];
-          return sum + details.length;
-        }, 0);
+        let availableCount = 0;
+        for (const v of variants) {
+          const details    = (v.room_details as Array<unknown> | undefined) ?? [];
+          const maxOcc     = (v.max_occupancy as number | null) ?? 0;
+          const avail      = details.length;
+          availableCount  += avail;
 
-        // Cover image comes from room_type-level images.
+          // Feed the capacity engine
+          if (maxOcc > 0 && avail > 0) {
+            variantCapacities.push({ max_occupancy: maxOcc, available_count: avail });
+          }
+        }
+
         const typeImages = (rtRec.type_images as Array<Record<string, unknown>> | undefined) ?? [];
         const coverImage = typeImages[0]?.image_url ?? null;
 
@@ -301,17 +407,49 @@ export async function GET(req: NextRequest) {
         };
       });
 
+      // ─── Accommodation classification ─────────────────────────────────────
+      const accommodation: AccommodationResult | null =
+        requestedGuests !== null
+          ? computeAccommodation(variantCapacities, requestedGuests, requestedRooms)
+          : null;
+
       return {
         ...base,
         room_types,
         total_room_types: rts.length,
         has_dates:        hasDates,
+        accommodation,
       };
     });
 
+    // ─── Accommodation sort (when guests param is present) ────────────────────
+    if (requestedGuests !== null && includeRooms) {
+      type FormattedHotel = (typeof formattedHotels)[number];
+
+      formattedHotels.sort((a: FormattedHotel, b: FormattedHotel) => {
+        const aA = (a as Record<string, unknown>).accommodation as AccommodationResult | null;
+        const bA = (b as Record<string, unknown>).accommodation as AccommodationResult | null;
+
+        const aTier = aA ? (TIER_ORDER[aA.matchType] ?? 3) : 3;
+        const bTier = bA ? (TIER_ORDER[bA.matchType] ?? 3) : 3;
+
+        if (aTier !== bTier) return aTier - bTier;
+
+        // Within same tier: fewer rooms required first
+        const aR = aA?.minimumRoomsRequired ?? Infinity;
+        const bR = bA?.minimumRoomsRequired ?? Infinity;
+        return aR - bR;
+      });
+    }
+
+    // ─── Paginate (only needed when we fetched all rows for memory sort) ──────
+    const pagedHotels = needsMemorySort
+      ? formattedHotels.slice(skip, skip + limit)
+      : formattedHotels;
+
     return NextResponse.json({
       success:    true,
-      data:       formattedHotels,
+      data:       pagedHotels,
       pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (error) {

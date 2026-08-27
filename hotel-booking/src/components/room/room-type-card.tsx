@@ -5,9 +5,16 @@ import Image from "next/image";
 import {
   Users, Bed, Check,
   ChevronUp, ChevronLeft, ChevronRight,
-  Images,
+  Images, AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  calculateRequiredRooms,
+  canVariantAccommodate,
+  getRecommendedQuantity,
+  formatCapacityMessage,
+  formatRecommendationMessage,
+} from "@/lib/room-capacity-calculator";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,8 +51,7 @@ export interface RoomTypeCardProps {
   onViewDetails?: () => void;
   selectedQuantities: Record<number, number>;
   onQuantityChange: (variantId: number, quantity: number) => void;
-  isGuestMismatch?: boolean;
-  guestMismatchReason?: string;
+  guests?: number;
   forceExpanded?: boolean;
   isHighlighted?: boolean;
   onClearHighlight?: () => void;
@@ -65,19 +71,27 @@ interface VariantRowProps {
   onQtyChange: (qty: number) => void;
   onViewDetails?: () => void;
   onViewRoomDetails?: () => void;
-  isGuestMismatch?: boolean;
-  guestMismatchReason?: string;
+  guests?: number;
 }
 
 function VariantRow({
   variant, roomName, typeImages, bedTypes, occupancy_adults,
   quantity, available, onQtyChange, onViewDetails, onViewRoomDetails,
-  isGuestMismatch, guestMismatchReason,
+  guests = 1,
 }: VariantRowProps) {
   const images = variant.variant_images.length > 0 ? variant.variant_images : typeImages;
   const [imgIdx, setImgIdx] = useState(0);
   const isSelected = quantity > 0;
   const isUnavailable = available <= 0;
+  const maxOccupancy = variant.max_occupancy ?? occupancy_adults;
+
+  // Calculate if this variant can accommodate the requested guests
+  const canAccommodate = canVariantAccommodate(maxOccupancy, available, guests);
+  const recommendedQuantity = getRecommendedQuantity(maxOccupancy, available, guests);
+
+  // Determine if current quantity is insufficient
+  const totalCapacity = quantity * maxOccupancy;
+  const isInsufficientQuantity = quantity > 0 && totalCapacity < guests;
 
   const bedLabel = bedTypes.map(b => b.bed_type.name).join(", ");
   const title = bedLabel ? `${roomName} • ${bedLabel}` : roomName;
@@ -149,17 +163,33 @@ function VariantRow({
             )}
           </div>
 
-          {/* Guest count / facilities */}
-          <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
-            <span className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              {variant.max_occupancy ?? occupancy_adults} guest{(variant.max_occupancy ?? occupancy_adults) > 1 ? 's' : ''}
-            </span>
-            {variant.facilities.slice(0, 4).map((f) => (
-              <span key={f.name} className="flex items-center gap-1.5">
-                <Check className="h-3.5 w-3.5 text-primary/80" /> {f.name}
-              </span>
-            ))}
+          {/* Guest count / facilities + recommendation */}
+          <div className="flex items-start gap-4 text-xs text-muted-foreground flex-wrap">
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                {formatCapacityMessage(maxOccupancy)}
+              </div>
+              {guests > 1 && canAccommodate && recommendedQuantity > 0 && (
+                <div className="flex items-center gap-1.5 text-green-600 dark:text-green-400 font-medium">
+                  <Check className="h-3.5 w-3.5" />
+                  {formatRecommendationMessage(recommendedQuantity, guests)}
+                </div>
+              )}
+              {guests > 1 && !canAccommodate && (
+                <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-medium">
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Cannot accommodate {guests} guests
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {variant.facilities.slice(0, 3).map((f) => (
+                <span key={f.name} className="flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5 text-primary/80" /> {f.name}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -183,40 +213,53 @@ function VariantRow({
           </div>
         </div>
 
-        {/* Far-right: stepper or mismatch reason */}
+        {/* Far-right: stepper or message */}
         <div className="flex flex-col items-center justify-center gap-2 shrink-0">
-          {isGuestMismatch ? (
+          {isUnavailable ? (
             <div className="text-xs text-muted-foreground bg-secondary/50 border border-border/40 rounded-lg px-3 py-2 max-w-45 text-right">
-              {guestMismatchReason}
+              Not available for selected dates
+            </div>
+          ) : !canAccommodate ? (
+            <div className="text-xs text-muted-foreground bg-secondary/50 border border-border/40 rounded-lg px-3 py-2 max-w-45 text-right">
+              Insufficient capacity alone
             </div>
           ) : (
-            <div className="flex items-center gap-2.5">
-                  <button
-                onClick={() => onQtyChange(Math.max(0, quantity - 1))}
-                disabled={quantity === 0}
-                className={cn(
-                  "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                  quantity > 0
-                    ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
-                    : "border-border/20 text-border/30 cursor-not-allowed"
-                )}
-              >
-                −
-              </button>
-              <span className="w-5 text-center text-sm font-semibold tabular-nums">{quantity}</span>
-              <button
-                onClick={() => onQtyChange(Math.min(available, quantity + 1))}
-                disabled={quantity >= available}
-                className={cn(
-                  "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
-                  quantity < available
-                    ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
-                    : "border-border/20 text-border/30 cursor-not-allowed"
-                )}
-              >
-                +
-              </button>
-            </div>
+            <>
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => onQtyChange(Math.max(0, quantity - 1))}
+                  disabled={quantity === 0}
+                  className={cn(
+                    "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
+                    quantity > 0
+                      ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
+                      : "border-border/20 text-border/30 cursor-not-allowed"
+                  )}
+                >
+                  −
+                </button>
+                <span className="w-5 text-center text-sm font-semibold tabular-nums">{quantity}</span>
+                <button
+                  onClick={() => onQtyChange(Math.min(available, quantity + 1))}
+                  disabled={quantity >= available}
+                  className={cn(
+                    "h-7 w-7 rounded-full border flex items-center justify-center text-sm font-bold transition-all",
+                    quantity < available
+                      ? "border-border/60 text-foreground hover:border-primary hover:text-primary"
+                      : "border-border/20 text-border/30 cursor-not-allowed"
+                  )}
+                >
+                  +
+                </button>
+              </div>
+
+              {/* Warning if selected quantity is insufficient */}
+              {isInsufficientQuantity && (
+                <div className="text-[10px] text-amber-600 dark:text-amber-400 text-center px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded">
+                  Not enough for {guests} guests
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -230,14 +273,13 @@ const RoomTypeCard = ({
   id, name, description,
   type_images, room_type_amenities, available_rooms_count,
   room_variants, onViewDetails, selectedQuantities, onQuantityChange,
-  isGuestMismatch, guestMismatchReason, forceExpanded = false, isHighlighted = false, onClearHighlight,
+  guests = 1, forceExpanded = false, isHighlighted = false, onClearHighlight,
   onViewRoomDetails
 }: RoomTypeCardProps) => {
   const [isExpanded, setIsExpanded] = useState(forceExpanded);
   const coverImage = type_images?.[0]?.image_url || null;
   const totalSelected = Object.values(selectedQuantities).reduce((a, b) => a + b, 0);
   const isUnavailable = available_rooms_count === 0;
-  const isDisabled = isGuestMismatch || isUnavailable;
   const shouldExpand = forceExpanded || isExpanded;
   // "From" price — the cheapest currently-effective variant price, since
   // Room Type no longer carries its own price (that moved to Variant).
@@ -250,7 +292,7 @@ const RoomTypeCard = ({
       className={cn(
         "rounded-xl border overflow-hidden bg-card transition-all duration-50  shadow-xl",
         isHighlighted && "ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]",
-        isDisabled
+        isUnavailable
           ? "opacity-60 border-border/30"
           : shouldExpand || totalSelected > 0
             ? "border-primary/70"
@@ -258,7 +300,7 @@ const RoomTypeCard = ({
       )}
     >
       {/* ── Card Header: image LEFT + info RIGHT ── */}
-      <div className={cn("select-none", isDisabled && "cursor-not-allowed")}> 
+      <div className={cn("select-none", isUnavailable && "cursor-not-allowed")}> 
         {/* Side-by-side row */}
         <div className="flex min-h-[240px]">
 
@@ -353,12 +395,11 @@ const RoomTypeCard = ({
               </div>
             )}
 
-            {/* Expand/collapse button in place of footer price */}
             <div className="mt-auto pt-4 flex items-end justify-end">
               <button
                 onClick={e => {
                   e.stopPropagation();
-                  if (isDisabled) return;
+                  if (isUnavailable) return;
                   if (isHighlighted && isExpanded) {
                     onClearHighlight?.();
                     setIsExpanded(false);
@@ -414,8 +455,7 @@ const RoomTypeCard = ({
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}
                 onViewDetails={onViewDetails}
                 onViewRoomDetails={() => onViewRoomDetails?.(variant.id)}
-                isGuestMismatch={isGuestMismatch}
-                guestMismatchReason={guestMismatchReason}
+                guests={guests}
               />
             ))
           )}

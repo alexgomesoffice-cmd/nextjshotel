@@ -75,7 +75,7 @@ export default async function HotelDetailPage({
   searchParams
 }: { 
   params: Promise<{ slug: string }>,
-  searchParams: Promise<{ check_in?: string; check_out?: string; guests?: string; room_type?: string }>
+  searchParams: Promise<{ check_in?: string; check_out?: string; guests?: string; rooms?: string; room_type?: string }>
 }) {
   const { slug } = await params;
   const search = await searchParams;
@@ -260,6 +260,7 @@ export default async function HotelDetailPage({
               checkIn={search.check_in}
               checkOut={search.check_out}
               guests={search.guests ? parseInt(search.guests) : 1}
+              requestedRooms={search.rooms ? parseInt(search.rooms) : null}
               focusRoomTypeId={search.room_type ? parseInt(search.room_type) : undefined}
             />
 

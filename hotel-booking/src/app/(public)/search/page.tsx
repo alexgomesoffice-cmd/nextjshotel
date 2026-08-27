@@ -2,9 +2,9 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Loader2, SlidersHorizontal, ArrowUpDown, Building2 } from "lucide-react";
+import { Loader2, SlidersHorizontal, ArrowUpDown, Building2, Users } from "lucide-react";
 import HotelFilterSidebar from "@/components/hotel/hotel-filter-sidebar";
-import HotelCard, { HotelCardProps } from "@/components/hotel/hotel-card";
+import HotelCard, { HotelCardProps, AccommodationContext } from "@/components/hotel/hotel-card";
 import SearchBar from "@/components/search/search-bar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -13,6 +13,9 @@ const SORT_OPTIONS = [
   { label: "Price", value: "price" },
   { label: "Newest", value: "newest" },
 ];
+
+// ─── HotelCardProps extended with accommodation from API ─────────────────────
+type HotelCardData = HotelCardProps & { accommodation?: AccommodationContext | null };
 
 function HotelCardSkeleton() {
   return (
@@ -28,11 +31,48 @@ function HotelCardSkeleton() {
   );
 }
 
+// ─── Section divider between result tiers ────────────────────────────────────
+function SectionDivider({ label, sublabel }: { label: string; sublabel?: string }) {
+  return (
+    <div className="col-span-full flex items-center gap-4 py-2">
+      <div className="flex-1 h-px bg-border/60" />
+      <div className="text-center shrink-0">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{label}</p>
+        {sublabel && (
+          <p className="text-[11px] text-muted-foreground/70 mt-0.5">{sublabel}</p>
+        )}
+      </div>
+      <div className="flex-1 h-px bg-border/60" />
+    </div>
+  );
+}
+
+// ─── Card renderer (passes accommodation + search params) ─────────────────────
+function HotelCardItem({
+  hotel,
+  searchParams,
+}: {
+  hotel: HotelCardData;
+  searchParams: ReturnType<typeof useSearchParams>;
+}) {
+  return (
+    <HotelCard
+      {...hotel}
+      accommodation={hotel.accommodation ?? null}
+      checkIn={searchParams.get("check_in") || undefined}
+      checkOut={searchParams.get("check_out") || undefined}
+      guests={searchParams.get("guests") ? parseInt(searchParams.get("guests")!) : undefined}
+      minPrice={searchParams.get("min_price") ? parseInt(searchParams.get("min_price")!) : undefined}
+      maxPrice={searchParams.get("max_price") ? parseInt(searchParams.get("max_price")!) : undefined}
+    />
+  );
+}
+
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [hotels, setHotels] = useState<HotelCardProps[]>([]);
+  const [hotels, setHotels] = useState<HotelCardData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalResults, setTotalResults] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -41,13 +81,15 @@ function SearchContent() {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
   const currentPage = parseInt(searchParams.get("page") || "1");
-  const location = searchParams.get("location");
+  const location    = searchParams.get("location");
+
+  // Are capacity params active?
+  const hasGuestsParam = !!searchParams.get("guests");
 
   useEffect(() => {
     const fetchHotels = async () => {
       setIsLoading(true);
       try {
-        // Forward all URL params to the API + add sort
         const params = new URLSearchParams(searchParams.toString());
         const sortValue = sort === "price" ? `price_${sortDirection}` : sort;
         params.set("sort", sortValue);
@@ -83,18 +125,25 @@ function SearchContent() {
     router.push(`/search?${params.toString()}`);
   };
 
-  const pageTitle = location
-    ? `Hotels in "${location}"`
-    : "Search Results";
+  const pageTitle = location ? `Hotels in "${location}"` : "Search Results";
 
-  // Navbar is fixed h-20 (80px). 
-  // Sidebar should stick right below the navbar with a small gap.
-  const SIDEBAR_OFFSET = 104; // 80px (navbar) + 24px (gap)
+  const SIDEBAR_OFFSET = 104;
+
+  // ─── Split hotels into accommodation tiers (only when guests param present) ─
+  const primaryHotels     = hasGuestsParam ? hotels.filter(h => h.accommodation?.matchType === 'PRIMARY')     : [];
+  const suggestedHotels   = hasGuestsParam ? hotels.filter(h => h.accommodation?.matchType === 'SUGGESTED')   : [];
+  const alternativeHotels = hasGuestsParam ? hotels.filter(h => h.accommodation?.matchType === 'ALTERNATIVE') : [];
+  // Hotels with no accommodation context (e.g. include_rooms was false) — treat as flat list
+  const noContextHotels   = hasGuestsParam ? hotels.filter(h => !h.accommodation) : [];
+
+  // Guest/room context summary for the result header
+  const guestsVal = searchParams.get("guests");
+  const roomsVal  = searchParams.get("rooms");
 
   return (
     <div className="min-h-screen bg-background">
 
-      {/* ── Search bar section (Scrolls naturally) ── */}
+      {/* ── Search bar section ── */}
       <div className="w-full bg-secondary/10 border-b border-border/50 shadow-sm py-8 px-4 pt-28">
         <div className="container mx-auto max-w-7xl flex flex-col items-center">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-3">Search <span className="text-primary">Hotels</span></h1>
@@ -108,12 +157,9 @@ function SearchContent() {
         <div className="container mx-auto px-4 md:px-8 py-8 max-w-7xl">
           <div className="flex flex-col lg:flex-row gap-8">
 
-            {/* ── Sidebar — desktop: sticky, NO overflow on sticky container ── */}
+            {/* ── Sidebar — desktop sticky ── */}
             <aside className="hidden lg:block w-72 shrink-0">
-              <div
-                className=""
-                style={{ top: SIDEBAR_OFFSET }}
-              >
+              <div className="" style={{ top: SIDEBAR_OFFSET }}>
                 <HotelFilterSidebar />
               </div>
             </aside>
@@ -148,6 +194,16 @@ function SearchContent() {
                         : `Total ${totalResults} propert${totalResults === 1 ? "y" : "ies"}`}
                     </p>
                   )}
+                  {/* Capacity context pill */}
+                  {hasGuestsParam && !isLoading && (
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] bg-primary/8 text-primary border border-primary/20 rounded-full px-3 py-1">
+                        <Users className="size-3" />
+                        {guestsVal} guest{Number(guestsVal) !== 1 ? 's' : ''}
+                        {roomsVal ? ` · up to ${roomsVal} room${Number(roomsVal) !== 1 ? 's' : ''}` : ''}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Sort dropdown */}
@@ -177,7 +233,7 @@ function SearchContent() {
                 </div>
               </div>
 
-              {/* Results grid */}
+              {/* Results */}
               {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -186,20 +242,60 @@ function SearchContent() {
                 </div>
               ) : hotels.length > 0 ? (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
-                    {hotels.map((hotel) => (
-                      <div key={hotel.id}>
-                        <HotelCard
-                          {...hotel}
-                          checkIn={searchParams.get("check_in") || undefined}
-                          checkOut={searchParams.get("check_out") || undefined}
-                          guests={searchParams.get("guests") ? parseInt(searchParams.get("guests")!) : undefined}
-                          minPrice={searchParams.get("min_price") ? parseInt(searchParams.get("min_price")!) : undefined}
-                          maxPrice={searchParams.get("max_price") ? parseInt(searchParams.get("max_price")!) : undefined}
+                  {/* ── Tiered layout when guests param is present ── */}
+                  {hasGuestsParam ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
+
+                      {/* PRIMARY tier */}
+                      {primaryHotels.map((hotel) => (
+                        <div key={hotel.id}>
+                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                        </div>
+                      ))}
+
+                      {/* SUGGESTED tier divider */}
+                      {suggestedHotels.length > 0 && (
+                        <SectionDivider
+                          label="Can accommodate your group"
+                          sublabel="Requires more rooms than requested"
                         />
-                      </div>
-                    ))}
-                  </div>
+                      )}
+                      {suggestedHotels.map((hotel) => (
+                        <div key={hotel.id}>
+                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                        </div>
+                      ))}
+
+                      {/* ALTERNATIVE tier divider */}
+                      {alternativeHotels.length > 0 && (
+                        <SectionDivider
+                          label="Other available hotels"
+                          sublabel="Cannot fully accommodate the requested group size"
+                        />
+                      )}
+                      {alternativeHotels.map((hotel) => (
+                        <div key={hotel.id}>
+                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                        </div>
+                      ))}
+
+                      {/* Fallback: hotels without accommodation context */}
+                      {noContextHotels.map((hotel) => (
+                        <div key={hotel.id}>
+                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    /* ── Flat layout (no guests param) — existing behavior ── */
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
+                      {hotels.map((hotel) => (
+                        <div key={hotel.id}>
+                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
                   {/* Pagination */}
                   {totalPages > 1 && (

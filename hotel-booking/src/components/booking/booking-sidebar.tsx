@@ -5,6 +5,7 @@ import {
   Users,
   Calendar as CalendarIcon,
   CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
@@ -15,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { format, differenceInCalendarDays, addDays } from "date-fns";
 import { Loader2 } from "lucide-react";
+import { calculateRequiredRooms } from "@/lib/room-capacity-calculator";
 
 export interface SelectedVariant {
   variantId: number;
@@ -30,10 +32,12 @@ interface BookingSidebarProps {
   initialCheckIn?: string;
   initialCheckOut?: string;
   initialGuests?: number;
+  requestedRooms?: number | null;
   displayPrice?: number;
   onDatesChange?: (checkIn: string, checkOut: string) => void;
   onGuestsChange?: (guests: number) => void;
   guestWarning?: string | null;
+  selectionValidation?: { isValid: boolean; message: string };
 }
 
 export default function BookingSidebar({
@@ -42,10 +46,12 @@ export default function BookingSidebar({
   initialCheckIn,
   initialCheckOut,
   initialGuests = 1,
+  requestedRooms,
   displayPrice,
   onDatesChange,
   onGuestsChange,
   guestWarning,
+  selectionValidation,
 }: BookingSidebarProps) {
   const router = useRouter();
   const [isReserving, setIsReserving] = useState(false);
@@ -95,6 +101,15 @@ export default function BookingSidebar({
 
   const handleReserve = async () => {
     if (!hasSelections || !date?.from || !date?.to) return;
+
+    // Validate that selected rooms can accommodate guests
+    // This is a frontend check; backend will validate again
+    const totalCapacity = selectedVariants.reduce((sum, variant) => {
+      // Find the variant to get its max_occupancy
+      // Note: We need to pass this from parent or calculate differently
+      // For now, we'll rely on backend validation
+      return sum;
+    }, 0);
 
     setIsReserving(true);
     setReserveError(null);
@@ -309,9 +324,16 @@ export default function BookingSidebar({
           />
         </div>
 
+        {hasSelections && selectionValidation && !selectionValidation.isValid && (
+          <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 rounded-lg px-3 py-2 text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{selectionValidation.message}</span>
+          </div>
+        )}
+
         <Button
           className="w-full h-12 text-base font-semibold rounded-xl"
-          disabled={isReserving || !hasSelections || !date?.from || !date?.to || nights < 1}
+          disabled={isReserving || !hasSelections || !date?.from || !date?.to || nights < 1 || (selectionValidation && !selectionValidation.isValid)}
           onClick={handleReserve}
         >
           {isReserving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reserving...</> : "Reserve Now"}

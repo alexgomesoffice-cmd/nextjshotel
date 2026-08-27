@@ -17,6 +17,7 @@ interface RoomSelectorProps {
   checkIn?: string;
   checkOut?: string;
   guests?: number;
+  requestedRooms?: number | null;
   focusRoomTypeId?: number;
 }
 
@@ -26,6 +27,7 @@ export default function RoomSelector({
   checkIn,
   checkOut,
   guests = 1,
+  requestedRooms,
   focusRoomTypeId,
 }: RoomSelectorProps) {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
@@ -125,32 +127,8 @@ export default function RoomSelector({
 
   const handleSidebarGuestsChange = (newGuests: number) => {
     setSidebarGuests(newGuests);
-
-    if (!newGuests) return;
-
-    const dropped: { variantId: number; roomTypeName: string; max: number }[] = [];
-    const newQuantities = { ...quantities };
-
-    for (const [vidStr, qty] of Object.entries(quantities)) {
-      const vid = parseInt(vidStr, 10);
-      if (!qty || qty <= 0) continue;
-      const parent = roomTypes.find(rt => rt.room_variants.some(v => v.id === vid));
-      const variant = parent?.room_variants.find(v => v.id === vid);
-      if (!parent || !variant) continue;
-      const variantMax = variant.max_occupancy ?? 0;
-      if (variantMax < newGuests) {
-        delete newQuantities[vid];
-        dropped.push({ variantId: vid, roomTypeName: parent.name, max: variantMax });
-      }
-    }
-
-    if (dropped.length > 0) {
-      setQuantities(newQuantities);
-      const first = dropped[0];
-      setGuestWarning(`${first.roomTypeName} fits up to ${first.max} guest${first.max !== 1 ? 's' : ''}. Your search needs ${newGuests}.`);
-      const t = setTimeout(() => setGuestWarning(null), 6000);
-      return () => clearTimeout(t);
-    }
+    // Guest count change no longer automatically removes selections.
+    // The user can manually adjust room quantities based on the capacity recommendations shown in each variant.
   };
 
   useEffect(() => {
@@ -184,6 +162,47 @@ export default function RoomSelector({
     const allPrices = roomTypes.flatMap(rt => rt.room_variants.map(v => v.pricing.effectivePrice));
     return allPrices.length > 0 ? Math.min(...allPrices) : undefined;
   }, [roomTypes]);
+
+  // Calculate if the selected rooms can accommodate the guests AND respect room limit
+  const selectionValidation = useMemo(() => {
+    if (selectedVariants.length === 0) {
+      return { isValid: false, message: "" };
+    }
+
+    let totalCapacity = 0;
+    let totalRooms = 0;
+    for (const selectedVar of selectedVariants) {
+      // Find the variant to get its max_occupancy
+      for (const rt of roomTypes) {
+        for (const v of rt.room_variants) {
+          if (v.id === selectedVar.variantId) {
+            const variantCapacity = (v.max_occupancy ?? 1) * selectedVar.quantity;
+            totalCapacity += variantCapacity;
+            totalRooms += selectedVar.quantity;
+            break;
+          }
+        }
+      }
+    }
+
+    // Check room limit first (this is a hard constraint from search)
+    if (requestedRooms !== null && requestedRooms !== undefined && totalRooms > requestedRooms) {
+      return {
+        isValid: false,
+        message: `You selected ${totalRooms} room${totalRooms !== 1 ? 's' : ''}, but your search allows up to ${requestedRooms}. Select fewer rooms.`,
+      };
+    }
+
+    // Then check guest capacity
+    if (totalCapacity < sidebarGuests) {
+      return {
+        isValid: false,
+        message: `Selected rooms accommodate ${totalCapacity} guest${totalCapacity !== 1 ? 's' : ''}. You need ${sidebarGuests} guest${sidebarGuests !== 1 ? 's' : ''}.`,
+      };
+    }
+
+    return { isValid: true, message: "" };
+  }, [selectedVariants, sidebarGuests, requestedRooms, roomTypes]);
 
   return (
     <div>
@@ -236,10 +255,12 @@ export default function RoomSelector({
             initialCheckIn={checkIn}
             initialCheckOut={checkOut}
             initialGuests={guests}
+            requestedRooms={requestedRooms}
             displayPrice={lowestPrice}
             onDatesChange={handleDatesChange}
             onGuestsChange={handleSidebarGuestsChange}
             guestWarning={guestWarning}
+            selectionValidation={selectionValidation}
           />
         </div>
       </div>

@@ -86,13 +86,16 @@ const Navbar = () => {
   return (
     <nav
       className={cn(
-        'fixed top-0 left-0 right-0 z-50 transition-all duration-500',
-        isScrolled
-          ? 'bg-background/80 backdrop-blur-xl border-b border-border/40 shadow-sm shadow-foreground/5'
-          : isHome
-            ? 'bg-transparent border-b border-transparent'
-            : 'bg-background/30 backdrop-blur-md border-b border-transparent'
-      )}
+  "fixed inset-x-0 top-0 z-50 border-0 outline-none transition-all duration-500",
+  isScrolled
+    ? "bg-background/80 backdrop-blur-xl shadow-sm shadow-foreground/5"
+    : isHome
+      ? theme === 'light'
+        ? "bg-gradient-to-b from-white/25 via-white/20 to-transparent shadow-none backdrop-blur-0"
+        : "bg-gradient-to-b from-black/25 via-black/10 to-transparent shadow-none backdrop-blur-0"
+      : "bg-background/80 backdrop-blur-md shadow-none"
+)}
+
     >
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
@@ -118,7 +121,7 @@ const Navbar = () => {
                   'relative text-sm font-medium transition-colors duration-300 hover:text-primary',
                   pathname === link.path
                     ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    : 'text-foreground hover:text-foreground'
                 )}
               >
                 {link.name}

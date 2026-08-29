@@ -1,99 +1,199 @@
 // filepath: src/components/home/hero-section.tsx
-// Hero Section with background collage and search bar
 
-'use client'
+"use client";
 
-import SearchBar from '@/components/search/hero-search'
+import { useEffect, useState } from "react";
+import SearchBar from "@/components/search/hero-search";
+import { cn } from "@/lib/utils";
 
-const collageImages = [
-    '/uploads/hotels/5a05f944-6ddf-4e8b-8811-53fd5a88f6e0.webp',
-    '/uploads/hotels/75edbccb-579a-4b86-9745-ee59a9a2a487.webp',
-    '/uploads/hotels/c33b9749-1f6c-4f97-8b01-cdfbfbedd804.webp',
-    '/uploads/hotels/d148dc9f-cbd4-4c56-87a9-94d6540976a1.webp',
-    '/uploads/hotels/7cb7b155-7fc3-4328-819b-ce0759fc76c6.webp',
-]
+const heroSlides = [
+  {
+    image:
+      "/uploads/hotels/1.png",
+    eyebrow: "CURATED STAYS",
+    title: "Stay where the coast meets the city",
+    description:
+      "Curated escapes for slow mornings and bold adventures.",
+  },
+  {
+    image:
+      "/uploads/hotels/2.jpeg",
+    eyebrow: "DISCOVER BANGLADESH",
+    title: "Find your next unforgettable stay",
+    description:
+      "From city escapes to quiet retreats, discover places worth staying for.",
+  },
+  {
+    image:
+      "/uploads/hotels/3.webp",
+    eyebrow: "STAY YOUR WAY",
+    title: "Rooms made for the moments that matter",
+    description:
+      "Find the right room, the right setting, and the right stay.",
+  },
+  {
+    image:
+      "/uploads/hotels/4.jpeg",
+    eyebrow: "TRAVEL BEAUTIFULLY",
+    title: "A better way to discover hotels",
+    description:
+      "Explore distinctive stays across Bangladesh with effortless search.",
+  },
+  {
+    image:
+      "/uploads/hotels/5.jpeg",
+    eyebrow: "YOUR NEXT ESCAPE",
+    title: "Stay somewhere you will remember",
+    description:
+      "Beautiful places, thoughtful rooms, and stays worth coming back to.",
+  },
+];
 
 export function HeroSection() {
-    return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-12">
-            {/* Photo Collage Background */}
-            <div className="absolute inset-0 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
-                {collageImages.map((image, index) => (
-                    <div
-                        key={index}
-                        className="relative overflow-hidden animate-fade-in group"
-                        style={{ animationDelay: `${index * 150}ms` }}
-                    >
-                        <img
-                            src={image}
-                            alt={`Collage image ${index + 1}`}
-                            className="w-full h-full object-cover scale-105 group-hover:scale-110 transition-transform duration-700"
-                            onError={(e) => {
-                                (e.currentTarget as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect fill="%23e5e7eb" width="400" height="300"/%3E%3C/svg%3E'
-                            }}
-                        />
-                        <div className="absolute inset-0 bg-linear-to-t from-background/60 via-background/30 to-transparent group-hover:from-background/40 transition-colors duration-500" />
-                    </div>
-                ))}
+  const [activeSlide, setActiveSlide] = useState(0);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % heroSlides.length);
+    }, 7000);
+
+    return () => window.clearInterval(interval);
+  }, []);
+
+  const currentSlide = heroSlides[activeSlide];
+
+  return (
+    <section className="relative min-h-[100svh] overflow-visible">
+      {/* ================================================================
+          HERO IMAGE CAROUSEL
+          ================================================================ */}
+      <div className="absolute inset-0">
+  {heroSlides.map((slide, index) => (
+    <div
+      key={slide.image}
+      className={cn(
+        "absolute inset-0 transition-opacity duration-1000 ease-out",
+        index === activeSlide ? "opacity-100" : "opacity-0"
+      )}
+      aria-hidden={index !== activeSlide}
+    >
+      <img
+        src={slide.image}
+        alt=""
+        className="h-full w-full object-cover"
+        loading={index === 0 ? "eager" : "lazy"}
+        onError={(event) => {
+          event.currentTarget.style.display = "none";
+        }}
+      />
+    </div>
+  ))}
+
+  {/* Theme-aware overall tone */}
+  <div
+    className="
+      absolute inset-0
+      bg-white/5
+      dark:bg-black/15
+    "
+  />
+
+  {/* Top → bottom tone */}
+  <div
+    className="
+      absolute inset-0
+      bg-linear-to-t
+      from-black/20
+      via-transparent
+      to-white/5
+      dark:from-black/35
+      dark:via-black/5
+      dark:to-black/15
+    "
+  />
+
+  {/* Left readability */}
+  <div
+    className="
+      absolute inset-y-0 left-0 w-[55%]
+      bg-linear-to-r
+      from-black/15
+      via-black/5
+      to-transparent
+      dark:from-black/30
+      dark:via-black/10
+      dark:to-transparent
+    "
+  />
+
+  {/* Bottom readability */}
+  <div
+    className="
+      absolute inset-x-0 bottom-0 h-72
+      bg-linear-to-t
+      from-black/20
+      to-transparent
+      dark:from-black/35
+      dark:to-transparent
+    "
+  />
+</div>
+
+
+      {/* ================================================================
+          CONTENT
+          ================================================================ */}
+      <div className="relative z-10 flex min-h-[100svh] items-end">
+        <div className="container mx-auto w-full px-4 pb-8 pt-28 sm:px-6 sm:pb-10 lg:px-8 lg:pb-12">
+          <div className="flex flex-col items-start">
+            {/* Supporting hero copy */}
+            <div className="mb-5 max-w-xl text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.35)] sm:mb-6">
+              <div className="mb-3 inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/85 backdrop-blur-md">
+                {currentSlide.eyebrow}
+              </div>
+
+              <h1 className="max-w-lg text-3xl font-semibold leading-[1.05] tracking-tight sm:text-4xl lg:text-[3.35rem]">
+                {currentSlide.title}
+              </h1>
+
+              <p className="mt-3 max-w-md text-sm leading-6 text-white/75 sm:text-base">
+                {currentSlide.description}
+              </p>
             </div>
 
-            {/* Main Overlay Gradients */}
-            <div className="absolute inset-0 bg-linear-to-b from-background/90 via-background/70 to-background" />
-            <div className="absolute inset-0 bg-linear-to-r from-background/60 via-transparent to-background/60" />
-
-            {/* Soft ambient glow */}
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-float opacity-20" />
-            <div
-                className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl animate-float opacity-15"
-                style={{ animationDelay: '1.5s' }}
-            />
-
-            {/* Content */}
-            <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-                <div className="text-center mb-12">
-                    {/* Main Heading */}
-                    <h1
-                        className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 animate-fade-in-up"
-                        style={{ animationDelay: '100ms' }}
-                    >
-                        <span className="block hover:tracking-wide transition-all duration-500">Book your stay with</span>
-                        <span className="text-gradient animate-gradient bg-size-[200%_auto]">GhuriBangla</span>
-                    </h1>
-
-                    {/* Subheading */}
-                    <p
-                        className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-12 animate-fade-in-up"
-                        style={{ animationDelay: '200ms' }}
-                    >
-                        "Discover extraordinary hotels and unique stays around the <span className="text-gradient">Bangladesh</span>. Your perfect getaway is just a search away."
-                    </p>
-                </div>
-
-                {/* Search Component */}
-                <SearchBar />
-
-                {/* Stats */}
-                <div
-                    className="flex flex-wrap justify-center gap-8 sm:gap-16 mt-16 animate-fade-in-up"
-                    style={{ animationDelay: '600ms' }}
-                >
-                    {[
-                        { value: '500K+', label: 'Active Users' },
-                        { value: '8', label: 'Cities' },
-                        { value: '50K+', label: 'Hotels' },
-                        { value: '4.9', label: 'App Rating' },
-                    ].map((stat, index) => (
-                        <div key={index} className="text-center group cursor-pointer">
-                            <div className="text-2xl sm:text-3xl font-bold text-gradient group-hover:scale-110 transition-transform duration-300">
-                                {stat.value}
-                            </div>
-                            <div className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
-                                {stat.label}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+            {/* ============================================================
+                SEARCH
+                ============================================================ */}
+            <div className="w-full max-w-[980px]">
+              <SearchBar />
             </div>
-        </section>
-    )
+          </div>
+        </div>
+      </div>
+
+      {/* ================================================================
+          CAROUSEL DOTS — BOTTOM RIGHT
+          ================================================================ */}
+      <div
+        className="absolute bottom-7 right-5 z-20 flex items-center gap-2 sm:bottom-9 sm:right-8"
+        aria-label="Hero slides"
+      >
+        {heroSlides.map((slide, index) => (
+          <button
+            key={slide.image}
+            type="button"
+            aria-label={`Go to slide ${index + 1}`}
+            aria-current={index === activeSlide}
+            onClick={() => setActiveSlide(index)}
+            className={cn(
+              "h-1.5 rounded-full transition-all duration-300",
+              index === activeSlide
+                ? "w-6 bg-white"
+                : "w-1.5 bg-white/45 hover:bg-white/75"
+            )}
+          />
+        ))}
+      </div>
+    </section>
+  );
 }

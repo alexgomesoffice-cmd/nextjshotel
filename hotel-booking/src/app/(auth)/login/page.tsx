@@ -4,10 +4,22 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
+function getSafeCallbackUrl(value: string | null) {
+  if (!value) return '/'
+
+  try {
+    const target = new URL(value, window.location.origin)
+    if (target.origin !== window.location.origin || !target.pathname.startsWith('/')) return '/'
+    return `${target.pathname}${target.search}${target.hash}`
+  } catch {
+    return '/'
+  }
+}
+
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/'
+  const callbackUrl = getSafeCallbackUrl(searchParams.get('callbackUrl'))
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

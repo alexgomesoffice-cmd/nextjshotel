@@ -197,7 +197,7 @@ export default function VariantRoomPage() {
                       <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                         <span>{room.floor ? `Floor ${room.floor}` : 'Floor not assigned'}</span>
                         <span className="text-border">•</span>
-                        <span className="inline-flex items-center gap-1"><Hotel className="h-3 w-3" /> {room.room_size || 'Standard size'}</span>
+                        <span className="inline-flex items-center gap-1"><Hotel className="h-3 w-3" /> {room.room_size }</span>
                         {room.max_occupancy && <><span className="text-border">•</span><span>Up to {room.max_occupancy} guests</span></>}
                       </p>
                     </div>

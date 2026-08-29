@@ -19,13 +19,13 @@ import { SectionInlineEditor } from '@/components/hotel-admin/property/section-d
 type SectionKey = 'general' | 'location' | 'contacts' | 'amenities' | 'gallery' | 'policies' | 'business' | 'owner' | 'admin'
 
 const SECTIONS: { key: SectionKey; title: string; description: string; icon: any; accent: string; requiresApproval?: boolean; approvalNote?: string }[] = [
-  { key: 'general', title: 'General Information', icon: Hotel, accent: 'from-emerald-500 to-green-600', description: 'Public identity of your hotel' },
+  { key: 'general', title: 'General Info', icon: Hotel, accent: 'from-emerald-500 to-green-600', description: 'Public identity of your hotel' },
   { key: 'location', title: 'Location', icon: MapPin, accent: 'from-sky-500 to-blue-600', description: 'Where guests will find you' },
-  { key: 'contacts', title: 'Contact Information', icon: Phone, accent: 'from-cyan-500 to-teal-600', description: 'Phones, email and emergency contact' },
+  { key: 'contacts', title: 'Contacts & Info', icon: Phone, accent: 'from-cyan-500 to-teal-600', description: 'Phones, email and emergency contact' },
   { key: 'amenities', title: 'Amenities', icon: Sparkles, accent: 'from-fuchsia-500 to-pink-600', description: 'Everything guests can enjoy' },
   { key: 'gallery', title: 'Gallery', icon: ImageIcon, accent: 'from-orange-500 to-amber-600', description: 'Photo library' },
   { key: 'policies', title: 'Policies', icon: ClipboardList, accent: 'from-lime-500 to-emerald-600', description: 'Your own house rules and policies' },
-  { key: 'business', title: 'Business & Documents', icon: Building2, accent: 'from-slate-500 to-slate-700', description: 'Legal documents verified by the System Admin',
+  { key: 'business', title: 'Documents', icon: Building2, accent: 'from-slate-500 to-slate-700', description: 'Legal documents verified by the System Admin',
     requiresApproval: true, approvalNote: 'Documents are verified by the System Administrator before publishing.' },
   { key: 'owner', title: 'Owner Information', icon: UserCircle2, accent: 'from-purple-500 to-fuchsia-600', description: 'Identity of the property owner',
     requiresApproval: true, approvalNote: 'Owner identity changes require System Administrator verification.' },

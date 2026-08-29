@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { AlertTriangle } from "lucide-react";
 import RoomsSectionClient, { type RoomType } from "@/components/room/rooms-section-client";
 import BookingSidebar, { type SelectedVariant } from "./booking-sidebar";
 import { useHotelAvailability } from "@/hooks/use-hotel-availability";
+
+const PENDING_BOOKING_KEY = "myhotels:pending-reservation";
+
+interface PendingBookingState {
+  selectedQuantities?: Record<number, number>;
+}
 
 // The old AC-only/Non-AC filter was tied to a single boolean field that no
 // longer exists (facilities are now an arbitrary named set per variant).
@@ -31,6 +37,7 @@ export default function RoomSelector({
   focusRoomTypeId,
 }: RoomSelectorProps) {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const restoredPendingState = useRef(false);
   // (acFilter state removed alongside the AC-only/Non-AC filter)
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [highlightedRoomTypeId, setHighlightedRoomTypeId] = useState<number | null>(null);
@@ -40,6 +47,42 @@ export default function RoomSelector({
   const [sidebarGuests, setSidebarGuests] = useState(guests);
   const [guestWarning, setGuestWarning] = useState<string | null>(null);
   const [internalRoomTypes, setInternalRoomTypes] = useState(initialRoomTypes);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      try {
+        const stored = sessionStorage.getItem(PENDING_BOOKING_KEY);
+        if (!stored) {
+          restoredPendingState.current = true;
+          return;
+        }
+
+        const pending = JSON.parse(stored) as PendingBookingState;
+        if (pending.selectedQuantities) setQuantities(pending.selectedQuantities);
+        restoredPendingState.current = true;
+      } catch {
+        sessionStorage.removeItem(PENDING_BOOKING_KEY);
+        restoredPendingState.current = true;
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
+  useEffect(() => {
+    if (!restoredPendingState.current) return;
+
+    try {
+      const stored = sessionStorage.getItem(PENDING_BOOKING_KEY);
+      const pending = stored ? JSON.parse(stored) as PendingBookingState : {};
+      sessionStorage.setItem(PENDING_BOOKING_KEY, JSON.stringify({
+        ...pending,
+        selectedQuantities: quantities,
+      }));
+    } catch {
+      sessionStorage.removeItem(PENDING_BOOKING_KEY);
+    }
+  }, [quantities]);
 
   // ── Scroll to #rooms then to the specific card and animate it ──
   useEffect(() => {

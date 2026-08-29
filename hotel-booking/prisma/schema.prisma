@@ -314,7 +314,7 @@ model hotels {
   city_id            Int?
   hotel_type_id      Int?
   zip_code           String?        @db.VarChar(20)
-  map_location       String?        @db.VarChar(500)  // plain string, e.g. Google Maps embed URL — confirmed
+  map_location       String?        @db.Text  // full Google Maps / location URLs can exceed 500 chars
   created_by         Int
   approval_status    ApprovalStatus @default(UNPUBLISHED)
   published_at       DateTime?

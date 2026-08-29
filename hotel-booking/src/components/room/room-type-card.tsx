@@ -5,11 +5,10 @@ import Image from "next/image";
 import {
   Users, Bed, Check,
   ChevronUp, ChevronLeft, ChevronRight,
-  Images, AlertCircle,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
-  calculateRequiredRooms,
   canVariantAccommodate,
   getRecommendedQuantity,
   formatCapacityMessage,
@@ -69,14 +68,13 @@ interface VariantRowProps {
   quantity: number;
   available: number;
   onQtyChange: (qty: number) => void;
-  onViewDetails?: () => void;
   onViewRoomDetails?: () => void;
   guests?: number;
 }
 
 function VariantRow({
   variant, roomName, typeImages, bedTypes, occupancy_adults,
-  quantity, available, onQtyChange, onViewDetails, onViewRoomDetails,
+  quantity, available, onQtyChange, onViewRoomDetails,
   guests = 1,
 }: VariantRowProps) {
   const images = variant.variant_images.length > 0 ? variant.variant_images : typeImages;
@@ -104,9 +102,9 @@ function VariantRow({
     )}>
       {/* ── Image ── */}
       <div
-        onClick={onViewRoomDetails ?? onViewDetails}
+        onClick={onViewRoomDetails}
         tabIndex={-1}
-        className="relative aspect-[4/3] sm:aspect-auto sm:min-h-32.5 sm:h-full group overflow-hidden bg-muted cursor-pointer"
+        className="relative aspect-4/3 sm:aspect-auto sm:min-h-32.5 sm:h-full group overflow-hidden bg-muted cursor-pointer"
       >
         {images.length > 0 ? (
           <>
@@ -298,16 +296,16 @@ const RoomTypeCard = ({
       {/* ── Card Header: image LEFT + info RIGHT ── */}
       <div className={cn("select-none", isUnavailable && "cursor-not-allowed")}> 
         {/* Side-by-side row */}
-        <div className="flex min-h-[240px]">
+        <div className="flex min-h-52.5 flex-col sm:flex-row">
 
           {/* Left: image panel */}
-          <div className="relative w-[260px] sm:w-[320px] shrink-0 bg-muted overflow-hidden self-stretch">
+          <div className="relative aspect-video w-full shrink-0 bg-muted overflow-hidden sm:aspect-auto sm:w-60 sm:min-h-52.5">
             {coverImage ? (
               <Image
                 src={coverImage}
                 alt={name}
                 fill
-                sizes="(max-width: 640px) 260px, 320px"
+                sizes="(max-width: 640px) 190px, 240px"
                 className="object-cover"
               />
             ) : (
@@ -315,25 +313,13 @@ const RoomTypeCard = ({
                 <Bed className="h-10 w-10 text-muted-foreground/20" />
               </div>
             )}
-            {/* View gallery button */}
-            {onViewDetails && (
-              <button
-                onClick={e => { e.stopPropagation(); onViewDetails(); }}
-                className="absolute bottom-3 left-3 flex items-center gap-1.5 bg-black/60 text-white text-xs px-2.5 py-1.5 rounded-md backdrop-blur-sm hover:bg-black/75 transition-colors"
-              >
-                <Images className="h-3.5 w-3.5" /> View gallery
-              </button>
-            )}
           </div>
 
           {/* Right: info panel */}
-          <div className="flex-1 min-w-0 p-5 flex flex-col">
+          <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col">
             {/* Name + price */}
             <div className="flex items-start justify-between gap-4">
-              <h3
-                className="font-bold text-xl text-foreground leading-tight cursor-pointer hover:text-primary transition-colors"
-                onClick={e => { if (onViewDetails) { e.stopPropagation(); onViewDetails(); } }}
-              >
+              <h3 className="font-bold text-xl text-foreground leading-tight">
                 {name}
               </h3>
               <div className="text-right">
@@ -380,18 +366,23 @@ const RoomTypeCard = ({
                     </span>
                   ))}
                   {room_type_amenities.length > 4 && (
-                    <button
-                      onClick={e => { e.stopPropagation(); if (onViewDetails) onViewDetails(); }}
-                      className="inline-flex items-center text-xs font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1 hover:bg-primary/10 transition-colors"
-                    >
+                    <span className="inline-flex items-center text-xs font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1">
                       +{room_type_amenities.length - 4} more
-                    </button>
+                    </span>
                   )}
                 </div>
               </div>
             )}
 
-            <div className="mt-auto pt-4 flex items-end justify-end">
+            <div className="mt-auto pt-4 flex items-center justify-between gap-3 flex-wrap">
+              {onViewDetails && (
+                <button
+                  onClick={e => { e.stopPropagation(); onViewDetails(); }}
+                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+                >
+                  View Details
+                </button>
+              )}
               <button
                 onClick={e => {
                   e.stopPropagation();
@@ -405,7 +396,7 @@ const RoomTypeCard = ({
                 }}
                 className="inline-flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1 hover:bg-primary/10 transition-colors"
               >
-                <span>{shouldExpand ? 'Hide rooms' : `${room_variants.length} room${room_variants.length !== 1 ? 's' : ''}`}</span>
+                <span>{shouldExpand ? 'Hide room options' : `View ${room_variants.length} room option${room_variants.length !== 1 ? 's' : ''}`}</span>
                 <ChevronUp className={cn("h-4 w-4 transition-transform duration-200", !shouldExpand && "rotate-180")} />
               </button>
             </div>
@@ -449,7 +440,6 @@ const RoomTypeCard = ({
                 quantity={selectedQuantities[variant.id] ?? 0}
                 available={variant.available_count}
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}
-                onViewDetails={onViewDetails}
                 onViewRoomDetails={() => onViewRoomDetails?.(variant.id)}
                 guests={guests}
               />

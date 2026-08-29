@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Users,
   Calendar as CalendarIcon,
@@ -16,7 +16,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { format, differenceInCalendarDays, addDays } from "date-fns";
 import { Loader2 } from "lucide-react";
-import { calculateRequiredRooms } from "@/lib/room-capacity-calculator";
+
+const PENDING_BOOKING_KEY = "myhotels:pending-reservation";
+
+interface PendingBookingState {
+  returnUrl?: string;
+  checkIn?: string;
+  checkOut?: string;
+  guests?: number;
+  specialRequest?: string;
+  selectedQuantities?: Record<number, number>;
+}
+
+function parseBookingDate(value?: string) {
+  if (!value) return undefined;
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? undefined : date;
+}
 
 export interface SelectedVariant {
   variantId: number;
@@ -46,7 +62,6 @@ export default function BookingSidebar({
   initialCheckIn,
   initialCheckOut,
   initialGuests = 1,
-  requestedRooms,
   displayPrice,
   onDatesChange,
   onGuestsChange,
@@ -57,6 +72,7 @@ export default function BookingSidebar({
   const [isReserving, setIsReserving] = useState(false);
   const [reserveError, setReserveError] = useState<string | null>(null);
   const [specialRequest, setSpecialRequest] = useState("");
+  const restoredPendingState = useRef(false);
 
   const parseDate = (s?: string) => {
     if (!s) return undefined;
@@ -70,6 +86,38 @@ export default function BookingSidebar({
   });
 
   const [guests, setGuests] = useState(initialGuests);
+
+  useEffect(() => {
+    if (restoredPendingState.current) return;
+
+    const timeoutId = window.setTimeout(() => {
+      restoredPendingState.current = true;
+      try {
+        const stored = sessionStorage.getItem(PENDING_BOOKING_KEY);
+        if (!stored) return;
+
+        const pending = JSON.parse(stored) as PendingBookingState;
+        if (pending.checkIn || pending.checkOut) {
+          const restoredCheckIn = pending.checkIn ?? initialCheckIn;
+          const restoredCheckOut = pending.checkOut ?? initialCheckOut;
+          setDate({
+            from: parseBookingDate(restoredCheckIn) ?? new Date(),
+            to: parseBookingDate(restoredCheckOut) ?? addDays(new Date(), 1),
+          });
+          if (restoredCheckIn && restoredCheckOut) onDatesChange?.(restoredCheckIn, restoredCheckOut);
+        }
+        if (typeof pending.guests === "number") {
+          setGuests(pending.guests);
+          onGuestsChange?.(pending.guests);
+        }
+        if (typeof pending.specialRequest === "string") setSpecialRequest(pending.specialRequest);
+      } catch {
+        sessionStorage.removeItem(PENDING_BOOKING_KEY);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [initialCheckIn, initialCheckOut, onDatesChange, onGuestsChange]);
 
   const nights =
     date?.from && date?.to
@@ -102,14 +150,44 @@ export default function BookingSidebar({
   const handleReserve = async () => {
     if (!hasSelections || !date?.from || !date?.to) return;
 
-    // Validate that selected rooms can accommodate guests
-    // This is a frontend check; backend will validate again
-    const totalCapacity = selectedVariants.reduce((sum, variant) => {
-      // Find the variant to get its max_occupancy
-      // Note: We need to pass this from parent or calculate differently
-      // For now, we'll rely on backend validation
-      return sum;
-    }, 0);
+    let authResponse: Response;
+    try {
+      authResponse = await fetch("/api/user/profile", {
+        method: "GET",
+        credentials: "include",
+      });
+    } catch {
+      setReserveError("Unable to verify your login. Please try again.");
+      return;
+    }
+
+    if (authResponse.status === 401 || authResponse.status === 403) {
+      const returnUrl = `${window.location.pathname}${window.location.search}`;
+      let previousState: PendingBookingState = {};
+      try {
+        const stored = sessionStorage.getItem(PENDING_BOOKING_KEY);
+        if (stored) previousState = JSON.parse(stored) as PendingBookingState;
+      } catch {
+        sessionStorage.removeItem(PENDING_BOOKING_KEY);
+      }
+
+      const pendingState: PendingBookingState = {
+        ...previousState,
+        returnUrl,
+        checkIn: format(date.from, "yyyy-MM-dd"),
+        checkOut: format(date.to, "yyyy-MM-dd"),
+        guests,
+        specialRequest: specialRequest.trim(),
+      };
+      sessionStorage.setItem(PENDING_BOOKING_KEY, JSON.stringify(pendingState));
+      router.push(`/login?callbackUrl=${encodeURIComponent(returnUrl)}`);
+      return;
+    }
+
+    if (!authResponse.ok) {
+      setReserveError("Unable to verify your login. Please try again.");
+      return;
+    }
 
     setIsReserving(true);
     setReserveError(null);
@@ -137,6 +215,7 @@ export default function BookingSidebar({
         throw new Error(data.message || "Unable to reserve the selected rooms.");
       }
 
+      sessionStorage.removeItem(PENDING_BOOKING_KEY);
       router.push(`/bookings/${data.data.booking_reference}`);
     } catch (error) {
       setReserveError(error instanceof Error ? error.message : "Unable to reserve the selected rooms.");

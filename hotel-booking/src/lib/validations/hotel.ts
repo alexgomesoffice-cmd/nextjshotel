@@ -16,7 +16,7 @@ export const createHotelSchema = z.object({
     city_id: z.number().int().positive('City is required'),
     hotel_type_id: z.number().int().positive('Hotel type is required'),
     zip_code: z.string().min(1, 'Zip code is required'),
-    map_location: z.string().optional(),
+    map_location: z.string().max(2000, 'Map location URL is too long').optional().or(z.literal('')),
   }),
   details: z.object({
     star_rating: z.number().min(1).max(5, 'Star rating is required'),
@@ -72,7 +72,7 @@ export const updateHotelSchema = z.object({
   city_id: z.number().int().positive().optional(),
   hotel_type_id: z.number().int().positive().optional(),
   zip_code: z.string().optional(),
-  map_location: z.string().optional(),
+  map_location: z.string().max(2000, 'Map location URL is too long').optional().or(z.literal('')),
   star_rating: z.number().min(1).max(5).optional(),
   website: z.string().optional(),
   reception_no1: z.string().optional(),

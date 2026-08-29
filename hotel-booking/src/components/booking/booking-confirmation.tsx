@@ -221,7 +221,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
                         <div className="flex items-start justify-between mb-2">
                           <div>
                             <h4 className="font-bold text-lg leading-tight">{group.room_type.name}</h4>
-                            <p className="text-sm font-medium text-muted-foreground">{group.room_variant.room_size || "Standard Room"}</p>
+                            <p className="text-sm font-medium text-muted-foreground">{group.room_variant.room_size}</p>
                           </div>
                           <Badge variant="secondary" className="font-medium">
                             {group.quantity} room{group.quantity !== 1 ? "s" : ""}
@@ -379,4 +379,4 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
       </div>
     </div>
   );
-}
+}

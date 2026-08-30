@@ -41,29 +41,35 @@ const fallbackSlides = [
 
 export function HeroSection() {
   const [activeSlide, setActiveSlide] = useState(0);
-  const [heroSlides, setHeroSlides] = useState<any[]>(fallbackSlides);
+  // Start empty — only populated after the fetch resolves
+  const [heroSlides, setHeroSlides] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchBanners = async () => {
       try {
-        const res = await fetch("/api/public/hero-banners")
-        const data = await res.json()
+        const res = await fetch("/api/public/hero-banners");
+        const data = await res.json();
         if (data.success && data.data.length > 0) {
-          // Map DB structure to the expected slide structure
+          // CMS has banners — use them exclusively
           const mappedBanners = data.data.map((banner: any) => ({
             image: banner.image_url,
             eyebrow: banner.eyebrow,
             title: banner.title,
             description: banner.description,
-          }))
-          setHeroSlides(mappedBanners)
+          }));
+          setHeroSlides(mappedBanners);
+        } else {
+          // CMS returned nothing — fall back to local slides
+          setHeroSlides(fallbackSlides);
         }
       } catch (error) {
-        console.error("Failed to fetch hero banners:", error)
+        console.error("Failed to fetch hero banners:", error);
+        // Network / parse error — fall back to local slides
+        setHeroSlides(fallbackSlides);
       }
-    }
-    
-    fetchBanners()
+    };
+
+    void fetchBanners();
   }, [])
 
   useEffect(() => {

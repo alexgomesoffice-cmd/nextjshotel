@@ -183,7 +183,7 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => router.push('/bookings')} className="gap-2 cursor-pointer">
                     <CalendarDays className="h-4 w-4" /> My Bookings
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => router.push('/favorites')} className="gap-2 cursor-pointer text-red-500 focus:text-red-500">
+                  <DropdownMenuItem onClick={() => router.push('/favorites')} className="gap-2 cursor-pointer">
                     <Heart className="h-4 w-4" /> Favorites
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="gap-2 cursor-pointer">

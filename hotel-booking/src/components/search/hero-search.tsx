@@ -825,18 +825,18 @@ const SearchBar = ({
   <Button
     onClick={handleSearch}
     className={cn(
-      "h-[52px] w-full rounded-[14px]",
+      "h-[46px] w-full rounded-[12px]",
       "bg-primary text-primary-foreground",
-      "shadow-[0_12px_28px_-18px_rgba(59,130,246,0.9)]",
+      "shadow-[0_8px_22px_-14px_rgba(59,130,246,0.85)]",
       "transition-all duration-300",
       "hover:bg-primary/90",
-      "hover:shadow-[0_16px_32px_-18px_rgba(59,130,246,1)]",
+      "hover:shadow-[0_12px_26px_-14px_rgba(59,130,246,0.95)]",
       "focus-visible:ring-2 focus-visible:ring-primary"
     )}
   >
-    <Search className="mr-2 h-4 w-4" />
+    <Search className="mr-1.5 h-3.5 w-3.5" />
 
-    <span className="text-sm font-semibold tracking-[-0.02em]">
+    <span className="text-[13px] font-semibold tracking-[-0.01em]">
       Search
     </span>
   </Button>
@@ -849,17 +849,17 @@ const SearchBar = ({
    */
 
   const filterContent = (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Property Type */}
       {hotelTypeOptions.length > 0 && (
         <section>
-          <div className="mb-3">
-            <p className="text-[9px] font-bold uppercase text-foreground/40">
+          <div className="mb-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/50">
               Property Type
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {hotelTypeOptions.map((option) => {
               const selected =
                 selectedHotelTypes.includes(option.name);
@@ -876,7 +876,7 @@ const SearchBar = ({
                     )
                   }
                   className={cn(
-                    "rounded-full border px-3 py-2 text-[11px] font-medium transition-all",
+                    "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
                     selected
                       ? "border-primary/30 bg-primary/10 text-primary"
                       : "border-foreground/10 bg-foreground/5 text-foreground/70 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
@@ -892,13 +892,13 @@ const SearchBar = ({
 
       {/* Star Rating */}
       <section>
-        <div className="mb-3">
-          <p className="text-[9px] font-bold uppercase text-foreground/40">
+        <div className="mb-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/50">
             Star Rating
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1.5">
           {[1, 2, 3, 4, 5].map((star) => {
             const selected = selectedStars.includes(star);
 
@@ -914,17 +914,17 @@ const SearchBar = ({
                   )
                 }
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-[11px] font-medium transition-all",
+                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
                   selected
-                    ? "border-amber-400/60 bg-amber-500/15 text-amber-300"
+                    ? "border-amber-400/60 bg-amber-500/15 text-amber-500 dark:text-amber-300"
                     : "border-foreground/10 bg-foreground/5 text-foreground/65 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
                 )}
               >
                 <Star
                   className={cn(
-                    "h-3.5 w-3.5",
+                    "h-3 w-3",
                     selected
-                      ? "fill-amber-300 text-amber-300"
+                      ? "fill-amber-500 text-amber-500 dark:fill-amber-300 dark:text-amber-300"
                       : "text-foreground/40"
                   )}
                 />
@@ -936,131 +936,111 @@ const SearchBar = ({
         </div>
       </section>
 
-      {/* Amenities */}
-      {(amenityGroups.hotel.length > 0 ||
-        amenityGroups.room.length > 0) && (
+      {/* Hotel Amenities */}
+      {amenityGroups.hotel.length > 0 && (
         <section>
-          <div className="mb-3">
-            <p className="text-[9px] font-bold uppercase text-foreground/40">
-              Amenities
+          <div className="mb-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/50">
+              Hotel Amenities
             </p>
           </div>
 
-          {/* Hotel Amenities */}
-          {amenityGroups.hotel.length > 0 && (
-            <div className="mb-5">
-              <p className="mb-2.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-foreground/30">
-                Hotel
-              </p>
+          <div className="flex flex-wrap gap-1.5">
+            {visibleHotelAmenities.map((amenity) => {
+              const selected =
+                selectedAmenities.includes(amenity.id);
 
-              <div className="flex flex-wrap gap-2">
-                {visibleHotelAmenities.map((amenity) => {
-                  const selected =
-                    selectedAmenities.includes(amenity.id);
+              return (
+                <button
+                  key={amenity.id}
+                  type="button"
+                  onClick={() =>
+                    togglePill(
+                      selectedAmenities,
+                      amenity.id,
+                      setSelectedAmenities
+                    )
+                  }
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
+                    selected
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-foreground/10 bg-foreground/5 text-foreground/65 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
+                  )}
+                >
+                  {amenity.name}
+                </button>
+              );
+            })}
 
-                  return (
-                    <button
-                      key={amenity.id}
-                      type="button"
-                      onClick={() =>
-                        togglePill(
-                          selectedAmenities,
-                          amenity.id,
-                          setSelectedAmenities
-                        )
-                      }
-                      className={cn(
-                        "rounded-full border px-3 py-2 text-[10px] font-medium transition-all",
-                        selected
-                          ? "border-primary/30 bg-primary/10 text-primary"
-                          : "border-foreground/10 bg-foreground/5 text-foreground/60 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
-                      )}
-                    >
-                      {amenity.name}
-                    </button>
-                  );
-                })}
+            {amenityGroups.hotel.length > AMENITIES_PREVIEW && (
+              <button
+                type="button"
+                onClick={() =>
+                  setShowAllHotelAmenities((current) => !current)
+                }
+                className="rounded-full border border-dashed border-foreground/15 px-3 py-1.5 text-[12px] font-medium text-foreground/45 transition-colors hover:border-foreground/25 hover:text-foreground"
+              >
+                {showAllHotelAmenities
+                  ? "Show less"
+                  : `+${amenityGroups.hotel.length - AMENITIES_PREVIEW} more`}
+              </button>
+            )}
+          </div>
+        </section>
+      )}
 
-                {amenityGroups.hotel.length >
-                  AMENITIES_PREVIEW && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowAllHotelAmenities(
-                        (current) => !current
-                      )
-                    }
-                    className="rounded-full border border-dashed border-foreground/15 px-3 py-2 text-[10px] font-medium text-foreground/45 transition-colors hover:border-foreground/25 hover:text-foreground"
-                  >
-                    {showAllHotelAmenities
-                      ? "Show less"
-                      : `+${
-                          amenityGroups.hotel.length -
-                          AMENITIES_PREVIEW
-                        } more`}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+      {/* Room Amenities */}
+      {amenityGroups.room.length > 0 && (
+        <section>
+          <div className="mb-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/50">
+              Room Amenities
+            </p>
+          </div>
 
-          {/* Room Amenities */}
-          {amenityGroups.room.length > 0 && (
-            <div>
-              <p className="mb-2.5 text-[9px] font-semibold uppercase tracking-[0.16em] text-foreground/30">
-                Room
-              </p>
+          <div className="flex flex-wrap gap-1.5">
+            {visibleRoomAmenities.map((amenity) => {
+              const selected =
+                selectedAmenities.includes(amenity.id);
 
-              <div className="flex flex-wrap gap-2">
-                {visibleRoomAmenities.map((amenity) => {
-                  const selected =
-                    selectedAmenities.includes(amenity.id);
+              return (
+                <button
+                  key={amenity.id}
+                  type="button"
+                  onClick={() =>
+                    togglePill(
+                      selectedAmenities,
+                      amenity.id,
+                      setSelectedAmenities
+                    )
+                  }
+                  className={cn(
+                    "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
+                    selected
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-foreground/10 bg-foreground/5 text-foreground/65 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
+                  )}
+                >
+                  {amenity.name}
+                </button>
+              );
+            })}
 
-                  return (
-                    <button
-                      key={amenity.id}
-                      type="button"
-                      onClick={() =>
-                        togglePill(
-                          selectedAmenities,
-                          amenity.id,
-                          setSelectedAmenities
-                        )
-                      }
-                      className={cn(
-                        "rounded-full border px-3 py-2 text-[10px] font-medium transition-all",
-                        selected
-                          ? "border-primary/30 bg-primary/10 text-primary"
-                          : "border-foreground/10 bg-foreground/5 text-foreground/60 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
-                      )}
-                    >
-                      {amenity.name}
-                    </button>
-                  );
-                })}
-
-                {amenityGroups.room.length >
-                  AMENITIES_PREVIEW && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setShowAllRoomAmenities(
-                        (current) => !current
-                      )
-                    }
-                    className="rounded-full border border-dashed border-foreground/15 px-3 py-2 text-[10px] font-medium text-foreground/45 transition-colors hover:border-foreground/25 hover:text-foreground"
-                  >
-                    {showAllRoomAmenities
-                      ? "Show less"
-                      : `+${
-                          amenityGroups.room.length -
-                          AMENITIES_PREVIEW
-                        } more`}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
+            {amenityGroups.room.length > AMENITIES_PREVIEW && (
+              <button
+                type="button"
+                onClick={() =>
+                  setShowAllRoomAmenities((current) => !current)
+                }
+                className="rounded-full border border-dashed border-foreground/15 px-3 py-1.5 text-[12px] font-medium text-foreground/45 transition-colors hover:border-foreground/25 hover:text-foreground"
+              >
+                {showAllRoomAmenities
+                  ? "Show less"
+                  : `+${amenityGroups.room.length - AMENITIES_PREVIEW} more`}
+              </button>
+            )}
+          </div>
         </section>
       )}
     </div>
@@ -1151,20 +1131,20 @@ const SearchBar = ({
                 setIsFilterOpen((current) => !current)
               }
               className={cn(
-  "inline-flex h-[52px] w-[135px] shrink-0",
-  "items-center justify-center gap-2",
-  "rounded-[14px] border px-3.5",
-  "text-sm font-medium",
-  "transition-all duration-200",
+                "inline-flex h-[46px] w-[120px] shrink-0",
+                "items-center justify-center gap-1.5",
+                "rounded-[12px] border px-3",
+                "text-[13px] font-medium",
+                "transition-all duration-200",
 
-  isFilterOpen || activeCount > 0
-    ? "border-primary/50 bg-primary/10 text-primary shadow-[0_10px_24px_-18px_rgba(59,130,246,0.9)]"
-    : "border-foreground/10 bg-foreground/[0.04] text-foreground/70 hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground"
-)}
+                isFilterOpen || activeCount > 0
+                  ? "border-primary/40 bg-primary/8 text-primary shadow-[0_6px_18px_-14px_rgba(59,130,246,0.7)]"
+                  : "border-foreground/10 bg-foreground/[0.04] text-foreground/70 hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground"
+              )}
               aria-expanded={isFilterOpen}
               aria-controls="hero-search-filters"
             >
-              <SlidersHorizontal className="h-4 w-4" />
+              <SlidersHorizontal className="h-3.5 w-3.5" />
 
               <span>
                 {isFilterOpen ? "Hide" : "Filters"}
@@ -1173,7 +1153,7 @@ const SearchBar = ({
               {activeCount > 0 && (
                 <span
                   className={cn(
-                    "flex h-5 min-w-5 items-center justify-center",
+                    "flex h-4 min-w-4 items-center justify-center",
                     "rounded-full bg-primary px-1",
                     "text-[9px] font-bold text-primary-foreground",
 
@@ -1211,42 +1191,29 @@ const SearchBar = ({
       >
         <div className="flex h-full w-[400px] min-w-0 flex-col">
           {/* Header */}
-          <div className="flex h-[60px] shrink-0 items-center justify-between border-b border-foreground/10 px-5">
+          <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-foreground/[0.08] px-5">
             <div>
-              <div className="text-sm font-semibold">
+              <div className="text-[13px] font-semibold tracking-[-0.01em] text-foreground">
                 Filters
               </div>
 
-              <div className="mt-0.5 text-[10px] text-foreground/40">
+              <div className="mt-0.5 text-[11px] text-foreground/45">
                 {activeCount > 0
                   ? `${activeCount} active`
                   : "Refine your stay"}
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() =>
-                  setIsFilterOpen(false)
-                }
-                className="inline-flex items-center gap-1.5 rounded-full border border-foreground/10 bg-foreground/[0.04] px-2.5 py-1.5 text-[11px] font-medium text-foreground/70 transition-colors hover:border-foreground/20 hover:text-foreground"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                Hide
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setIsFilterOpen(false)
-                }
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 text-foreground/45 transition-colors hover:bg-foreground/10 hover:text-foreground"
-                aria-label="Close filters"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() =>
+                setIsFilterOpen(false)
+              }
+              className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 text-foreground/40 transition-colors hover:bg-foreground/8 hover:text-foreground"
+              aria-label="Close filters"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
           </div>
 
           {/* Filter Content */}
@@ -1257,11 +1224,11 @@ const SearchBar = ({
           </div>
 
           {/* Footer */}
-          <div className="flex h-[58px] shrink-0 items-center justify-between gap-3 border-t border-foreground/10 px-5">
+          <div className="flex h-[54px] shrink-0 items-center justify-between gap-3 border-t border-foreground/[0.08] px-5">
             <button
               type="button"
               onClick={resetFilters}
-              className="text-xs font-medium text-foreground/45 transition-colors hover:text-foreground"
+              className="text-[12px] font-medium text-foreground/45 transition-colors hover:text-foreground"
             >
               Reset all
             </button>
@@ -1272,7 +1239,7 @@ const SearchBar = ({
                 setIsFilterOpen(false);
                 handleSearch();
               }}
-              className="h-9 rounded-full bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+              className="h-8 rounded-[10px] bg-primary px-4 text-[12px] font-semibold text-primary-foreground shadow-[0_4px_14px_-8px_rgba(59,130,246,0.8)] hover:bg-primary/90"
             >
               Apply Filters
             </Button>
@@ -1444,7 +1411,9 @@ const SearchBar = ({
         className
       )}
     >
-      {desktopBento}
+      <div className="hidden w-full justify-center lg:flex">
+        {desktopBento}
+      </div>
 
       {mobileBento}
     </div>

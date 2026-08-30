@@ -81,14 +81,15 @@ export function HeroSection() {
   if (!currentSlide) return null;
 
   return (
-    <section className="relative min-h-[100svh] overflow-visible">
+<section className="relative h-[100svh] min-h-[720px] overflow-visible">
+
       {/* ================================================================
           HERO IMAGE CAROUSEL
           ================================================================ */}
       <div className="absolute inset-0">
   {heroSlides.map((slide, index) => (
     <div
-      key={slide.image}
+      key={index}
       className={cn(
         "absolute inset-0 transition-opacity duration-1000 ease-out",
         index === activeSlide ? "opacity-100" : "opacity-0"
@@ -107,12 +108,12 @@ export function HeroSection() {
     </div>
   ))}
 
-  {/* Theme-aware overall tone */}
+  {/* Theme-aware overall tone: very subtle white in light, subtle black in dark */}
   <div
     className="
       absolute inset-0
-      bg-white/5
-      dark:bg-black/15
+      bg-white/8
+      dark:bg-black/20
     "
   />
 
@@ -120,39 +121,29 @@ export function HeroSection() {
   <div
     className="
       absolute inset-0
-      bg-linear-to-t
-      from-black/20
-      via-transparent
-      to-white/5
-      dark:from-black/35
-      dark:via-black/5
-      dark:to-black/15
+      bg-gradient-to-t
+      from-white/10 via-transparent to-white/5
+      dark:from-black/30 dark:via-black/5 dark:to-black/10
     "
   />
 
-  {/* Left readability */}
+  {/* Left readability gradient */}
   <div
     className="
       absolute inset-y-0 left-0 w-[55%]
-      bg-linear-to-r
-      from-black/15
-      via-black/5
-      to-transparent
-      dark:from-black/30
-      dark:via-black/10
-      dark:to-transparent
+      bg-gradient-to-r
+      from-white/12 via-white/5 to-transparent
+      dark:from-black/25 dark:via-black/8 dark:to-transparent
     "
   />
 
-  {/* Bottom readability */}
+  {/* Bottom readability gradient */}
   <div
     className="
       absolute inset-x-0 bottom-0 h-72
-      bg-linear-to-t
-      from-black/20
-      to-transparent
-      dark:from-black/35
-      dark:to-transparent
+      bg-gradient-to-t
+      from-white/15 to-transparent
+      dark:from-black/30 dark:to-transparent
     "
   />
 </div>
@@ -163,26 +154,43 @@ export function HeroSection() {
           ================================================================ */}
       <div className="relative z-10 flex min-h-[100svh] items-end">
         <div className="container mx-auto w-full px-4 pb-16 pt-28 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
-          <div className="flex flex-col items-start">
+          <div className="flex w-full flex-col">
             {/* Supporting hero copy */}
-            <div className="mb-5 max-w-xl text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.35)] sm:mb-6">
-              <div className="mb-3 inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/85 backdrop-blur-md">
-                {currentSlide.eyebrow}
+            <div className="mb-5 flex flex-col items-start sm:mb-6">
+              {/* Hero copy — drop-shadow aids readability on photograph */}
+              <div className="max-w-xl drop-shadow-[0_2px_20px_rgba(0,0,0,0.28)] dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.50)]">
+                {/* Eyebrow badge — foreground-tinted in light, white-tinted in dark */}
+                <div className="mb-3 inline-flex items-center rounded-full border border-foreground/20 bg-foreground/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/75 backdrop-blur-md dark:border-white/20 dark:bg-white/10 dark:text-white/85">
+                  {currentSlide.eyebrow}
+                </div>
+
+                {/* Main heading: dark text in light mode, white in dark */}
+                <h1
+  className="
+    mx-auto
+    max-w-[850px]
+    text-3xl
+    font-semibold
+    leading-[1.05]
+    tracking-tight
+    sm:text-4xl
+    lg:text-[3.35rem]
+  "
+>
+  {currentSlide.title}
+</h1>
+
+                {/* Description: foreground/70 in light, white/75 in dark */}
+                <p className="mt-3 max-w-md text-sm leading-6 text-foreground/70 sm:text-base dark:text-white/75">
+                  {currentSlide.description}
+                </p>
               </div>
-
-              <h1 className="max-w-lg text-3xl font-semibold leading-[1.05] tracking-tight sm:text-4xl lg:text-[3.35rem]">
-                {currentSlide.title}
-              </h1>
-
-              <p className="mt-3 max-w-md text-sm leading-6 text-white/75 sm:text-base">
-                {currentSlide.description}
-              </p>
             </div>
 
             {/* ============================================================
                 SEARCH
                 ============================================================ */}
-            <div className="w-full max-w-[980px]">
+            <div className="w-full">
               <SearchBar />
             </div>
           </div>

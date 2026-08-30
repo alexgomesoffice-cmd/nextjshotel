@@ -24,11 +24,12 @@ interface Props {
   onSave: (id: number, formData: FormData) => Promise<void>
   onToggleActive: (id: number, isActive: boolean) => Promise<void>
   onDragStart: (e: React.DragEvent, id: number) => void
-  onDragOver: (e: React.DragEvent, id: number) => void
-  onDrop: (e: React.DragEvent, id: number) => void
+  onDragOver: (e: React.DragEvent, id: number, position: "top" | "bottom") => void
+  onDrop: (e: React.DragEvent, id: number, position: "top" | "bottom") => void
   onDragEnd: () => void
   isDragging: boolean
   isDragOver: boolean
+  dragPosition: "top" | "bottom" | null
 }
 
 export function HeroBannerCard({
@@ -40,7 +41,8 @@ export function HeroBannerCard({
   onDrop,
   onDragEnd,
   isDragging,
-  isDragOver
+  isDragOver,
+  dragPosition
 }: Props) {
   const [eyebrow, setEyebrow] = useState(banner.eyebrow || "")
   const [title, setTitle] = useState(banner.title || "")
@@ -96,16 +98,41 @@ export function HeroBannerCard({
     }
   }
 
+  const handleDragOverLocal = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const midY = rect.top + rect.height / 2
+    const position = e.clientY < midY ? "top" : "bottom"
+    onDragOver(e, banner.id, position)
+  }
+
+  const handleDropLocal = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const rect = e.currentTarget.getBoundingClientRect()
+    const midY = rect.top + rect.height / 2
+    const position = e.clientY < midY ? "top" : "bottom"
+    onDrop(e, banner.id, position)
+  }
+
   return (
     <div
       className={cn(
         "relative rounded-xl border bg-card text-card-foreground shadow-xs transition-all duration-200",
-        isDragging && "opacity-50 scale-[0.98]",
-        isDragOver && "border-primary ring-2 ring-primary/20"
+        isDragging && "opacity-50 scale-[0.98]"
       )}
-      onDragOver={(e) => onDragOver(e, banner.id)}
-      onDrop={(e) => onDrop(e, banner.id)}
+      onDragOver={handleDragOverLocal}
+      onDrop={handleDropLocal}
+      onDragEnter={(e) => e.preventDefault()}
     >
+      {/* Insertion Indicators */}
+      {isDragOver && dragPosition === "top" && (
+        <div className="absolute -top-3 left-0 right-0 h-1.5 rounded-full bg-primary z-50 shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+      )}
+      {isDragOver && dragPosition === "bottom" && (
+        <div className="absolute -bottom-3 left-0 right-0 h-1.5 rounded-full bg-primary z-50 shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+      )}
       {/* Header */}
       <div className="flex items-center justify-between border-b px-6 py-4">
         <div className="flex items-center gap-4">

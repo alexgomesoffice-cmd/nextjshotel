@@ -9,6 +9,7 @@ export default function HeroBannersPage() {
   const [loading, setLoading] = useState(true)
   const [draggedId, setDraggedId] = useState<number | null>(null)
   const [dragOverId, setDragOverId] = useState<number | null>(null)
+  const [dragPosition, setDragPosition] = useState<"top" | "bottom" | null>(null)
 
   const fetchBanners = async () => {
     try {
@@ -86,22 +87,25 @@ export default function HeroBannersPage() {
     e.dataTransfer.effectAllowed = "move"
   }
 
-  const handleDragOver = (e: React.DragEvent, id: number) => {
+  const handleDragOver = (e: React.DragEvent, id: number, position: "top" | "bottom") => {
     e.preventDefault()
     e.dataTransfer.dropEffect = "move"
-    if (dragOverId !== id) {
+    if (dragOverId !== id || dragPosition !== position) {
       setDragOverId(id)
+      setDragPosition(position)
     }
   }
 
   const handleDragEnd = () => {
     setDraggedId(null)
     setDragOverId(null)
+    setDragPosition(null)
   }
 
-  const handleDrop = async (e: React.DragEvent, targetId: number) => {
+  const handleDrop = async (e: React.DragEvent, targetId: number, position: "top" | "bottom") => {
     e.preventDefault()
     setDragOverId(null)
+    setDragPosition(null)
 
     if (!draggedId || draggedId === targetId) return
 
@@ -112,7 +116,18 @@ export default function HeroBannersPage() {
 
     const newBanners = [...banners]
     const [draggedItem] = newBanners.splice(draggedIndex, 1)
-    newBanners.splice(targetIndex, 0, draggedItem)
+    
+    // Recalculate targetIndex because it shifted if draggedIndex was before it
+    let finalTargetIndex = banners.findIndex((b) => b.id === targetId)
+    if (draggedIndex < finalTargetIndex) {
+      finalTargetIndex -= 1
+    }
+    
+    if (position === "bottom") {
+      finalTargetIndex += 1
+    }
+
+    newBanners.splice(finalTargetIndex, 0, draggedItem)
 
     // Optimistically update UI (but we don't change slot numbers until server confirms)
     // Actually, let's update slot numbers optimistically for a seamless visual transition
@@ -172,6 +187,7 @@ export default function HeroBannersPage() {
             onDragEnd={handleDragEnd}
             isDragging={draggedId === banner.id}
             isDragOver={dragOverId === banner.id}
+            dragPosition={dragOverId === banner.id ? dragPosition : null}
           />
         ))}
         {banners.length === 0 && (

@@ -74,6 +74,7 @@ const catalogNav: NavItem[] = [
 
 const platformNav: NavItem[] = [
   { label: 'System Admins', href: '/dashboard/system/admins', icon: ShieldCheck },
+  { label: 'Hero Banners', href: '/dashboard/system/hero-banners', icon:Sparkles },
   { label: 'Master Data Requests', href: '/dashboard/system/master-data-requests', icon: PackagePlus },
   { label: 'Notifications', href: '/dashboard/system/notifications', icon: Bell },
   { label: 'Platform Settings', href: '/dashboard/system/settings', icon: Settings },

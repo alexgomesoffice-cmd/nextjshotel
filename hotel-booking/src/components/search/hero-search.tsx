@@ -854,7 +854,7 @@ const SearchBar = ({
       {hotelTypeOptions.length > 0 && (
         <section>
           <div className="mb-3">
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-foreground/40">
+            <p className="text-[9px] font-bold uppercase text-foreground/40">
               Property Type
             </p>
           </div>
@@ -893,7 +893,7 @@ const SearchBar = ({
       {/* Star Rating */}
       <section>
         <div className="mb-3">
-          <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-foreground/40">
+          <p className="text-[9px] font-bold uppercase text-foreground/40">
             Star Rating
           </p>
         </div>
@@ -941,7 +941,7 @@ const SearchBar = ({
         amenityGroups.room.length > 0) && (
         <section>
           <div className="mb-3">
-            <p className="text-[9px] font-bold uppercase tracking-[0.18em] text-foreground/40">
+            <p className="text-[9px] font-bold uppercase text-foreground/40">
               Amenities
             </p>
           </div>

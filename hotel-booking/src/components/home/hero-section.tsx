@@ -6,61 +6,79 @@ import { useEffect, useState } from "react";
 import SearchBar from "@/components/search/hero-search";
 import { cn } from "@/lib/utils";
 
-const heroSlides = [
+const fallbackSlides = [
   {
-    image:
-      "/uploads/hotels/1.png",
+    image: "/uploads/hotels/1.png",
     eyebrow: "CURATED STAYS",
     title: "Stay where the coast meets the city",
-    description:
-      "Curated escapes for slow mornings and bold adventures.",
+    description: "Curated escapes for slow mornings and bold adventures.",
   },
   {
-    image:
-      "/uploads/hotels/2.jpeg",
+    image: "/uploads/hotels/2.jpeg",
     eyebrow: "DISCOVER BANGLADESH",
     title: "Find your next unforgettable stay",
-    description:
-      "From city escapes to quiet retreats, discover places worth staying for.",
+    description: "From city escapes to quiet retreats, discover places worth staying for.",
   },
   {
-    image:
-      "/uploads/hotels/10.jpeg",
+    image: "/uploads/hotels/10.jpeg",
     eyebrow: "STAY YOUR WAY",
     title: "Rooms made for the moments that matter",
-    description:
-      "Find the right room, the right setting, and the right stay.",
+    description: "Find the right room, the right setting, and the right stay.",
   },
   {
-    image:
-      "/uploads/hotels/4.jpeg",
+    image: "/uploads/hotels/4.jpeg",
     eyebrow: "TRAVEL BEAUTIFULLY",
     title: "A better way to discover hotels",
-    description:
-      "Explore distinctive stays across Bangladesh with effortless search.",
+    description: "Explore distinctive stays across Bangladesh with effortless search.",
   },
   {
-    image:
-      "/uploads/hotels/5.jpeg",
+    image: "/uploads/hotels/5.jpeg",
     eyebrow: "YOUR NEXT ESCAPE",
     title: "Stay somewhere you will remember",
-    description:
-      "Beautiful places, thoughtful rooms, and stays worth coming back to.",
+    description: "Beautiful places, thoughtful rooms, and stays worth coming back to.",
   },
 ];
 
 export function HeroSection() {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [heroSlides, setHeroSlides] = useState<any[]>(fallbackSlides);
 
   useEffect(() => {
+    const fetchBanners = async () => {
+      try {
+        const res = await fetch("/api/public/hero-banners")
+        const data = await res.json()
+        if (data.success && data.data.length > 0) {
+          // Map DB structure to the expected slide structure
+          const mappedBanners = data.data.map((banner: any) => ({
+            image: banner.image_url,
+            eyebrow: banner.eyebrow,
+            title: banner.title,
+            description: banner.description,
+          }))
+          setHeroSlides(mappedBanners)
+        }
+      } catch (error) {
+        console.error("Failed to fetch hero banners:", error)
+      }
+    }
+    
+    fetchBanners()
+  }, [])
+
+  useEffect(() => {
+    if (heroSlides.length === 0) return;
+    
     const interval = window.setInterval(() => {
       setActiveSlide((current) => (current + 1) % heroSlides.length);
     }, 7000);
 
     return () => window.clearInterval(interval);
-  }, []);
+  }, [heroSlides.length]);
 
-  const currentSlide = heroSlides[activeSlide];
+  const currentSlide = heroSlides[activeSlide] || heroSlides[0];
+
+  if (!currentSlide) return null;
 
   return (
     <section className="relative min-h-[100svh] overflow-visible">

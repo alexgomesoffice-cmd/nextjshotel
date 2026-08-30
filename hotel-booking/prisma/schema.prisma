@@ -1312,3 +1312,22 @@ model end_user_notifications {
   @@index([created_at])
   @@map("end_user_notifications")
 }
+
+// ═══════════════════════════════════════════════════════
+// HERO BANNERS
+// Managed by System Admin. Exactly 5 slots.
+// ═══════════════════════════════════════════════════════
+
+model hero_banners {
+  id          Int      @id @default(autoincrement())
+  slot        Int      @unique
+  image_url   String?  @db.VarChar(500)
+  eyebrow     String?  @db.VarChar(100)
+  title       String?  @db.VarChar(255)
+  description String?  @db.Text
+  is_active   Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("hero_banners")
+}

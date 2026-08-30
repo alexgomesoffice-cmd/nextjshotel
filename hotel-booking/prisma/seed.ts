@@ -37,9 +37,28 @@ async function seedRoles() {
   }
 }
 
+async function seedHeroBanners() {
+  console.log('🌱 Seeding Hero Banners...')
+  for (let i = 1; i <= 5; i++) {
+    const existing = await prisma.hero_banners.findUnique({
+      where: { slot: i }
+    })
+    if (!existing) {
+      await prisma.hero_banners.create({
+        data: {
+          slot: i,
+          is_active: false
+        }
+      })
+    }
+  }
+}
+
 async function main() {
   console.log('🌱 Seeding roles...')
   await seedRoles()
+
+  await seedHeroBanners()
 
   console.log('🌱 Seeding System Admin...')
 

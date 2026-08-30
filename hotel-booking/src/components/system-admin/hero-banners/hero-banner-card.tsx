@@ -148,13 +148,22 @@ export function HeroBannerCard({
         </div>
         
         <div className="flex items-center gap-3">
-          <Label htmlFor={`active-${banner.id}`} className="font-medium text-sm text-muted-foreground">
-            {banner.is_active ? "Active" : "Inactive"}
+          <Label 
+            htmlFor={`active-${banner.id}`} 
+            className={cn(
+              "font-medium text-sm",
+              banner.is_active ? "text-primary" : "text-destructive"
+            )}
+          >
+            {banner.is_active ? "Activated" : "Inactive"}
           </Label>
           <Switch
             id={`active-${banner.id}`}
             checked={banner.is_active}
             onCheckedChange={(val) => onToggleActive(banner.id, val)}
+            className={cn(
+              banner.is_active ? "data-[state=checked]:bg-primary" : "data-[state=unchecked]:bg-destructive"
+            )}
           />
         </div>
       </div>

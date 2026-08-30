@@ -166,7 +166,7 @@ export default function HeroBannersPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1200px] space-y-4 px-6 py-5">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Hero Management</h1>
         <p className="text-muted-foreground mt-2">

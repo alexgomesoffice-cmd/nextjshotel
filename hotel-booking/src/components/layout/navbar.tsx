@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Menu, X, Hotel, User, CalendarDays, Settings, LogOut, Sun, Moon } from 'lucide-react'
+import { Menu, X, Hotel, User, CalendarDays, Settings, LogOut, Sun, Moon, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   DropdownMenu,
@@ -183,6 +183,9 @@ const Navbar = () => {
                   <DropdownMenuItem onClick={() => router.push('/bookings')} className="gap-2 cursor-pointer">
                     <CalendarDays className="h-4 w-4" /> My Bookings
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/favorites')} className="gap-2 cursor-pointer text-red-500 focus:text-red-500">
+                    <Heart className="h-4 w-4" /> Favorites
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => router.push('/settings')} className="gap-2 cursor-pointer">
                     <Settings className="h-4 w-4" /> Settings
                   </DropdownMenuItem>
@@ -258,6 +261,9 @@ const Navbar = () => {
                 </Link>
                 <Link href="/bookings" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <CalendarDays className="h-4 w-4" /> My Bookings
+                </Link>
+                <Link href="/favorites" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 py-2 text-sm text-red-500 hover:text-red-600">
+                  <Heart className="h-4 w-4" /> Favorites
                 </Link>
                 <Link href="/settings" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground">
                   <Settings className="h-4 w-4" /> Settings

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolvePriceForDate } from '@/lib/pricing-resolver';
+import { verifyToken } from '@/lib/jwt';
+import { isBlacklisted } from '@/lib/token-blacklist';
 
 /**
  * GET /api/public/hotels/[slug]
@@ -19,6 +21,22 @@ export async function GET(
 
     if (!slug) {
       return NextResponse.json({ success: false, message: 'Hotel slug is required' }, { status: 400 });
+    }
+
+    // ─── Resolve Authentication for Favorites ───────────────────────────────────
+    let endUserId: number | null = null;
+    const token = req.cookies.get('token_user')?.value;
+    if (token) {
+      try {
+        if (!(await isBlacklisted(token))) {
+          const payload = await verifyToken(token);
+          if (payload.actor_type === 'END_USER' && payload.actor_id) {
+            endUserId = payload.actor_id;
+          }
+        }
+      } catch (err) {
+        // Silently ignore auth errors for public routes
+      }
     }
 
     const hotel = await prisma.hotels.findUnique({
@@ -54,6 +72,32 @@ export async function GET(
       return NextResponse.json({ success: false, message: 'Hotel not found' }, { status: 404 });
     }
 
+    // ─── Fetch Favorite Status ────────────────────────────────────────────────
+    let isFavorited = false;
+    if (endUserId) {
+      const fav = await prisma.user_favourites.findUnique({
+        where: {
+          end_user_id_hotel_id: {
+            end_user_id: endUserId,
+            hotel_id: hotel.id,
+          },
+        },
+      });
+      if (fav) isFavorited = true;
+    } else {
+      const cookieVal = req.cookies.get('guest_favourites')?.value;
+      if (cookieVal) {
+        try {
+          const parsed = JSON.parse(cookieVal);
+          if (Array.isArray(parsed) && parsed.includes(hotel.id)) {
+            isFavorited = true;
+          }
+        } catch {
+          // Ignore invalid JSON
+        }
+      }
+    }
+
     const today = new Date();
     const { room_types, ...hotelRest } = hotel;
     const formattedRoomTypes = room_types.map((rt) => {
@@ -71,7 +115,7 @@ export async function GET(
       };
     });
 
-    return NextResponse.json({ success: true, data: { ...hotelRest, room_types: formattedRoomTypes } });
+    return NextResponse.json({ success: true, data: { ...hotelRest, isFavorited, room_types: formattedRoomTypes } });
   } catch (error) {
     console.error('Failed to fetch hotel details:', error);
     return NextResponse.json({ success: false, message: 'Failed to fetch hotel details' }, { status: 500 });

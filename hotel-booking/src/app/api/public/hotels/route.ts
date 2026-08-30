@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { verifyToken } from '@/lib/jwt';
+import { isBlacklisted } from '@/lib/token-blacklist';
 
 // ─── Accommodation types ───────────────────────────────────────────────────────
 
@@ -156,6 +158,22 @@ export async function GET(req: NextRequest) {
     // null = unbounded (guest supplied no room limit)
     const requestedRooms:  number | null = roomsParam  ? parseInt(roomsParam)  : null;
 
+    // ─── Resolve Authentication for Favorites ───────────────────────────────────
+    let endUserId: number | null = null;
+    const token = req.cookies.get('token_user')?.value;
+    if (token) {
+      try {
+        if (!(await isBlacklisted(token))) {
+          const payload = await verifyToken(token);
+          if (payload.actor_type === 'END_USER' && payload.actor_id) {
+            endUserId = payload.actor_id;
+          }
+        }
+      } catch (err) {
+        // Silently ignore auth errors for public routes
+      }
+    }
+
     // ─── Hotel-level WHERE ────────────────────────────────────────────────────
     const where: Record<string, unknown> = { approval_status: 'PUBLISHED', deleted_at: null };
 
@@ -310,6 +328,31 @@ export async function GET(req: NextRequest) {
 
     let hotels = allHotels;
 
+    // ─── Fetch Favorites ──────────────────────────────────────────────────────
+    const favoriteHotelIds = new Set<number>();
+    if (endUserId && hotels.length > 0) {
+      const favs = await prisma.user_favourites.findMany({
+        where: {
+          end_user_id: endUserId,
+          hotel_id: { in: hotels.map(h => h.id) },
+        },
+        select: { hotel_id: true },
+      });
+      favs.forEach(f => favoriteHotelIds.add(f.hotel_id));
+    } else if (!endUserId && hotels.length > 0) {
+      const cookieVal = req.cookies.get('guest_favourites')?.value;
+      if (cookieVal) {
+        try {
+          const parsed = JSON.parse(cookieVal);
+          if (Array.isArray(parsed) && parsed.every(n => typeof n === 'number')) {
+            parsed.forEach(id => favoriteHotelIds.add(id));
+          }
+        } catch {
+          // Ignore invalid JSON
+        }
+      }
+    }
+
     // ─── In-memory price sort (existing behaviour) ────────────────────────────
     if (isPriceSort) {
       hotels.sort((a, b) => {
@@ -356,6 +399,7 @@ export async function GET(req: NextRequest) {
         amenities:      (hotel.hotel_amenities || [])
           .slice(0, 3)
           .map((ha) => String(((ha as Record<string, unknown>).amenity as Record<string, unknown>).name)),
+        isFavorited:    favoriteHotelIds.has(hotel.id),
       };
 
       if (!includeRooms) return { ...base, accommodation: null };

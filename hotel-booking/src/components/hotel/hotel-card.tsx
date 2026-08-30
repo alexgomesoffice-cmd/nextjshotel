@@ -3,11 +3,12 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {
-  MapPin, Star, Building2, Heart,
+  MapPin, Star, Building2,
   Users, BedDouble, ArrowUpRight,
   CheckCircle2, AlertTriangle, Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import FavoriteButton from './favorite-button';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -56,6 +57,7 @@ export interface HotelCardProps {
   maxPrice?:         number;
   /** Populated by the capacity engine when a guests param was supplied. */
   accommodation?:    AccommodationContext | null;
+  isFavorited?:      boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -237,6 +239,7 @@ function RoomRow({
 // ─── Main Premium Hotel Card Component ───────────────────────────────────────
 
 const HotelCard = ({
+  id,
   slug,
   name,
   city,
@@ -257,6 +260,7 @@ const HotelCard = ({
   minPrice,
   maxPrice,
   accommodation,
+  isFavorited = false,
 }: HotelCardProps) => {
   const dateParams = checkIn && checkOut
     ? `?check_in=${checkIn}&check_out=${checkOut}&guests=${guests || 1}`
@@ -299,14 +303,7 @@ const HotelCard = ({
             <span className="rounded-full bg-background/90 px-2.5 py-1 text-[10px] uppercase font-semibold tracking-[0.12em] text-foreground backdrop-blur">
               {hotel_type}
             </span>
-            <button
-              onClick={e => { e.preventDefault(); e.stopPropagation(); }}
-              type="button"
-              aria-label="Save hotel"
-              className="grid size-9 place-items-center rounded-full bg-white/15 text-white backdrop-blur-md transition hover:bg-white/30"
-            >
-              <Heart className="size-4" />
-            </button>
+            <FavoriteButton hotelId={id} initialIsFavorited={isFavorited} />
           </div>
 
           {/* Bottom Info Overlay */}

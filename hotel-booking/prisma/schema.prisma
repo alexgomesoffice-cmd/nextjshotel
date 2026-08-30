@@ -5,7 +5,6 @@
 
 generator client {
   provider = "prisma-client-js"
-
 }
 
 datasource db {
@@ -24,24 +23,24 @@ enum ActorType {
 }
 
 enum AmenityContext {
-  HOTEL   // shown on hotel listing / hotel detail page amenity section
-  ROOM    // shown on room type detail / room properties
+  HOTEL // shown on hotel listing / hotel detail page amenity section
+  ROOM // shown on room type detail / room properties
 }
 
 enum ApprovalStatus {
-  UNPUBLISHED  // created by system admin; not public
-  PUBLISHED    // hotel admin published; visible on site
-  SUSPENDED    // system admin suspended; hidden from public
+  UNPUBLISHED // created by system admin; not public
+  PUBLISHED // hotel admin published; visible on site
+  SUSPENDED // system admin suspended; hidden from public
 }
 
 enum BookingStatus {
-  RESERVED     // 10-min hold; awaiting payment
-  BOOKED       // payment confirmed
-  EXPIRED      // 10-min window passed without payment
-  CANCELLED    // cancelled by user or hotel staff
-  CHECKED_IN   // set manually by hotel staff on guest arrival
-  CHECKED_OUT  // set manually by hotel staff on departure
-  NO_SHOW      // set manually by hotel staff
+  RESERVED // 10-min hold; awaiting payment
+  BOOKED // payment confirmed
+  EXPIRED // 10-min window passed without payment
+  CANCELLED // cancelled by user or hotel staff
+  CHECKED_IN // set manually by hotel staff on guest arrival
+  CHECKED_OUT // set manually by hotel staff on departure
+  NO_SHOW // set manually by hotel staff
 }
 
 enum TrackerStatus {
@@ -54,16 +53,16 @@ enum TrackerStatus {
 }
 
 enum RoomStatus {
-  AVAILABLE     // no active booking for today; default resting state
-  BOOKED        // auto-set when a room_tracker covers today (RESERVED/BOOKED)
-  CHECKED_IN    // set manually by hotel staff on guest arrival (mirrors room_trackers)
-  CHECKED_OUT   // set manually by hotel staff on departure (mirrors room_trackers)
-  MAINTENANCE   // manual override; room taken out of service
+  AVAILABLE // no active booking for today; default resting state
+  BOOKED // auto-set when a room_tracker covers today (RESERVED/BOOKED)
+  CHECKED_IN // set manually by hotel staff on guest arrival (mirrors room_trackers)
+  CHECKED_OUT // set manually by hotel staff on departure (mirrors room_trackers)
+  MAINTENANCE // manual override; room taken out of service
 }
 
 enum CaseStatus {
-  DRAFTING   // accumulating staged edits, not yet submitted, invisible to Review Queue
-  PENDING    // submitted, awaiting System Admin decision
+  DRAFTING // accumulating staged edits, not yet submitted, invisible to Review Queue
+  PENDING // submitted, awaiting System Admin decision
   APPROVED
   REJECTED
 }
@@ -88,13 +87,13 @@ enum DocumentType {
 // No DB-level FK to the target table (a row can describe a brand new record
 // that doesn't exist yet) — validated at the application layer instead.
 enum CaseEntityType {
-  HOTEL              // hotels + hotel_details fields
-  HOTEL_OWNER        // hotel_owner_details
-  HOTEL_ADMIN        // hotel_admin_details identity fields (name/phone/dob/nid/passport/address/photo). NOT email (immutable, no change path exists) or password (immediate, no review).
-  HOTEL_IMAGE        // hotel_images (gallery)
-  HOTEL_DOCUMENT     // hotel_documents
-  AMENITY            // a hotel's or room type's amenity SELECTION only — amenities themselves are fully global/System-Admin-owned now, same as bed types, so there's no "creating a new custom amenity" case anymore
-  POLICY             // policies
+  HOTEL // hotels + hotel_details fields
+  HOTEL_OWNER // hotel_owner_details
+  HOTEL_ADMIN // hotel_admin_details identity fields (name/phone/dob/nid/passport/address/photo). NOT email (immutable, no change path exists) or password (immediate, no review).
+  HOTEL_IMAGE // hotel_images (gallery)
+  HOTEL_DOCUMENT // hotel_documents
+  AMENITY // a hotel's or room type's amenity SELECTION only — amenities themselves are fully global/System-Admin-owned now, same as bed types, so there's no "creating a new custom amenity" case anymore
+  POLICY // policies
   // ROOM_TYPE, ROOM_TYPE_IMAGE, ROOM_FACILITY, ROOM_DETAIL removed —
   // Room Type / Room Variant / Physical Room management is direct Hotel
   // Admin CRUD now (see room-variant-matching.ts), never case-reviewed.
@@ -115,7 +114,7 @@ enum NotificationType {
   NEW_REVIEW
   DOCUMENT_EXPIRING
   ACCOUNT_BLOCKED
-  MASTER_DATA_REQUEST  // a Hotel Admin submitted, or a System Admin resolved, a master data request — NOT a case, deliberately separate from CASE_SUBMITTED
+  MASTER_DATA_REQUEST // a Hotel Admin submitted, or a System Admin resolved, a master data request — NOT a case, deliberately separate from CASE_SUBMITTED
   GENERAL
 }
 
@@ -146,20 +145,20 @@ model roles {
 // ═══════════════════════════════════════════════════════
 
 model system_admins {
-  id                     Int                   @id @default(autoincrement())
-  name                   String                @db.VarChar(150)
-  email                  String                @unique @db.VarChar(255)
-  password               String                @db.VarChar(255)
-  is_active              Boolean               @default(true)
-  is_blocked             Boolean               @default(false)
+  id                     Int       @id @default(autoincrement())
+  name                   String    @db.VarChar(150)
+  email                  String    @unique @db.VarChar(255)
+  password               String    @db.VarChar(255)
+  is_active              Boolean   @default(true)
+  is_blocked             Boolean   @default(false)
   created_by             Int?
   last_login_at          DateTime?
-  login_attempts         Int                   @default(0)
+  login_attempts         Int       @default(0)
   locked_until           DateTime?
-  password_reset_token   String?               @db.VarChar(255)
+  password_reset_token   String?   @db.VarChar(255)
   password_reset_expires DateTime?
-  created_at             DateTime              @default(now())
-  updated_at             DateTime              @updatedAt
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
   deleted_at             DateTime?
 
   creator              system_admins?        @relation("AdminCreatedBy", fields: [created_by], references: [id])
@@ -208,26 +207,27 @@ model system_admin_images {
 // ═══════════════════════════════════════════════════════
 
 model end_users {
-  id                     Int                @id @default(autoincrement())
-  email                  String             @unique @db.VarChar(255)
-  password               String?            @db.VarChar(255)
-  name                   String             @db.VarChar(150)
-  email_verified         Boolean            @default(false)
+  id                     Int       @id @default(autoincrement())
+  email                  String    @unique @db.VarChar(255)
+  password               String?   @db.VarChar(255)
+  name                   String    @db.VarChar(150)
+  email_verified         Boolean   @default(false)
   email_verified_at      DateTime?
-  is_active              Boolean            @default(true)
-  is_blocked             Boolean            @default(false)
+  is_active              Boolean   @default(true)
+  is_blocked             Boolean   @default(false)
   last_login_at          DateTime?
-  login_attempts         Int                @default(0)
+  login_attempts         Int       @default(0)
   locked_until           DateTime?
-  password_reset_token   String?            @db.VarChar(255)
+  password_reset_token   String?   @db.VarChar(255)
   password_reset_expires DateTime?
-  created_at             DateTime           @default(now())
-  updated_at             DateTime           @updatedAt
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
   deleted_at             DateTime?
 
-  detail   end_user_details?
-  images   end_user_images[]
-  bookings user_bookings[]
+  detail     end_user_details?
+  images     end_user_images[]
+  bookings   user_bookings[]
+  favourites user_favourites[]
 
   @@index([email])
   @@map("end_users")
@@ -306,37 +306,38 @@ model hotel_types {
 // ═══════════════════════════════════════════════════════
 
 model hotels {
-  id                 Int            @id @default(autoincrement())
-  name               String         @db.VarChar(255)
-  slug               String         @unique @db.VarChar(255)
-  email              String?        @db.VarChar(150)
-  address            String?        @db.Text
-  city_id            Int?
-  hotel_type_id      Int?
-  zip_code           String?        @db.VarChar(20)
-  map_location       String?        @db.Text  // full Google Maps / location URLs can exceed 500 chars
-  created_by         Int
-  approval_status    ApprovalStatus @default(UNPUBLISHED)
-  published_at       DateTime?
-  created_at         DateTime       @default(now())
-  updated_at         DateTime       @updatedAt
-  deleted_at         DateTime?
+  id              Int            @id @default(autoincrement())
+  name            String         @db.VarChar(255)
+  slug            String         @unique @db.VarChar(255)
+  email           String?        @db.VarChar(150)
+  address         String?        @db.Text
+  city_id         Int?
+  hotel_type_id   Int?
+  zip_code        String?        @db.VarChar(20)
+  map_location    String?        @db.Text // full Google Maps / location URLs can exceed 500 chars
+  created_by      Int
+  approval_status ApprovalStatus @default(UNPUBLISHED)
+  published_at    DateTime?
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @updatedAt
+  deleted_at      DateTime?
 
-  city             cities?            @relation(fields: [city_id], references: [id])
-  hotel_type       hotel_types?       @relation(fields: [hotel_type_id], references: [id])
-  creator          system_admins      @relation("HotelCreatedBy", fields: [created_by], references: [id])
-  hotel_admin      hotel_admins?
-  detail           hotel_details?
-  images           hotel_images[]
-  hotel_amenities  hotel_amenities[]
-  hotel_sub_admins hotel_sub_admins[]
-  room_types       room_types[]
-  bookings         user_bookings[]
-  owner_detail     hotel_owner_details?
-  documents        hotel_documents[]
-  policies         policies[]
-  cases            cases[]
+  city                 cities?                @relation(fields: [city_id], references: [id])
+  hotel_type           hotel_types?           @relation(fields: [hotel_type_id], references: [id])
+  creator              system_admins          @relation("HotelCreatedBy", fields: [created_by], references: [id])
+  hotel_admin          hotel_admins?
+  detail               hotel_details?
+  images               hotel_images[]
+  hotel_amenities      hotel_amenities[]
+  hotel_sub_admins     hotel_sub_admins[]
+  room_types           room_types[]
+  bookings             user_bookings[]
+  owner_detail         hotel_owner_details?
+  documents            hotel_documents[]
+  policies             policies[]
+  cases                cases[]
   master_data_requests master_data_requests[]
+  favourites           user_favourites[]
 
   @@index([approval_status])
   @@index([city_id])
@@ -346,26 +347,26 @@ model hotels {
 }
 
 model hotel_details {
-  id                      Int                @id @default(autoincrement())
-  hotel_id                Int                @unique
-  description             String?            @db.Text
-  reception_no1           String?            @db.VarChar(32)
-  reception_no2           String?            @db.VarChar(32)
-  star_rating             Decimal?           @db.Decimal(2, 1)
-  guest_rating            Decimal            @default(0.00) @db.Decimal(3, 2)
-  website                 String?            @db.VarChar(255)
-  check_in_time           String             @default("14:00") @db.VarChar(5)
-  check_out_time          String             @default("12:00") @db.VarChar(5)
-  advance_deposit_percent Int                @default(0)
+  id                            Int      @id @default(autoincrement())
+  hotel_id                      Int      @unique
+  description                   String?  @db.Text
+  reception_no1                 String?  @db.VarChar(32)
+  reception_no2                 String?  @db.VarChar(32)
+  star_rating                   Decimal? @db.Decimal(2, 1)
+  guest_rating                  Decimal  @default(0.00) @db.Decimal(3, 2)
+  website                       String?  @db.VarChar(255)
+  check_in_time                 String   @default("14:00") @db.VarChar(5)
+  check_out_time                String   @default("12:00") @db.VarChar(5)
+  advance_deposit_percent       Int      @default(0)
   // Emergency contact — property-level point of contact for critical incidents.
   // Distinct from hotel_admin_details.emergency_contact1/2, which is the admin's own personal contact.
-  emergency_contact_name        String?      @db.VarChar(150)
-  emergency_contact_designation String?      @db.VarChar(100)
-  emergency_contact_phone1      String?      @db.VarChar(32)
-  emergency_contact_phone2      String?      @db.VarChar(32)
-  emergency_contact_email       String?      @db.VarChar(150)
-  updated_at              DateTime           @updatedAt
-  hotel                   hotels             @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  emergency_contact_name        String?  @db.VarChar(150)
+  emergency_contact_designation String?  @db.VarChar(100)
+  emergency_contact_phone1      String?  @db.VarChar(32)
+  emergency_contact_phone2      String?  @db.VarChar(32)
+  emergency_contact_email       String?  @db.VarChar(150)
+  updated_at                    DateTime @updatedAt
+  hotel                         hotels   @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
 
   @@map("hotel_details")
 }
@@ -390,22 +391,22 @@ model hotel_images {
 // ═══════════════════════════════════════════════════════
 
 model hotel_admins {
-  id                     Int                  @id @default(autoincrement())
-  role_id                Int                  @default(1)
-  hotel_id               Int                  @unique
+  id                     Int       @id @default(autoincrement())
+  role_id                Int       @default(1)
+  hotel_id               Int       @unique
   created_by             Int?
-  name                   String               @db.VarChar(150)
-  email                  String               @unique @db.VarChar(255)
-  password               String               @db.VarChar(255)
-  is_active              Boolean              @default(true)
-  is_blocked             Boolean              @default(false)
+  name                   String    @db.VarChar(150)
+  email                  String    @unique @db.VarChar(255)
+  password               String    @db.VarChar(255)
+  is_active              Boolean   @default(true)
+  is_blocked             Boolean   @default(false)
   last_login_at          DateTime?
-  login_attempts         Int                  @default(0)
+  login_attempts         Int       @default(0)
   locked_until           DateTime?
-  password_reset_token   String?              @db.VarChar(255)
+  password_reset_token   String?   @db.VarChar(255)
   password_reset_expires DateTime?
-  created_at             DateTime             @default(now())
-  updated_at             DateTime             @updatedAt
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
   deleted_at             DateTime?
 
   role               roles                @relation(fields: [role_id], references: [id])
@@ -463,22 +464,22 @@ model hotel_admin_images {
 // ═══════════════════════════════════════════════════════
 
 model hotel_sub_admins {
-  id                     Int                      @id @default(autoincrement())
-  role_id                Int                      @default(2)
+  id                     Int       @id @default(autoincrement())
+  role_id                Int       @default(2)
   hotel_id               Int
   created_by             Int?
-  name                   String                   @db.VarChar(150)
-  email                  String                   @unique @db.VarChar(255)
-  password               String                   @db.VarChar(255)
-  is_active              Boolean                  @default(true)
-  is_blocked             Boolean                  @default(false)
+  name                   String    @db.VarChar(150)
+  email                  String    @unique @db.VarChar(255)
+  password               String    @db.VarChar(255)
+  is_active              Boolean   @default(true)
+  is_blocked             Boolean   @default(false)
   last_login_at          DateTime?
-  login_attempts         Int                      @default(0)
+  login_attempts         Int       @default(0)
   locked_until           DateTime?
-  password_reset_token   String?                  @db.VarChar(255)
+  password_reset_token   String?   @db.VarChar(255)
   password_reset_expires DateTime?
-  created_at             DateTime                 @default(now())
-  updated_at             DateTime                 @updatedAt
+  created_at             DateTime  @default(now())
+  updated_at             DateTime  @updatedAt
   deleted_at             DateTime?
 
   role    roles                    @relation(fields: [role_id], references: [id])
@@ -573,10 +574,10 @@ model hotel_amenities {
 // ═══════════════════════════════════════════════════════
 
 model bed_types {
-  id                    Int                     @id @default(autoincrement())
-  name                  String                  @unique @db.VarChar(100)
-  is_active             Boolean                 @default(true)
-  created_at            DateTime                @default(now())
+  id         Int      @id @default(autoincrement())
+  name       String   @unique @db.VarChar(100)
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
 
   room_variant_bed_types room_variant_bed_types[]
 
@@ -650,7 +651,6 @@ model room_facilities {
 // exercised end-to-end through the old case-based flow), so there's
 // nothing to migrate off of them.
 
-
 // ═══════════════════════════════════════════════════════
 // MASTER DATA REQUESTS
 // "Can't find the amenity/bed type/room type/facility you need? Send a request."
@@ -667,16 +667,16 @@ model room_facilities {
 model master_data_requests {
   id                Int                     @id @default(autoincrement())
   hotel_id          Int
-  requested_by      Int                     // hotel_admins.id
+  requested_by      Int // hotel_admins.id
   category          MasterDataCategory
   name              String                  @db.VarChar(150) // the requested item's name, e.g. "Rollaway Bed"
-  context           AmenityContext?         // only set when category = AMENITY (Hotel vs Room amenity)
+  context           AmenityContext? // only set when category = AMENITY (Hotel vs Room amenity)
   note              String                  @db.Text
   status            MasterDataRequestStatus @default(PENDING)
-  resolved_by       Int?                    // system_admins.id
+  resolved_by       Int? // system_admins.id
   resolved_at       DateTime?
   resolution_note   String?                 @db.Text // dismissal reason; also usable for a short fulfillment note if ever needed
-  created_entity_id Int?                    // id of the row created via the normal creation page when this request is fulfilled — not auto-generated. No DB-level FK since it's polymorphic across three tables (amenities/bed_types/room_facilities).
+  created_entity_id Int? // id of the row created via the normal creation page when this request is fulfilled — not auto-generated. No DB-level FK since it's polymorphic across three tables (amenities/bed_types/room_facilities).
   created_at        DateTime                @default(now())
 
   hotel hotels @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
@@ -812,8 +812,8 @@ model room_details {
   updated_at      DateTime   @updatedAt
   deleted_at      DateTime?
 
-  room_variant  room_variants  @relation(fields: [room_variant_id], references: [id])
-  room_images   room_images[]  @relation("RoomDetailImages")
+  room_variant  room_variants   @relation(fields: [room_variant_id], references: [id])
+  room_images   room_images[]   @relation("RoomDetailImages")
   room_trackers room_trackers[]
   room_bookings room_bookings[]
 
@@ -835,14 +835,14 @@ model room_details {
 // ═══════════════════════════════════════════════════════
 
 model room_images {
-  id              Int            @id @default(autoincrement())
-  image_url       String         @db.LongText
-  is_cover        Boolean        @default(false)
-  sort_order      Int            @default(0)
+  id              Int      @id @default(autoincrement())
+  image_url       String   @db.LongText
+  is_cover        Boolean  @default(false)
+  sort_order      Int      @default(0)
   room_type_id    Int?
   room_variant_id Int?
   room_detail_id  Int?
-  created_at      DateTime       @default(now())
+  created_at      DateTime @default(now())
 
   room_type    room_types?    @relation("RoomTypeImages", fields: [room_type_id], references: [id], onDelete: Cascade)
   room_variant room_variants? @relation("RoomVariantImages", fields: [room_variant_id], references: [id], onDelete: Cascade)
@@ -885,19 +885,19 @@ enum PricingRuleStatus {
 // ═══════════════════════════════════════════════════════
 
 model pricing_rules {
-  id             Int               @id @default(autoincrement())
+  id              Int               @id @default(autoincrement())
   room_variant_id Int
-  name           String            @db.VarChar(150)
-  description    String?           @db.Text
-  discount_type  DiscountType
-  discount_value Decimal           @db.Decimal(12, 2) // percentage (0-100) or a fixed amount, per discount_type
-  status         PricingRuleStatus @default(ACTIVE)
-  priority       Int               @default(0) // higher wins when multiple rules apply to the same date
-  start_date     DateTime          @db.Date
-  end_date       DateTime          @db.Date
-  created_at     DateTime          @default(now())
-  updated_at     DateTime          @updatedAt
-  room_variant   room_variants     @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
+  name            String            @db.VarChar(150)
+  description     String?           @db.Text
+  discount_type   DiscountType
+  discount_value  Decimal           @db.Decimal(12, 2) // percentage (0-100) or a fixed amount, per discount_type
+  status          PricingRuleStatus @default(ACTIVE)
+  priority        Int               @default(0) // higher wins when multiple rules apply to the same date
+  start_date      DateTime          @db.Date
+  end_date        DateTime          @db.Date
+  created_at      DateTime          @default(now())
+  updated_at      DateTime          @updatedAt
+  room_variant    room_variants     @relation(fields: [room_variant_id], references: [id], onDelete: Cascade)
 
   @@index([room_variant_id])
   @@index([start_date, end_date])
@@ -947,20 +947,20 @@ model user_bookings {
 // subtotal itself is always SUM(room_booking_nightly_rates.price), the
 // authoritative total. The real per-night snapshot lives below.
 model room_bookings {
-  id              Int          @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   booking_id      Int
   room_type_id    Int
   room_variant_id Int
   room_detail_id  Int
-  price_per_night Decimal      @db.Decimal(12, 2)
+  price_per_night Decimal  @db.Decimal(12, 2)
   nights          Int
-  subtotal        Decimal      @db.Decimal(12, 2)
-  created_at      DateTime     @default(now())
+  subtotal        Decimal  @db.Decimal(12, 2)
+  created_at      DateTime @default(now())
 
-  booking       user_bookings              @relation(fields: [booking_id], references: [id], onDelete: Cascade)
-  room_type     room_types                 @relation(fields: [room_type_id], references: [id])
-  room_variant  room_variants              @relation(fields: [room_variant_id], references: [id])
-  room_detail   room_details               @relation(fields: [room_detail_id], references: [id])
+  booking       user_bookings                @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+  room_type     room_types                   @relation(fields: [room_type_id], references: [id])
+  room_variant  room_variants                @relation(fields: [room_variant_id], references: [id])
+  room_detail   room_details                 @relation(fields: [room_detail_id], references: [id])
   nightly_rates room_booking_nightly_rates[]
 
   @@index([booking_id])
@@ -981,10 +981,10 @@ model room_bookings {
 // ═══════════════════════════════════════════════════════
 
 model room_booking_nightly_rates {
-  id              Int      @id @default(autoincrement())
-  room_booking_id Int
-  stay_date       DateTime @db.Date
-  price           Decimal  @db.Decimal(12, 2)
+  id                Int      @id @default(autoincrement())
+  room_booking_id   Int
+  stay_date         DateTime @db.Date
+  price             Decimal  @db.Decimal(12, 2)
   // Snapshot of what produced this price, purely for admin transparency
   // (e.g. showing "Weekend Special applied" on a past booking) — never
   // read by any live calculation, only for display/audit.
@@ -1090,18 +1090,18 @@ model hotel_owner_details {
   created_at DateTime  @default(now())
   updated_at DateTime  @updatedAt
 
-  hotel  hotels                @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  hotel  hotels               @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
   images hotel_owner_images[]
 
   @@map("hotel_owner_details")
 }
 
 model hotel_owner_images {
-  id                  Int                 @id @default(autoincrement())
+  id                    Int      @id @default(autoincrement())
   hotel_owner_detail_id Int
-  image_url           String              @db.VarChar(500)
-  is_active            Boolean             @default(true)
-  created_at           DateTime            @default(now())
+  image_url             String   @db.VarChar(500)
+  is_active             Boolean  @default(true)
+  created_at            DateTime @default(now())
 
   hotel_owner_detail hotel_owner_details @relation(fields: [hotel_owner_detail_id], references: [id], onDelete: Cascade)
 
@@ -1141,20 +1141,20 @@ model hotel_documents {
 // ═══════════════════════════════════════════════════════
 
 model cases {
-  id             Int         @id @default(autoincrement())
-  hotel_id       Int
-  submitted_by   Int         // hotel_admins.id
-  status         CaseStatus  @default(DRAFTING)
-  summary        String?     @db.Text
-  submitted_at   DateTime    @default(now())
-  decided_by     Int?        // system_admins.id
-  decided_at     DateTime?
-  created_at     DateTime    @default(now())
-  updated_at     DateTime    @updatedAt
+  id           Int        @id @default(autoincrement())
+  hotel_id     Int
+  submitted_by Int // hotel_admins.id
+  status       CaseStatus @default(DRAFTING)
+  summary      String?    @db.Text
+  submitted_at DateTime   @default(now())
+  decided_by   Int? // system_admins.id
+  decided_at   DateTime?
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @updatedAt
 
-  hotel         hotels           @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
-  submitter     hotel_admins     @relation("CaseSubmittedBy", fields: [submitted_by], references: [id])
-  decider       system_admins?   @relation("CaseDecidedBy", fields: [decided_by], references: [id])
+  hotel         hotels               @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+  submitter     hotel_admins         @relation("CaseSubmittedBy", fields: [submitted_by], references: [id])
+  decider       system_admins?       @relation("CaseDecidedBy", fields: [decided_by], references: [id])
   field_changes case_field_changes[]
 
   @@index([hotel_id])
@@ -1209,7 +1209,7 @@ model case_field_changes {
 
 model system_admin_activity_logs {
   id          Int      @id @default(autoincrement())
-  actor_id    Int      // system_admins.id
+  actor_id    Int // system_admins.id
   action      String   @db.VarChar(150)
   entity_type String   @db.VarChar(100)
   entity_id   Int?
@@ -1226,7 +1226,7 @@ model system_admin_activity_logs {
 model hotel_admin_activity_logs {
   id          Int       @id @default(autoincrement())
   hotel_id    Int
-  actor_id    Int       // hotel_admins.id OR hotel_sub_admins.id
+  actor_id    Int // hotel_admins.id OR hotel_sub_admins.id
   actor_type  ActorType // HOTEL_ADMIN or HOTEL_SUB_ADMIN
   action      String    @db.VarChar(150)
   entity_type String    @db.VarChar(100)
@@ -1244,7 +1244,7 @@ model hotel_admin_activity_logs {
 
 model end_user_activity_logs {
   id          Int      @id @default(autoincrement())
-  actor_id    Int      // end_users.id
+  actor_id    Int // end_users.id
   action      String   @db.VarChar(150)
   entity_type String   @db.VarChar(100)
   entity_id   Int?
@@ -1265,15 +1265,15 @@ model end_user_activity_logs {
 // ═══════════════════════════════════════════════════════
 
 model system_admin_notifications {
-  id                 Int              @id @default(autoincrement())
-  recipient_id       Int              // system_admins.id
-  type               NotificationType
-  title              String           @db.VarChar(200)
-  message            String           @db.Text
-  related_entity_type String?        @db.VarChar(100)
-  related_entity_id  Int?
-  is_read            Boolean          @default(false)
-  created_at         DateTime         @default(now())
+  id                  Int              @id @default(autoincrement())
+  recipient_id        Int // system_admins.id
+  type                NotificationType
+  title               String           @db.VarChar(200)
+  message             String           @db.Text
+  related_entity_type String?          @db.VarChar(100)
+  related_entity_id   Int?
+  is_read             Boolean          @default(false)
+  created_at          DateTime         @default(now())
 
   @@index([recipient_id, is_read])
   @@index([created_at])
@@ -1281,16 +1281,16 @@ model system_admin_notifications {
 }
 
 model hotel_admin_notifications {
-  id                   Int              @id @default(autoincrement())
-  recipient_id         Int              // hotel_admins.id OR hotel_sub_admins.id
-  recipient_type       ActorType        // HOTEL_ADMIN or HOTEL_SUB_ADMIN
-  type                 NotificationType
-  title                String           @db.VarChar(200)
-  message              String           @db.Text
-  related_entity_type  String?          @db.VarChar(100)
-  related_entity_id    Int?
-  is_read              Boolean          @default(false)
-  created_at           DateTime         @default(now())
+  id                  Int              @id @default(autoincrement())
+  recipient_id        Int // hotel_admins.id OR hotel_sub_admins.id
+  recipient_type      ActorType // HOTEL_ADMIN or HOTEL_SUB_ADMIN
+  type                NotificationType
+  title               String           @db.VarChar(200)
+  message             String           @db.Text
+  related_entity_type String?          @db.VarChar(100)
+  related_entity_id   Int?
+  is_read             Boolean          @default(false)
+  created_at          DateTime         @default(now())
 
   @@index([recipient_id, recipient_type, is_read])
   @@index([created_at])
@@ -1298,15 +1298,15 @@ model hotel_admin_notifications {
 }
 
 model end_user_notifications {
-  id                   Int              @id @default(autoincrement())
-  recipient_id         Int              // end_users.id
-  type                 NotificationType
-  title                String           @db.VarChar(200)
-  message              String           @db.Text
-  related_entity_type  String?          @db.VarChar(100)
-  related_entity_id    Int?
-  is_read              Boolean          @default(false)
-  created_at           DateTime         @default(now())
+  id                  Int              @id @default(autoincrement())
+  recipient_id        Int // end_users.id
+  type                NotificationType
+  title               String           @db.VarChar(200)
+  message             String           @db.Text
+  related_entity_type String?          @db.VarChar(100)
+  related_entity_id   Int?
+  is_read             Boolean          @default(false)
+  created_at          DateTime         @default(now())
 
   @@index([recipient_id, is_read])
   @@index([created_at])
@@ -1330,4 +1330,24 @@ model hero_banners {
   updated_at  DateTime @updatedAt
 
   @@map("hero_banners")
+}
+
+// ═══════════════════════════════════════════════════════
+// USER FAVOURITES
+// End User favorite hotels list
+// ═══════════════════════════════════════════════════════
+
+model user_favourites {
+  id          Int      @id @default(autoincrement())
+  end_user_id Int
+  hotel_id    Int
+  created_at  DateTime @default(now())
+
+  end_user end_users @relation(fields: [end_user_id], references: [id], onDelete: Cascade)
+  hotel    hotels    @relation(fields: [hotel_id], references: [id], onDelete: Cascade)
+
+  @@unique([end_user_id, hotel_id])
+  @@index([end_user_id])
+  @@index([hotel_id])
+  @@map("user_favourites")
 }

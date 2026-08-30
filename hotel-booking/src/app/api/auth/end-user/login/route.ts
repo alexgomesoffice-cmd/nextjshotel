@@ -81,6 +81,51 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    // ─── LOGIN MERGE: GUEST FAVORITES ─────────────────────────────────────────
+    const GUEST_COOKIE_NAME = 'guest_favourites'
+    const guestFavsCookie = req.cookies.get(GUEST_COOKIE_NAME)?.value
+    let shouldClearCookie = false
+
+    if (guestFavsCookie) {
+      try {
+        const parsed = JSON.parse(guestFavsCookie)
+        if (Array.isArray(parsed) && parsed.every(n => typeof n === 'number')) {
+          const validIds = parsed as number[]
+          
+          if (validIds.length > 0) {
+            // Validate that these hotels actually exist and are published
+            const validHotels = await prisma.hotels.findMany({
+              where: {
+                id: { in: validIds },
+                approval_status: 'PUBLISHED',
+                deleted_at: null,
+              },
+              select: { id: true },
+            })
+            
+            const hotelIdsToMerge = validHotels.map(h => h.id)
+            
+            if (hotelIdsToMerge.length > 0) {
+              await prisma.user_favourites.createMany({
+                data: hotelIdsToMerge.map(id => ({
+                  end_user_id: user.id,
+                  hotel_id: id,
+                })),
+                skipDuplicates: true, // Crucial for unique constraint safety
+              })
+              
+              // Optional: Log bulk activity?
+              // Skipping for now since it might spam logs, or log individually:
+              // We won't strictly log the merge to keep it simple and avoid massive inserts.
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to merge guest favorites during login:', err)
+      }
+      shouldClearCookie = true
+    }
+
     // Generate token
     const token = await signToken({
       actor_id: user.id,
@@ -105,6 +150,15 @@ export async function POST(req: NextRequest) {
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7, // 7 days
     })
+
+    if (shouldClearCookie) {
+      response.cookies.set(GUEST_COOKIE_NAME, '', {
+        httpOnly: true,
+        path: '/',
+        sameSite: 'lax',
+        maxAge: 0,
+      })
+    }
 
     return response
   } catch (error) {

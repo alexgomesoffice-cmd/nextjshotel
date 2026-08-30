@@ -710,119 +710,110 @@ const SearchBar = ({
    */
 
   const guestField = (
-    <div className="relative h-full">
-      <button
-        type="button"
-        onClick={() => setIsGuestOpen((current) => !current)}
-        className={cn(
-          cellClass,
-          "flex h-full w-full items-center justify-between px-4 pt-5 text-left text-foreground"
-        )}
-      >
-        <span className={labelClass}>
-          Guests & Rooms
+  <div className="relative h-full">
+    <button
+      type="button"
+      onClick={() => setIsGuestOpen((current) => !current)}
+      className={cn(
+        cellClass,
+        "flex h-full w-full items-center justify-between px-4 pt-5 text-left text-foreground"
+      )}
+    >
+      <span className={labelClass}>
+        Guests & Rooms
+      </span>
+
+      <div className="flex min-w-0 items-center gap-2.5">
+        <Users className="h-[18px] w-[18px] shrink-0 text-foreground/55" />
+
+        <span className="whitespace-nowrap text-sm font-semibold leading-5">
+          {guests} Guest
+          {guests > 1 ? "s" : ""} · {rooms} Room
+          {rooms > 1 ? "s" : ""}
         </span>
+      </div>
 
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Users className="h-[18px] w-[18px] shrink-0 text-foreground/55" />
+      <ChevronDown
+        className={cn(
+          "ml-2 h-4 w-4 shrink-0 text-foreground/45 transition-transform duration-200",
+          isGuestOpen && "rotate-180"
+        )}
+      />
+    </button>
 
-          <span className="whitespace-nowrap text-sm font-semibold leading-5">
-            {guests} Guest
-            {guests > 1 ? "s" : ""} · {rooms} Room
-            {rooms > 1 ? "s" : ""}
-          </span>
-        </div>
+    {isGuestOpen && (
+      <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-[300px] rounded-2xl border border-foreground/10 bg-background/95 p-4 text-foreground shadow-2xl backdrop-blur-2xl">
+        {[
+          {
+            label: "Guests",
+            value: guests,
+            setter: setGuests,
+            max: 30,
+          },
+          {
+            label: "Rooms",
+            value: rooms,
+            setter: setRooms,
+            max: 10,
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center justify-between py-2.5"
+          >
+            <div>
+              <span className="text-sm font-medium">
+                {item.label}
+              </span>
 
-        <ChevronDown
-          className={cn(
-            "ml-2 h-4 w-4 shrink-0 text-foreground/45 transition-transform duration-200",
-            isGuestOpen && "rotate-180"
-          )}
-        />
-      </button>
-
-      {isGuestOpen && (
-        <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-[300px] rounded-2xl border border-foreground/10 bg-background/95 p-4 text-foreground shadow-2xl backdrop-blur-2xl">
-          {[
-            {
-              label: "Guests",
-              value: guests,
-              setter: setGuests,
-              max: 30,
-            },
-            {
-              label: "Rooms",
-              value: rooms,
-              setter: setRooms,
-              max: 10,
-            },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between py-2.5"
-            >
-              <div>
-                <span className="text-sm font-medium">
-                  {item.label}
-                </span>
-
-                <div className="mt-0.5 text-[10px] text-foreground/40">
-                  {item.label === "Guests"
-                    ? "People staying"
-                    : "Rooms required"}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    item.setter(
-                      Math.max(1, item.value - 1)
-                    )
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
-                  aria-label={`Decrease ${item.label}`}
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-
-                <span className="min-w-5 text-center text-sm font-semibold tabular-nums">
-                  {item.value}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    item.setter(
-                      Math.min(
-                        item.max,
-                        item.value + 1
-                      )
-                    )
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
-                  aria-label={`Increase ${item.label}`}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
+              <div className="mt-0.5 text-[10px] text-foreground/40">
+                {item.label === "Guests"
+                  ? "People staying"
+                  : "Rooms required"}
               </div>
             </div>
-          ))}
 
-          <div className="mt-3 border-t border-foreground/10 pt-3">
-            <button
-              type="button"
-              onClick={() => setIsGuestOpen(false)}
-              className="w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-            >
-              Done
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  item.setter(
+                    Math.max(1, item.value - 1)
+                  )
+                }
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
+                aria-label={`Decrease ${item.label}`}
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+
+              <span className="min-w-5 text-center text-sm font-semibold tabular-nums">
+                {item.value}
+              </span>
+
+              <button
+                type="button"
+                onClick={() =>
+                  item.setter(
+                    Math.min(
+                      item.max,
+                      item.value + 1
+                    )
+                  )
+                }
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
+                aria-label={`Increase ${item.label}`}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 
   /*
    * ================================================================
@@ -831,25 +822,25 @@ const SearchBar = ({
    */
 
   const searchButton = (
-    <Button
-      onClick={handleSearch}
-      className={cn(
-        "h-full min-h-[64px] w-full rounded-[18px]",
-        "bg-primary text-primary-foreground",
-        "shadow-[0_16px_36px_-18px_rgba(59,130,246,0.9)]",
-        "transition-all duration-300",
-        "hover:bg-primary/90",
-        "hover:shadow-[0_20px_40px_-18px_rgba(59,130,246,1)]",
-        "focus-visible:ring-2 focus-visible:ring-primary"
-      )}
-    >
-      <Search className="mr-2.5 h-[18px] w-[18px]" />
+  <Button
+    onClick={handleSearch}
+    className={cn(
+      "h-[52px] w-full rounded-[14px]",
+      "bg-primary text-primary-foreground",
+      "shadow-[0_12px_28px_-18px_rgba(59,130,246,0.9)]",
+      "transition-all duration-300",
+      "hover:bg-primary/90",
+      "hover:shadow-[0_16px_32px_-18px_rgba(59,130,246,1)]",
+      "focus-visible:ring-2 focus-visible:ring-primary"
+    )}
+  >
+    <Search className="mr-2 h-4 w-4" />
 
-      <span className="text-[15px] font-semibold tracking-[-0.02em]">
-        Search
-      </span>
-    </Button>
-  );
+    <span className="text-sm font-semibold tracking-[-0.02em]">
+      Search
+    </span>
+  </Button>
+);
 
   /*
    * ================================================================
@@ -1098,7 +1089,7 @@ const SearchBar = ({
   <div
     className={cn(
       "hidden lg:flex",
-      "h-[300px]",
+      "h-[260px]",
       "overflow-visible",
       "rounded-[28px]",
       "border border-foreground/[0.13]",
@@ -1160,15 +1151,16 @@ const SearchBar = ({
                 setIsFilterOpen((current) => !current)
               }
               className={cn(
-                "inline-flex shrink-0 items-center justify-center gap-2",
-                "rounded-[16px] border px-4",
-                "text-sm font-medium",
-                "transition-all duration-200",
+  "inline-flex h-[52px] w-[135px] shrink-0",
+  "items-center justify-center gap-2",
+  "rounded-[14px] border px-3.5",
+  "text-sm font-medium",
+  "transition-all duration-200",
 
-                isFilterOpen || activeCount > 0
-                  ? "border-primary/50 bg-primary/10 text-primary shadow-[0_10px_24px_-18px_rgba(59,130,246,0.9)]"
-                  : "border-foreground/10 bg-foreground/[0.04] text-foreground/70 hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground"
-              )}
+  isFilterOpen || activeCount > 0
+    ? "border-primary/50 bg-primary/10 text-primary shadow-[0_10px_24px_-18px_rgba(59,130,246,0.9)]"
+    : "border-foreground/10 bg-foreground/[0.04] text-foreground/70 hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground"
+)}
               aria-expanded={isFilterOpen}
               aria-controls="hero-search-filters"
             >

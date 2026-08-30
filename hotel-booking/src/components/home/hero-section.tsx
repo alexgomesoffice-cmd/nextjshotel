@@ -25,7 +25,7 @@ const heroSlides = [
   },
   {
     image:
-      "/uploads/hotels/3.webp",
+      "/uploads/hotels/10.jpeg",
     eyebrow: "STAY YOUR WAY",
     title: "Rooms made for the moments that matter",
     description:
@@ -144,7 +144,7 @@ export function HeroSection() {
           CONTENT
           ================================================================ */}
       <div className="relative z-10 flex min-h-[100svh] items-end">
-        <div className="container mx-auto w-full px-4 pb-8 pt-28 sm:px-6 sm:pb-10 lg:px-8 lg:pb-12">
+        <div className="container mx-auto w-full px-4 pb-16 pt-28 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
           <div className="flex flex-col items-start">
             {/* Supporting hero copy */}
             <div className="mb-5 max-w-xl text-white drop-shadow-[0_2px_18px_rgba(0,0,0,0.35)] sm:mb-6">

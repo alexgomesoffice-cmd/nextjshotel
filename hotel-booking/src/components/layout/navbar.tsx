@@ -175,7 +175,7 @@ const Navbar = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2.5 px-3 py-2 rounded-xl border-none backdrop-blur-sm hover:bg-primary/10 transition-all duration-300">
+                  <button className="flex items-center gap-2.5 px-3 py-2 rounded-xl border-none outline-none ring-0 backdrop-blur-sm hover:bg-primary/10 transition-all duration-300 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0">
                     <div className="w-9 h-9 rounded-lg bg-linear-to-br from-primary to-accent flex items-center justify-center shrink-0">
                       <span className="text-xs font-bold text-primary-foreground">{initials}</span>
                     </div>

@@ -467,10 +467,10 @@ const SearchBar = ({
    */
 
   const cellClass =
-    "relative min-w-0 overflow-visible rounded-[18px] border border-foreground/[0.10] bg-foreground/[0.045] transition-all duration-200 hover:border-foreground/[0.16] hover:bg-foreground/[0.065]";
+    "relative min-w-0 overflow-visible rounded-[18px] border border-foreground/[0.10] bg-background/10 backdrop-blur-md dark:text-white transition-all duration-200 hover:border-foreground/[0.16] hover:bg-background/40";
 
   const labelClass =
-    "pointer-events-none absolute left-4 top-2.5 z-10 text-[10px] font-medium tracking-[-0.01em] text-foreground/55";
+    "pointer-events-none absolute left-4 top-2.5 z-10 text-[10px] font-medium tracking-[-0.01em] text-foreground/55 dark:text-white/55";
 
   /*
    * ================================================================
@@ -487,7 +487,7 @@ const SearchBar = ({
     >
       <label className={labelClass}>Location</label>
 
-      <MapPin className="pointer-events-none absolute left-4 top-[58%] h-[18px] w-[18px] -translate-y-1/2 text-foreground/55" />
+      <MapPin className="pointer-events-none absolute left-4 top-[58%] h-[18px] w-[18px] -translate-y-1/2 text-foreground/65 dark:text-white/65" />
 
       <Input
         value={searchLocation}
@@ -505,12 +505,12 @@ const SearchBar = ({
           }
         }}
         placeholder="Where are you going?"
-        className="h-full rounded-[18px] border-0 bg-transparent pl-11 pr-11 pt-6 pb-2 text-base font-medium text-foreground shadow-none placeholder:text-foreground/40 focus-visible:ring-0"
+        className="h-full rounded-[18px] border-0 bg-transparent pl-11 pr-11 pt-6 pb-2 text-base font-medium !text-foreground shadow-none placeholder:!text-foreground/50 dark:!text-white dark:placeholder:!text-white/50 focus-visible:ring-0"
         aria-label="Location"
       />
 
       {isLoadingSuggestions && (
-        <Loader2 className="absolute right-4 top-[58%] h-4 w-4 -translate-y-1/2 animate-spin text-foreground/45" />
+        <Loader2 className="absolute right-4 top-[58%] h-4 w-4 -translate-y-1/2 animate-spin text-foreground/60 dark:text-white/60" />
       )}
 
       {(suggestions.hotels.length > 0 ||
@@ -605,20 +605,20 @@ const SearchBar = ({
           type="button"
           className={cn(
             cellClass,
-            "flex h-full w-full items-center px-4 pt-5 text-left text-foreground"
+            "flex h-full w-full items-center px-4 pt-5 text-foreground dark:text-white"
           )}
         >
           <span className={labelClass}>Stay Dates</span>
 
-          <CalendarIcon className="mr-3 h-[18px] w-[18px] shrink-0 text-foreground/55" />
+          <CalendarIcon className="mr-3 h-[18px] w-[18px] shrink-0 text-foreground/65 dark:text-white/65" />
 
           <div className="grid min-w-0 flex-1 grid-cols-2 gap-2.5">
             <div className="min-w-0">
-              <div className="text-[10px] font-medium text-foreground/45">
+              <div className="text-[10px] font-medium text-foreground/50 dark:text-white/50">
                 Check in
               </div>
 
-              <div className="mt-1 truncate text-sm font-semibold leading-5 tracking-[-0.01em]">
+              <div className="mt-1 truncate text-sm font-semibold leading-5 tracking-[-0.01em] text-foreground dark:text-white">
                 {date?.from
                   ? format(date.from, "MMM d, yyyy")
                   : "Select date"}
@@ -626,11 +626,11 @@ const SearchBar = ({
             </div>
 
             <div className="min-w-0 border-l border-foreground/10 pl-2.5">
-              <div className="text-[10px] font-medium text-foreground/45">
+              <div className="text-[10px] font-medium text-foreground/50 dark:text-white/50">
                 Check out
               </div>
 
-              <div className="mt-1 truncate text-sm font-semibold leading-5 tracking-[-0.01em]">
+              <div className="mt-1 truncate text-sm font-semibold leading-5 tracking-[-0.01em] text-foreground dark:text-white">
                 {date?.to
                   ? format(date.to, "MMM d, yyyy")
                   : "Select date"}
@@ -687,7 +687,7 @@ const SearchBar = ({
         </div>
 
         {/* Calendar */}
-        <div className="flex w-full justify-center p-3">
+        <div className="flex w-full justify-center pt-0 p-3">
           <Calendar
             initialFocus
             mode="range"
@@ -710,110 +710,109 @@ const SearchBar = ({
    */
 
   const guestField = (
-  <div className="relative h-full">
-    <button
-      type="button"
-      onClick={() => setIsGuestOpen((current) => !current)}
-      className={cn(
-        cellClass,
-        "flex h-full w-full items-center justify-between px-4 pt-5 text-left text-foreground"
-      )}
-    >
-      <span className={labelClass}>
-        Guests & Rooms
-      </span>
-
-      <div className="flex min-w-0 items-center gap-2.5">
-        <Users className="h-[18px] w-[18px] shrink-0 text-foreground/55" />
-
-        <span className="whitespace-nowrap text-sm font-semibold leading-5">
-          {guests} Guest
-          {guests > 1 ? "s" : ""} · {rooms} Room
-          {rooms > 1 ? "s" : ""}
-        </span>
-      </div>
-
-      <ChevronDown
+    <div className="relative h-full">
+      <button
+        type="button"
+        onClick={() => setIsGuestOpen((current) => !current)}
         className={cn(
-          "ml-2 h-4 w-4 shrink-0 text-foreground/45 transition-transform duration-200",
-          isGuestOpen && "rotate-180"
+          cellClass,
+          "flex h-full w-full items-center justify-between px-4 pt-5 !text-foreground dark:!text-white"
         )}
-      />
-    </button>
+      >
+        <span className={labelClass}>
+          Guests & Rooms
+        </span>
 
-    {isGuestOpen && (
-      <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-[300px] rounded-2xl border border-foreground/10 bg-background/95 p-4 text-foreground shadow-2xl backdrop-blur-2xl">
-        {[
-          {
-            label: "Guests",
-            value: guests,
-            setter: setGuests,
-            max: 30,
-          },
-          {
-            label: "Rooms",
-            value: rooms,
-            setter: setRooms,
-            max: 10,
-          },
-        ].map((item) => (
-          <div
-            key={item.label}
-            className="flex items-center justify-between py-2.5"
-          >
-            <div>
-              <span className="text-sm font-medium">
-                {item.label}
-              </span>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Users className="h-[18px] w-[18px] shrink-0 text-foreground/65 dark:text-white/65" />
 
-              <div className="mt-0.5 text-[10px] text-foreground/40">
-                {item.label === "Guests"
-                  ? "People staying"
-                  : "Rooms required"}
+          <span className="whitespace-nowrap text-sm font-semibold leading-5 text-foreground dark:text-white">
+            {guests} Guest
+            {guests > 1 ? "s" : ""} · {rooms} Room
+            {rooms > 1 ? "s" : ""}
+          </span>
+        </div>
+
+        <ChevronDown
+          className={cn(
+            "ml-2 h-4 w-4 shrink-0 text-foreground/50 dark:text-white/50 transition-transform duration-200",
+            isGuestOpen && "rotate-180"
+          )}
+        />
+      </button>
+
+      {isGuestOpen && (
+        <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-[300px] rounded-2xl border border-foreground/10 bg-background/95 p-4 text-foreground shadow-2xl backdrop-blur-2xl">
+          {[
+            {
+              label: "Guests",
+              value: guests,
+              setter: setGuests,
+              max: 30,
+            },
+            {
+              label: "Rooms",
+              value: rooms,
+              setter: setRooms,
+              max: 10,
+            },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="flex items-center justify-between py-2.5"
+            >
+              <div>
+                <span className="text-sm font-medium">
+                  {item.label}
+                </span>
+
+                <div className="mt-0.5 text-[10px] text-foreground/40">
+                  {item.label === "Guests"
+                    ? "People staying"
+                    : "Rooms required"}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    item.setter(
+                      Math.max(1, item.value - 1)
+                    )
+                  }
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
+                  aria-label={`Decrease ${item.label}`}
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+
+                <span className="min-w-5 text-center text-sm font-semibold tabular-nums">
+                  {item.value}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    item.setter(
+                      Math.min(
+                        item.max,
+                        item.value + 1
+                      )
+                    )
+                  }
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
+                  aria-label={`Increase ${item.label}`}
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
             </div>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  item.setter(
-                    Math.max(1, item.value - 1)
-                  )
-                }
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
-                aria-label={`Decrease ${item.label}`}
-              >
-                <Minus className="h-4 w-4" />
-              </button>
-
-              <span className="min-w-5 text-center text-sm font-semibold tabular-nums">
-                {item.value}
-              </span>
-
-              <button
-                type="button"
-                onClick={() =>
-                  item.setter(
-                    Math.min(
-                      item.max,
-                      item.value + 1
-                    )
-                  )
-                }
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
-                aria-label={`Increase ${item.label}`}
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
-
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   /*
    * ================================================================
@@ -822,25 +821,25 @@ const SearchBar = ({
    */
 
   const searchButton = (
-  <Button
-    onClick={handleSearch}
-    className={cn(
-      "h-[46px] w-full rounded-[12px]",
-      "bg-primary text-primary-foreground",
-      "shadow-[0_8px_22px_-14px_rgba(59,130,246,0.85)]",
-      "transition-all duration-300",
-      "hover:bg-primary/90",
-      "hover:shadow-[0_12px_26px_-14px_rgba(59,130,246,0.95)]",
-      "focus-visible:ring-2 focus-visible:ring-primary"
-    )}
-  >
-    <Search className="mr-1.5 h-3.5 w-3.5" />
+    <Button
+      onClick={handleSearch}
+      className={cn(
+        "h-[46px] w-full rounded-[12px]",
+        "bg-primary text-primary-foreground",
+        "shadow-[0_8px_22px_-14px_rgba(59,130,246,0.85)]",
+        "transition-all duration-300",
+        "hover:bg-primary/90",
+        "hover:shadow-[0_12px_26px_-14px_rgba(59,130,246,0.95)]",
+        "focus-visible:ring-2 focus-visible:ring-primary"
+      )}
+    >
+      <Search className="mr-1.5 h-3.5 w-3.5" />
 
-    <span className="text-[13px] font-semibold tracking-[-0.01em]">
-      Search
-    </span>
-  </Button>
-);
+      <span className="text-[13px] font-semibold tracking-[-0.01em]">
+        Search
+      </span>
+    </Button>
+  );
 
   /*
    * ================================================================
@@ -849,408 +848,396 @@ const SearchBar = ({
    */
 
   const filterContent = (
-    <div className="space-y-5">
-      {/* Property Type */}
-      {hotelTypeOptions.length > 0 && (
-        <section>
-          <div className="mb-2.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/50">
-              Property Type
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {hotelTypeOptions.map((option) => {
-              const selected =
-                selectedHotelTypes.includes(option.name);
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() =>
-                    togglePill(
-                      selectedHotelTypes,
-                      option.name,
-                      setSelectedHotelTypes
-                    )
-                  }
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
-                    selected
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-foreground/10 bg-foreground/5 text-foreground/70 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
-                  )}
-                >
-                  {option.name}
-                </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Star Rating */}
+  <div className="space-y-5 text-white">
+    {/* Property Type */}
+    {hotelTypeOptions.length > 0 && (
       <section>
         <div className="mb-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/50">
-            Star Rating
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+            Property Type
           </p>
         </div>
 
         <div className="flex flex-wrap gap-1.5">
-          {[1, 2, 3, 4, 5].map((star) => {
-            const selected = selectedStars.includes(star);
+          {hotelTypeOptions.map((option) => {
+            const selected =
+              selectedHotelTypes.includes(option.name);
 
             return (
               <button
-                key={star}
+                key={option.id}
                 type="button"
                 onClick={() =>
                   togglePill(
-                    selectedStars,
-                    star,
-                    setSelectedStars
+                    selectedHotelTypes,
+                    option.name,
+                    setSelectedHotelTypes
                   )
                 }
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
+                  "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
                   selected
-                    ? "border-amber-400/60 bg-amber-500/15 text-amber-500 dark:text-amber-300"
-                    : "border-foreground/10 bg-foreground/5 text-foreground/65 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10 hover:text-white"
                 )}
               >
-                <Star
-                  className={cn(
-                    "h-3 w-3",
-                    selected
-                      ? "fill-amber-500 text-amber-500 dark:fill-amber-300 dark:text-amber-300"
-                      : "text-foreground/40"
-                  )}
-                />
-
-                {star}
+                {option.name}
               </button>
             );
           })}
         </div>
       </section>
-
-      {/* Hotel Amenities */}
-      {amenityGroups.hotel.length > 0 && (
-        <section>
-          <div className="mb-2.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/50">
-              Hotel Amenities
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {visibleHotelAmenities.map((amenity) => {
-              const selected =
-                selectedAmenities.includes(amenity.id);
-
-              return (
-                <button
-                  key={amenity.id}
-                  type="button"
-                  onClick={() =>
-                    togglePill(
-                      selectedAmenities,
-                      amenity.id,
-                      setSelectedAmenities
-                    )
-                  }
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
-                    selected
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-foreground/10 bg-foreground/5 text-foreground/65 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
-                  )}
-                >
-                  {amenity.name}
-                </button>
-              );
-            })}
-
-            {amenityGroups.hotel.length > AMENITIES_PREVIEW && (
-              <button
-                type="button"
-                onClick={() =>
-                  setShowAllHotelAmenities((current) => !current)
-                }
-                className="rounded-full border border-dashed border-foreground/15 px-3 py-1.5 text-[12px] font-medium text-foreground/45 transition-colors hover:border-foreground/25 hover:text-foreground"
-              >
-                {showAllHotelAmenities
-                  ? "Show less"
-                  : `+${amenityGroups.hotel.length - AMENITIES_PREVIEW} more`}
-              </button>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Room Amenities */}
-      {amenityGroups.room.length > 0 && (
-        <section>
-          <div className="mb-2.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-foreground/50">
-              Room Amenities
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-1.5">
-            {visibleRoomAmenities.map((amenity) => {
-              const selected =
-                selectedAmenities.includes(amenity.id);
-
-              return (
-                <button
-                  key={amenity.id}
-                  type="button"
-                  onClick={() =>
-                    togglePill(
-                      selectedAmenities,
-                      amenity.id,
-                      setSelectedAmenities
-                    )
-                  }
-                  className={cn(
-                    "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
-                    selected
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-foreground/10 bg-foreground/5 text-foreground/65 hover:border-foreground/20 hover:bg-foreground/10 hover:text-foreground"
-                  )}
-                >
-                  {amenity.name}
-                </button>
-              );
-            })}
-
-            {amenityGroups.room.length > AMENITIES_PREVIEW && (
-              <button
-                type="button"
-                onClick={() =>
-                  setShowAllRoomAmenities((current) => !current)
-                }
-                className="rounded-full border border-dashed border-foreground/15 px-3 py-1.5 text-[12px] font-medium text-foreground/45 transition-colors hover:border-foreground/25 hover:text-foreground"
-              >
-                {showAllRoomAmenities
-                  ? "Show less"
-                  : `+${amenityGroups.room.length - AMENITIES_PREVIEW} more`}
-              </button>
-            )}
-          </div>
-        </section>
-      )}
-    </div>
-  );
-
-  /*
-   * ================================================================
-   * DESKTOP BENTO
-   *
-   * IMPORTANT LAYOUT RULE:
-   *
-   * Search panel = 760px fixed
-   * Filter panel = 400px fixed
-   *
-   * Closed:
-   * 760px
-   *
-   * Open:
-   * 760px + 400px = 1160px
-   *
-   * The search panel NEVER shrinks when filters open.
-   * ================================================================
-   */
-
- const desktopBento = (
-  <div
-    className={cn(
-      "hidden lg:flex",
-      "h-[260px]",
-      "overflow-visible",
-      "rounded-[28px]",
-      "border border-foreground/[0.13]",
-      "bg-background/70",
-      "text-foreground",
-      "shadow-[0_28px_80px_-35px_rgba(0,0,0,0.65)]",
-      "backdrop-blur-2xl",
-      "transition-[width,box-shadow]",
-      "duration-500",
-      "ease-[cubic-bezier(0.22,1,0.36,1)]",
-
-      isFilterOpen
-        ? "w-[1160px] max-w-[calc(100vw-48px)]"
-        : "w-[760px] max-w-[calc(100vw-48px)]"
     )}
-  >
-    {/* ============================================================
-        LEFT — SEARCH
-        ============================================================ */}
 
-    <div
-      className={cn(
-        "h-full shrink-0 p-3",
-        "w-[760px]",
-        isFilterOpen ? "max-w-[760px]" : "max-w-[760px]"
-      )}
-    >
-      <div className="grid h-full grid-cols-1 gap-2.5">
-        {/* Location */}
-        <div className="min-w-0">
-          {locationField}
+    {/* Star Rating */}
+    <section>
+      <div className="mb-2.5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+          Star Rating
+        </p>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {[1, 2, 3, 4, 5].map((star) => {
+          const selected = selectedStars.includes(star);
+
+          return (
+            <button
+              key={star}
+              type="button"
+              onClick={() =>
+                togglePill(
+                  selectedStars,
+                  star,
+                  setSelectedStars
+                )
+              }
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
+                selected
+                  ? "border-amber-400/60 bg-amber-500/15 text-amber-300"
+                  : "border-white/10 bg-white/5 text-white/65 hover:border-white/20 hover:bg-white/10 hover:text-white"
+              )}
+            >
+              <Star
+                className={cn(
+                  "h-3 w-3",
+                  selected
+                    ? "fill-amber-300 text-amber-300"
+                    : "text-white/40"
+                )}
+              />
+
+              {star}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+
+    {/* Hotel Amenities */}
+    {amenityGroups.hotel.length > 0 && (
+      <section>
+        <div className="mb-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+            Hotel Amenities
+          </p>
         </div>
 
-        {/* Date + Guests */}
-        <div className="grid min-w-0 grid-cols-2 gap-2.5">
-          {/* Date */}
-          <div className="min-w-0">
-            {dateField}
-          </div>
+        <div className="flex flex-wrap gap-1.5">
+          {visibleHotelAmenities.map((amenity) => {
+            const selected =
+              selectedAmenities.includes(amenity.id);
 
-          {/* Guests */}
-          <div className="min-w-0">
-            {guestField}
-          </div>
-        </div>
+            return (
+              <button
+                key={amenity.id}
+                type="button"
+                onClick={() =>
+                  togglePill(
+                    selectedAmenities,
+                    amenity.id,
+                    setSelectedAmenities
+                  )
+                }
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
+                  selected
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-white/10 bg-white/5 text-white/65 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                )}
+              >
+                {amenity.name}
+              </button>
+            );
+          })}
 
-        {/* Search + Filters */}
-        <div className="flex min-w-0 items-stretch gap-2.5">
-          {/* Search */}
-          <div className="min-w-0 flex-1">
-            {searchButton}
-          </div>
-
-          {/* Filters */}
-          {showFilters && (
+          {amenityGroups.hotel.length > AMENITIES_PREVIEW && (
             <button
               type="button"
               onClick={() =>
-                setIsFilterOpen((current) => !current)
+                setShowAllHotelAmenities((current) => !current)
               }
-              className={cn(
-                "inline-flex h-[46px] w-[120px] shrink-0",
-                "items-center justify-center gap-1.5",
-                "rounded-[12px] border px-3",
-                "text-[13px] font-medium",
-                "transition-all duration-200",
-
-                isFilterOpen || activeCount > 0
-                  ? "border-primary/40 bg-primary/8 text-primary shadow-[0_6px_18px_-14px_rgba(59,130,246,0.7)]"
-                  : "border-foreground/10 bg-foreground/[0.04] text-foreground/70 hover:border-foreground/20 hover:bg-foreground/[0.08] hover:text-foreground"
-              )}
-              aria-expanded={isFilterOpen}
-              aria-controls="hero-search-filters"
+              className="rounded-full border border-dashed border-white/15 px-3 py-1.5 text-[12px] font-medium text-white/45 transition-colors hover:border-white/25 hover:text-white"
             >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-
-              <span>
-                {isFilterOpen ? "Hide" : "Filters"}
-              </span>
-
-              {activeCount > 0 && (
-                <span
-                  className={cn(
-                    "flex h-4 min-w-4 items-center justify-center",
-                    "rounded-full bg-primary px-1",
-                    "text-[9px] font-bold text-primary-foreground",
-
-                    isFilterOpen &&
-                      "bg-background text-primary"
-                  )}
-                >
-                  {activeCount}
-                </span>
-              )}
+              {showAllHotelAmenities
+                ? "Show less"
+                : `+${amenityGroups.hotel.length - AMENITIES_PREVIEW} more`}
             </button>
           )}
         </div>
-      </div>
-    </div>
+      </section>
+    )}
 
-    {/* ============================================================
-        RIGHT — FILTERS
-        ============================================================ */}
+    {/* Room Amenities */}
+    {amenityGroups.room.length > 0 && (
+      <section>
+        <div className="mb-2.5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+            Room Amenities
+          </p>
+        </div>
 
-    {showFilters && (
-      <div
-        id="hero-search-filters"
-        className={cn(
-          "h-full shrink-0 overflow-hidden",
-          "border-l border-foreground/10",
-          "bg-foreground/[0.02]",
-          "transition-[width,opacity]",
-          "duration-500",
-          "ease-[cubic-bezier(0.22,1,0.36,1)]",
-          isFilterOpen
-            ? "w-[400px] opacity-100"
-            : "w-0 opacity-0"
-        )}
-      >
-        <div className="flex h-full w-[400px] min-w-0 flex-col">
-          {/* Header */}
-          <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-foreground/[0.08] px-5">
-            <div>
-              <div className="text-[13px] font-semibold tracking-[-0.01em] text-foreground">
-                Filters
-              </div>
+        <div className="flex flex-wrap gap-1.5">
+          {visibleRoomAmenities.map((amenity) => {
+            const selected =
+              selectedAmenities.includes(amenity.id);
 
-              <div className="mt-0.5 text-[11px] text-foreground/45">
-                {activeCount > 0
-                  ? `${activeCount} active`
-                  : "Refine your stay"}
-              </div>
-            </div>
+            return (
+              <button
+                key={amenity.id}
+                type="button"
+                onClick={() =>
+                  togglePill(
+                    selectedAmenities,
+                    amenity.id,
+                    setSelectedAmenities
+                  )
+                }
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
+                  selected
+                    ? "border-primary/30 bg-primary/10 text-primary"
+                    : "border-white/10 bg-white/5 text-white/65 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                )}
+              >
+                {amenity.name}
+              </button>
+            );
+          })}
 
+          {amenityGroups.room.length > AMENITIES_PREVIEW && (
             <button
               type="button"
               onClick={() =>
-                setIsFilterOpen(false)
+                setShowAllRoomAmenities((current) => !current)
               }
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 text-foreground/40 transition-colors hover:bg-foreground/8 hover:text-foreground"
-              aria-label="Close filters"
+              className="rounded-full border border-dashed border-white/15 px-3 py-1.5 text-[12px] font-medium text-white/45 transition-colors hover:border-white/25 hover:text-white"
             >
-              <X className="h-3.5 w-3.5" />
+              {showAllRoomAmenities
+                ? "Show less"
+                : `+${amenityGroups.room.length - AMENITIES_PREVIEW} more`}
             </button>
-          </div>
-
-          {/* Filter Content */}
-          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 custom-scrollbar"  data-lenis-prevent
-          data-lenis-prevent-wheel
-          data-lenis-prevent-touch>
-            {filterContent}
-          </div>
-
-          {/* Footer */}
-          <div className="flex h-[54px] shrink-0 items-center justify-between gap-3 border-t border-foreground/[0.08] px-5">
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="text-[12px] font-medium text-foreground/45 transition-colors hover:text-foreground"
-            >
-              Reset all
-            </button>
-
-            <Button
-              type="button"
-              onClick={() => {
-                setIsFilterOpen(false);
-                handleSearch();
-              }}
-              className="h-8 rounded-[10px] bg-primary px-4 text-[12px] font-semibold text-primary-foreground shadow-[0_4px_14px_-8px_rgba(59,130,246,0.8)] hover:bg-primary/90"
-            >
-              Apply Filters
-            </Button>
-          </div>
+          )}
         </div>
-      </div>
+      </section>
     )}
   </div>
 );
 
+  /*
+   * ================================================================
+   * DESKTOP BENTO
+   * ================================================================
+   */
 
+  const desktopBento = (
+    <div
+      className={cn(
+        "hidden lg:flex",
+        "h-[260px]",
+        "overflow-visible",
+        "rounded-[28px]",
+        "border border-foreground/[0.13]",
+        "backdrop-blur-sm",
+        "!text-foreground dark:!text-white",
+        "shadow-[0_28px_80px_-35px_rgba(0,0,0,0.65)]",
+        "backdrop-blur-2xl",
+        "transition-[width,box-shadow]",
+        "duration-500",
+        "ease-[cubic-bezier(0.22,1,0.36,1)]",
+
+        isFilterOpen
+          ? "w-[1160px] max-w-[calc(100vw-48px)]"
+          : "w-[760px] max-w-[calc(100vw-48px)]"
+      )}
+    >
+      {/* ============================================================
+          LEFT — SEARCH
+          ============================================================ */}
+
+      <div
+        className={cn(
+          "h-full shrink-0 p-3",
+          "w-[760px]",
+          isFilterOpen ? "max-w-[760px]" : "max-w-[760px]"
+        )}
+      >
+        <div className="grid h-full grid-cols-1 gap-2.5">
+          {/* Location */}
+          <div className="min-w-0">
+            {locationField}
+          </div>
+
+          {/* Date + Guests */}
+          <div className="grid min-w-0 grid-cols-2 gap-2.5">
+            {/* Date */}
+            <div className="min-w-0">
+              {dateField}
+            </div>
+
+            {/* Guests */}
+            <div className="min-w-0">
+              {guestField}
+            </div>
+          </div>
+
+          {/* Search + Filters */}
+          <div className="flex min-w-0 items-stretch gap-2.5">
+            {/* Search */}
+            <div className="min-w-0 flex-1">
+              {searchButton}
+            </div>
+
+            {/* Filters */}
+            {showFilters && (
+              <button
+                type="button"
+                onClick={() =>
+                  setIsFilterOpen((current) => !current)
+                }
+                className={cn(
+                  "inline-flex h-[46px] w-[120px] shrink-0",
+                  "items-center justify-center gap-1.5",
+                  "rounded-[12px] border px-3",
+                  "text-[13px] font-medium",
+                  "transition-all duration-200",
+
+                  isFilterOpen || activeCount > 0
+                    ? "border-primary/40 bg-primary/8 text-primary shadow-[0_6px_18px_-14px_rgba(59,130,246,0.7)]"
+                    : "border-foreground/[0.10] bg-background/30 text-foreground dark:text-white backdrop-blur-md hover:border-foreground/[0.16] hover:bg-background/40 hover:text-foreground dark:hover:text-white"
+                )}
+                aria-expanded={isFilterOpen}
+                aria-controls="hero-search-filters"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+
+                <span>
+                  {isFilterOpen ? "Hide" : "Filters"}
+                </span>
+
+                {activeCount > 0 && (
+                  <span
+                    className={cn(
+                      "flex h-4 min-w-4 items-center justify-center",
+                      "rounded-full bg-primary px-1",
+                      "text-[9px] font-bold text-primary-foreground",
+
+                      isFilterOpen &&
+                        "bg-background text-primary"
+                    )}
+                  >
+                    {activeCount}
+                  </span>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ============================================================
+          RIGHT — FILTERS
+          ============================================================ */}
+
+      {showFilters && (
+        <div
+          id="hero-search-filters"
+          className={cn(
+            "h-full shrink-0 overflow-hidden",
+            "border-l border-foreground/10",
+            "bg-foreground/[0.02]",
+            "transition-[width,opacity]",
+            "duration-500",
+            "ease-[cubic-bezier(0.22,1,0.36,1)]",
+            isFilterOpen
+              ? "w-[400px] opacity-100"
+              : "w-0 opacity-0"
+          )}
+        >
+          <div className="flex h-full w-[400px] min-w-0 flex-col">
+            {/* Header */}
+            <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-foreground/[0.08] px-5">
+              <div>
+                <div className="text-[13px] font-semibold tracking-[-0.01em] text-White">
+                  Filters
+                </div>
+
+                <div className="mt-0.5 text-[11px] text-white/45">
+                  {activeCount > 0
+                    ? `${activeCount} active`
+                    : "Refine your stay"}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setIsFilterOpen(false)
+                }
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 text-white transition-colors hover:bg-foreground/8 hover:text-foreground"
+                aria-label="Close filters"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+
+            {/* Filter Content */}
+            <div
+              className="min-h-0 flex-1 overflow-y-auto px-5 py-4 custom-scrollbar"
+              data-lenis-prevent
+              data-lenis-prevent-wheel
+              data-lenis-prevent-touch
+            >
+              {filterContent}
+            </div>
+
+            {/* Footer */}
+            <div className="flex h-[54px] shrink-0 items-center justify-between gap-3 border-t border-foreground/[0.08] px-5">
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="text-[12px] font-medium text-white/45 transition-colors hover:text-foreground"
+              >
+                Reset all
+              </button>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  setIsFilterOpen(false);
+                  handleSearch();
+                }}
+                className="h-8 rounded-[10px] bg-primary px-4 text-[12px] font-semibold text-primary-foreground shadow-[0_4px_14px_-8px_rgba(59,130,246,0.8)] hover:bg-primary/90"
+              >
+                Apply Filters
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
   /*
    * ================================================================
@@ -1266,7 +1253,7 @@ const SearchBar = ({
         "border border-foreground/[0.13]",
         "bg-background/70",
         "p-3",
-        "text-foreground",
+        "!text-foreground dark:!text-white",
         "shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)]",
         "backdrop-blur-2xl"
       )}

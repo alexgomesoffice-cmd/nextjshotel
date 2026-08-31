@@ -84,21 +84,26 @@ const Navbar = () => {
     : ''
 
   return (
-    <nav
-      className={cn(
-  "fixed inset-x-0 top-0 z-50 border-0 outline-none transition-all duration-500",
-  isScrolled
-    ? "bg-background/80 backdrop-blur-xl shadow-sm shadow-foreground/5"
-    : isHome
-      ? theme === 'light'
-        ? "bg-gradient-to-b from-white/25 via-white/20 to-transparent shadow-none backdrop-blur-0"
-        : "bg-gradient-to-b from-black/25 via-black/10 to-transparent shadow-none backdrop-blur-0"
-      : "bg-background/80 backdrop-blur-md shadow-none"
-)}
+<nav
+  className={cn(
+    "fixed inset-x-0 top-0 z-50 border-0 outline-none transition-all duration-500 ease-out",
 
-    >
+    // Smooth background layer
+    "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-full",
+    "before:bg-background before:transition-opacity before:duration-500 before:ease-out",
+
+    isScrolled
+      ? "before:opacity-80 backdrop-blur-xl shadow-sm shadow-foreground/5"
+      : isHome
+        ? theme === "light"
+          ? "before:opacity-0 backdrop-blur-[2px] shadow-none"
+          : "before:opacity-0 backdrop-blur-[2px] shadow-none"
+        : "before:opacity-80 backdrop-blur-md shadow-none"
+  )}
+>
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-[72px]">
 
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
@@ -137,24 +142,30 @@ const Navbar = () => {
 
             <button
               onClick={toggleTheme}
-              className="relative p-2.5 rounded-xl transition-all duration-500 hover:scale-110 group overflow-hidden flex items-center justify-center glass hover:bg-primary/10"
+              className="relative p-2.5 rounded-xl transition-all duration-500 hover:scale-110 group overflow-hidden flex items-center justify-center border-none backdrop-blur-sm hover:bg-primary/10"
               aria-label="Toggle theme"
             >
               {isInitialized && (
 
                 <>
                   <Sun
-                    className={cn(
-                      "h-5 w-5 transition-all duration-500",
-                      theme === "dark" ? "rotate-0 scale-100 opacity-100" : "rotate-90 scale-0 opacity-0"
-                    )}
-                  />
-                  <Moon
-                    className={cn(
-                      "absolute h-5 w-5 transition-all duration-500",
-                      theme === "light" ? "rotate-0 scale-100 opacity-100" : "-rotate-90 scale-0 opacity-0"
-                    )}
-                  />
+  className={cn(
+    "h-5 w-5 text-white transition-all duration-500",
+    theme === "dark"
+      ? "rotate-0 scale-100 opacity-100"
+      : "rotate-90 scale-0 opacity-0"
+  )}
+/>
+
+<Moon
+  className={cn(
+    "absolute h-5 w-5  transition-all duration-500",
+    theme === "light"
+      ? "rotate-0 scale-100 opacity-100"
+      : "-rotate-90 scale-0 opacity-0"
+  )}
+/>
+
                 </>
               )}
               <span className="absolute inset-0 rounded-xl bg-linear-to-r from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -164,7 +175,7 @@ const Navbar = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-2.5 px-3 py-2 rounded-xl glass hover:bg-primary/10 transition-all duration-300">
+                  <button className="flex items-center gap-2.5 px-3 py-2 rounded-xl border-none backdrop-blur-sm hover:bg-primary/10 transition-all duration-300">
                     <div className="w-9 h-9 rounded-lg bg-linear-to-br from-primary to-accent flex items-center justify-center shrink-0">
                       <span className="text-xs font-bold text-primary-foreground">{initials}</span>
                     </div>

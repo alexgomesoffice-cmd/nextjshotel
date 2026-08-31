@@ -176,6 +176,7 @@ export function HeroSection() {
     mx-auto
     max-w-[850px]
     text-3xl
+    text-white
     font-semibold
     leading-[1.05]
     tracking-tight

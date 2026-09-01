@@ -178,7 +178,7 @@ useEffect(() => {
                     )
                   }
                   aria-label="Next image"
-                  className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-black/55 focus:outline-none focus:ring-2 focus:ring-white"
+                  className="absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white backdrop-blur-md transition-all hover:scale-105 hover:bg-black/55 focus:outline-none"
                 >
                   <ChevronRight className="h-5 w-5" />
                 </button>

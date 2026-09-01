@@ -37,7 +37,7 @@ export default function FavoritesPage() {
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="h-8 w-48 bg-muted rounded animate-pulse mb-2" />
           <div className="h-4 w-72 bg-muted rounded animate-pulse mb-12" />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-[450px] bg-muted rounded-3xl animate-pulse" />
             ))}
@@ -75,12 +75,13 @@ export default function FavoritesPage() {
         </header>
 
         {hotels.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {hotels.map((hotel) => (
               <HotelCard 
                 key={hotel.id} 
                 {...hotel} 
                 roomListMaxHeight="h-[300px]"
+                favoritePage
               />
             ))}
           </div>

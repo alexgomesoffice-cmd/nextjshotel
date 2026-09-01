@@ -22,6 +22,7 @@ export interface RoomTypeStrip {
   bed_types:       { name: string; count: number }[];
   available_count: number;
   dates_filtered:  boolean;
+  favoritePage?:      boolean;
 }
 
 export interface AccommodationContext {
@@ -58,6 +59,7 @@ export interface HotelCardProps {
   /** Populated by the capacity engine when a guests param was supplied. */
   accommodation?:    AccommodationContext | null;
   isFavorited?:      boolean;
+  favoritePage?:      boolean;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -261,6 +263,7 @@ const HotelCard = ({
   maxPrice,
   accommodation,
   isFavorited = false,
+  favoritePage = false,
 }: HotelCardProps) => {
   const dateParams = checkIn && checkOut
     ? `?check_in=${checkIn}&check_out=${checkOut}&guests=${guests || 1}`
@@ -279,7 +282,13 @@ const HotelCard = ({
       
       {/* ── HOTEL SHOWCASE FRAME ─────────────────────────────────────────── */}
       <div className="relative flex flex-col">
-        <Link href={hotelUrl} className="block relative h-72 overflow-hidden bg-muted z-10">
+<Link
+  href={hotelUrl}
+  className={cn(
+    "block relative overflow-hidden bg-muted z-10",
+    favoritePage ? "h-80 md:h-[360px]" : "h-72"
+  )}
+>
           {cover_image ? (
             <Image
               src={cover_image}

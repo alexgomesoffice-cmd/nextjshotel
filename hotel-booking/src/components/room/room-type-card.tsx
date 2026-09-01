@@ -3,10 +3,16 @@
 import { useState } from "react";
 import Image from "next/image";
 import {
-  Users, Bed, Check,
-  ChevronUp, ChevronLeft, ChevronRight,
+  Users,
+  Bed,
+  Check,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   AlertCircle,
 } from "lucide-react";
+
+import { getAmenityIcon } from "@/lib/amenity-icons";
 import { cn } from "@/lib/utils";
 import {
   canVariantAccommodate,
@@ -14,6 +20,7 @@ import {
   formatCapacityMessage,
   formatRecommendationMessage,
 } from "@/lib/room-capacity-calculator";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -356,20 +363,21 @@ const RoomTypeCard = ({
                   Top highlights
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {room_type_amenities.slice(0, 4).map((prop, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 rounded-full px-3 py-1"
-                    >
-                      <Check className="h-3 w-3 text-primary shrink-0" />
-                      {prop.amenity.name}
-                    </span>
-                  ))}
-                  {room_type_amenities.length > 4 && (
-                    <span className="inline-flex items-center text-xs font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1">
-                      +{room_type_amenities.length - 4} more
-                    </span>
-                  )}
+{room_type_amenities.slice(0, 4).map((prop, i) => {
+  const Icon = getAmenityIcon(prop.amenity.icon);
+
+  return (
+    <span
+      key={i}
+      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 rounded-full px-3 py-1"
+    >
+      <Icon className="h-3 w-3 text-primary shrink-0" />
+      {prop.amenity.name}
+    </span>
+  );
+})}
+
+
                 </div>
               </div>
             )}

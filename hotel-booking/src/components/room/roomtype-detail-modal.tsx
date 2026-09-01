@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { X, Users, Bed, CheckCircle2, Wind, Tv, Coffee, Bath } from "lucide-react";
+import { getAmenityIcon } from "@/lib/amenity-icons";
 import { Button } from "@/components/ui/button";
 import { getLenis } from "@/components/ui/SmoothScroll";
 
@@ -209,14 +210,18 @@ useEffect(() => {
             <div>
               <h3 className="text-lg font-semibold mb-4">Room Amenities</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6">
-                {roomType.room_type_amenities?.map((prop, idx) => (
-                  <div key={idx} className="flex items-center gap-3">
-                    <div className="text-primary/70">
-                      {getIconForAmenity(prop.amenity.name)}
+                {roomType.room_type_amenities?.map((prop, idx) => {
+                  const Icon = getAmenityIcon(prop.amenity.icon);
+
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      <div className="text-primary/70">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-sm">{prop.amenity.name}</span>
                     </div>
-                    <span className="text-sm">{prop.amenity.name}</span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

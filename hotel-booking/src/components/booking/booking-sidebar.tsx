@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { format, differenceInCalendarDays, addDays } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2,ArrowRight } from "lucide-react";
 import {
   getBookingWindowStart,
   getBookingWindowEnd,
@@ -133,7 +133,7 @@ export default function BookingSidebar({
 
   const hasSelections = selectedVariants.length > 0;
   const roomsTotal = selectedVariants.reduce((s, v) => s + v.price * nights * v.quantity, 0);
-  const grandTotal = roomsTotal ;
+  const grandTotal = roomsTotal;
 
   const headerPrice =
     selectedVariants.length > 0
@@ -251,19 +251,19 @@ export default function BookingSidebar({
       <div className="flex items-baseline justify-between px-5 pt-5 pb-4">
         <h3 className="font-bold text-lg text-foreground">Book your stay</h3>
         {headerPrice && (
-  <div className="flex flex-col items-end leading-tight">
-    {!hasSelections && (
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
-        Starts from
-      </span>
-    )}
+          <div className="flex flex-col items-end leading-tight">
+            {!hasSelections && (
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">
+                Starts from
+              </span>
+            )}
 
-    <span className="font-bold text-lg text-primary">
-      TK {Number(headerPrice).toLocaleString()}
-      <span className="text-xs text-muted-foreground font-normal">/night</span>
-    </span>
-  </div>
-)}
+            <span className="font-bold text-lg text-primary">
+              TK {Number(headerPrice).toLocaleString()}
+              <span className="text-xs text-muted-foreground font-normal">/night</span>
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="px-5 pb-5 space-y-3">
@@ -456,7 +456,15 @@ export default function BookingSidebar({
           disabled={isReserving || !hasSelections || !date?.from || !date?.to || nights < 1 || !!dateValidationError || (selectionValidation && !selectionValidation.isValid)}
           onClick={handleReserve}
         >
-          {isReserving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reserving...</> : "Reserve Now"}
+          {isReserving ? (
+  <>
+    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reserving...
+  </>
+) : (
+  <>
+    Reserve Now <ArrowRight className="ml-2 h-4 w-4" />
+  </>
+)}
         </Button>
         {reserveError && <p className="text-sm text-destructive">{reserveError}</p>}
       </div>

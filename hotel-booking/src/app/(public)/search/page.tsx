@@ -2,12 +2,13 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Loader2, SlidersHorizontal, ArrowUpDown, Building2, Users } from "lucide-react";
+import { Loader2, SlidersHorizontal, ArrowUpDown, Building2, Users, AlertCircle } from "lucide-react";
 import HotelFilterSidebar from "@/components/hotel/hotel-filter-sidebar";
 import HotelCard, { HotelCardProps, AccommodationContext } from "@/components/hotel/hotel-card";
 import SearchBar from "@/components/search/search-bar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { validateBookingDateRange } from "@/lib/date-policy";
 
 const SORT_OPTIONS = [
   { label: "Price", value: "price" },
@@ -79,12 +80,25 @@ function SearchContent() {
   const [sort, setSort] = useState("newest");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [dateValidationError, setDateValidationError] = useState<string | null>(null);
 
   const currentPage = parseInt(searchParams.get("page") || "1");
   const location    = searchParams.get("location");
+  const checkIn     = searchParams.get("check_in");
+  const checkOut    = searchParams.get("check_out");
 
   // Are capacity params active?
   const hasGuestsParam = !!searchParams.get("guests");
+
+  // Validate dates from URL parameters
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      const validation = validateBookingDateRange(checkIn, checkOut);
+      setDateValidationError(validation.isValid ? null : validation.message);
+    } else {
+      setDateValidationError(null);
+    }
+  }, [checkIn, checkOut]);
 
   useEffect(() => {
     const fetchHotels = async () => {
@@ -183,6 +197,25 @@ function SearchContent() {
 
             {/* ── Main content ── */}
             <main className="flex-1 min-w-0">
+              {/* Date validation error */}
+              {dateValidationError && (
+                <div className="mb-6 flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40 rounded-lg">
+                  <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-500 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-amber-900 dark:text-amber-200 text-sm">Invalid Date Range</h3>
+                    <p className="text-amber-800 dark:text-amber-300 text-sm mt-1">{dateValidationError}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => router.push("/search")}
+                    >
+                      Clear Dates & Search Again
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Header row */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>

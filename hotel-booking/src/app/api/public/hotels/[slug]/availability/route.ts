@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { resolvePriceRange, type PricingRuleLike } from '@/lib/pricing-resolver';
+import { validateBookingDateRange, getStayNights } from '@/lib/date-policy';
 
 /**
  * GET /api/public/hotels/[slug]/availability
@@ -35,13 +36,11 @@ export async function GET(
       if (isNaN(ci.getTime()) || isNaN(co.getTime()) || co <= ci) {
         return NextResponse.json({ success: false, message: 'Invalid stay dates' }, { status: 400 });
       }
-      const maxAllowed = new Date();
-      maxAllowed.setFullYear(maxAllowed.getFullYear() + 1);
-      if (!isNaN(ci.getTime()) && ci > maxAllowed) {
-        return NextResponse.json({ success: false, message: 'Check-in date cannot be more than 1 year from today' }, { status: 400 });
-      }
-      if (!isNaN(co.getTime()) && co > maxAllowed) {
-        return NextResponse.json({ success: false, message: 'Check-out date cannot be more than 1 year from today' }, { status: 400 });
+
+      // Validate using centralized date policy
+      const dateValidation = validateBookingDateRange(ci, co);
+      if (!dateValidation.isValid) {
+        return NextResponse.json({ success: false, message: dateValidation.message }, { status: 400 });
       }
     }
 

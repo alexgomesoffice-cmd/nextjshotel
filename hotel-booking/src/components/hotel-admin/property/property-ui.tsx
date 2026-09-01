@@ -14,7 +14,7 @@ import {
 export const Row = ({ label, value, pending }: { label: string; value: React.ReactNode; pending?: string }) => (
   <div className="min-w-0">
     <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-    <div className="text-sm font-medium truncate mt-0.5">
+    <div className="text-sm font-medium mt-0.5">
       {value || <span className="text-muted-foreground/60">—</span>}
     </div>
     {pending !== undefined && pending !== String(value ?? '') && (

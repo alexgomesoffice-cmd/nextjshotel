@@ -22,6 +22,7 @@ import {
   ChevronDown,
   SlidersHorizontal,
   X,
+  AlertCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,13 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import {
+  getBookingWindowStart,
+  getBookingWindowEnd,
+  getStayNights,
+  validateBookingDateRange,
+  MAX_STAY_NIGHTS,
+} from "@/lib/date-policy";
 
 export interface SearchSuggestion {
   id: number;
@@ -88,6 +96,8 @@ const SearchBar = ({
     from: new Date(),
     to: addDays(new Date(), 4),
   });
+
+  const [dateValidationError, setDateValidationError] = useState<string | null>(null);
 
   const [guests, setGuests] = useState(1);
   const [rooms, setRooms] = useState(1);
@@ -261,84 +271,86 @@ const SearchBar = ({
    * ================================================================
    */
 
-  const handleLocationChange = useCallback(
-    async (value: string) => {
-      setSearchLocation(value);
+ const handleLocationChange = useCallback(
+  async (value: string) => {
+    setSearchLocation(value);
 
-      if (!value.trim()) {
-        setSuggestions({
-          hotels: [],
-          cities: [],
-        });
+    // Don't fetch suggestions until at least 3 characters
+    if (value.trim().length < 2) {
+      setSuggestions({
+        hotels: [],
+        cities: [],
+      });
 
-        setIsLoadingSuggestions(false);
+      setIsLoadingSuggestions(false);
 
-        return;
-      }
+      return;
+    }
 
-      setIsLoadingSuggestions(true);
+    setIsLoadingSuggestions(true);
 
-      try {
-        const encoded = encodeURIComponent(value.trim());
+    try {
+      const encoded = encodeURIComponent(value.trim());
 
-        const [citiesResponse, hotelsResponse] =
-          await Promise.all([
-            fetch(`/api/public/cities?q=${encoded}`),
-            fetch(`/api/public/hotels?location=${encoded}`),
-          ]);
+      const [citiesResponse, hotelsResponse] =
+        await Promise.all([
+          fetch(`/api/public/cities?q=${encoded}`),
+          fetch(`/api/public/hotels?location=${encoded}`),
+        ]);
 
-        const next: {
-          hotels: SearchSuggestion[];
-          cities: SearchSuggestion[];
-        } = {
-          hotels: [],
-          cities: [],
+      const next: {
+        hotels: SearchSuggestion[];
+        cities: SearchSuggestion[];
+      } = {
+        hotels: [],
+        cities: [],
+      };
+
+      if (citiesResponse.ok) {
+        const data = (await citiesResponse.json()) as {
+          success?: boolean;
+          data?: CityApiItem[];
         };
 
-        if (citiesResponse.ok) {
-          const data = (await citiesResponse.json()) as {
-            success?: boolean;
-            data?: CityApiItem[];
-          };
-
-          if (data.success && Array.isArray(data.data)) {
-            next.cities = data.data.map((city) => ({
-              id: city.id,
-              name: city.name,
-              type: "city",
-            }));
-          }
+        if (data.success && Array.isArray(data.data)) {
+          next.cities = data.data.map((city) => ({
+            id: city.id,
+            name: city.name,
+            type: "city",
+          }));
         }
-
-        if (hotelsResponse.ok) {
-          const data = (await hotelsResponse.json()) as {
-            success?: boolean;
-            data?: HotelApiItem[];
-          };
-
-          if (data.success && Array.isArray(data.data)) {
-            next.hotels = data.data.map((hotel) => ({
-              id: hotel.id,
-              name: hotel.name,
-              type: "hotel",
-              city: hotel.city,
-              address: hotel.address,
-            }));
-          }
-        }
-
-        setSuggestions(next);
-      } catch {
-        setSuggestions({
-          hotels: [],
-          cities: [],
-        });
-      } finally {
-        setIsLoadingSuggestions(false);
       }
-    },
-    []
-  );
+
+      if (hotelsResponse.ok) {
+        const data = (await hotelsResponse.json()) as {
+          success?: boolean;
+          data?: HotelApiItem[];
+        };
+
+        if (data.success && Array.isArray(data.data)) {
+          next.hotels = data.data.map((hotel) => ({
+            id: hotel.id,
+            name: hotel.name,
+            type: "hotel",
+            city: hotel.city,
+            address: hotel.address,
+          }));
+        }
+      }
+
+      setSuggestions(next);
+    } catch {
+      setSuggestions({
+        hotels: [],
+        cities: [],
+      });
+    } finally {
+      setIsLoadingSuggestions(false);
+    }
+  },
+  []
+);
+
 
   const handleSuggestionSelect = (
     suggestion: SearchSuggestion
@@ -363,7 +375,36 @@ const SearchBar = ({
    * ================================================================
    */
 
+  const handleDateChange = (newDate: DateRange | undefined) => {
+    setDate(newDate);
+    setDateValidationError(null);
+
+    // Validate the new date range
+    if (newDate?.from && newDate?.to) {
+      const validation = validateBookingDateRange(newDate.from, newDate.to);
+      if (!validation.isValid) {
+        setDateValidationError(validation.message);
+      }
+    }
+  };
+
+  const isDateRangeValid = () => {
+    if (!date?.from || !date?.to) {
+      return false;
+    }
+    const validation = validateBookingDateRange(date.from, date.to);
+    return validation.isValid;
+  };
+
   const handleSearch = () => {
+    // Validate date range before searching
+    if (!isDateRangeValid()) {
+      setDateValidationError(
+        "Please select valid dates (within 3 months and maximum 21 nights)."
+      );
+      return;
+    }
+
     const params = new URLSearchParams();
 
     if (searchLocation.trim()) {
@@ -449,15 +490,11 @@ const SearchBar = ({
    */
 
   const isDateDisabled = (day: Date) => {
-    const today = new Date();
+    const windowStart = getBookingWindowStart();
+    const windowEnd = getBookingWindowEnd();
 
-    today.setHours(0, 0, 0, 0);
-
-    const max = new Date(today);
-
-    max.setFullYear(max.getFullYear() + 1);
-
-    return day < today || day > max;
+    // Disable dates outside the booking window
+    return day < windowStart || day >= windowEnd;
   };
 
   /*
@@ -515,7 +552,10 @@ const SearchBar = ({
 
       {(suggestions.hotels.length > 0 ||
         suggestions.cities.length > 0) && (
-        <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] overflow-hidden rounded-2xl border border-foreground/10 bg-background/95 text-foreground shadow-2xl backdrop-blur-2xl">
+        <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] overflow-hidden rounded-2xl border border-foreground/10 bg-background/95 text-foreground shadow-2xl backdrop-blur-2xl custom-scrollbar"
+              data-lenis-prevent
+              data-lenis-prevent-wheel
+              data-lenis-prevent-touch>
           <div className="max-h-80 overflow-y-auto">
             {suggestions.hotels.length > 0 && (
               <div
@@ -665,7 +705,7 @@ const SearchBar = ({
             </div>
 
             <div className="mt-0.5 text-xs text-foreground/45">
-              Minimum 1 night stay
+              Maximum 3 weeks (21 nights)
             </div>
           </div>
 
@@ -674,17 +714,28 @@ const SearchBar = ({
               variant="ghost"
               size="sm"
               className="h-8 text-xs text-foreground/55 hover:bg-foreground/5 hover:text-foreground"
-              onClick={() =>
+              onClick={() => {
                 setDate({
                   from: undefined,
                   to: undefined,
-                })
-              }
+                });
+                setDateValidationError(null);
+              }}
             >
               Clear
             </Button>
           )}
         </div>
+
+        {/* Validation Error */}
+        {dateValidationError && (
+          <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3">
+            <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
+            <div className="text-xs text-amber-700 dark:text-amber-200">
+              {dateValidationError}
+            </div>
+          </div>
+        )}
 
         {/* Calendar */}
         <div className="flex w-full justify-center pt-0 p-3">
@@ -693,9 +744,11 @@ const SearchBar = ({
             mode="range"
             defaultMonth={date?.from}
             selected={date}
-            onSelect={setDate}
+            onSelect={handleDateChange}
             numberOfMonths={1}
             disabled={isDateDisabled}
+            fromDate={getBookingWindowStart()}
+            toDate={getBookingWindowEnd()}
             className="w-full"
           />
         </div>
@@ -823,6 +876,7 @@ const SearchBar = ({
   const searchButton = (
     <Button
       onClick={handleSearch}
+      disabled={!isDateRangeValid()}
       className={cn(
         "h-[46px] w-full rounded-[12px]",
         "bg-primary text-primary-foreground",
@@ -830,7 +884,8 @@ const SearchBar = ({
         "transition-all duration-300",
         "hover:bg-primary/90",
         "hover:shadow-[0_12px_26px_-14px_rgba(59,130,246,0.95)]",
-        "focus-visible:ring-2 focus-visible:ring-primary"
+        "focus-visible:ring-2 focus-visible:ring-primary",
+        "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
       )}
     >
       <Search className="mr-1.5 h-3.5 w-3.5" />
@@ -1246,18 +1301,18 @@ const SearchBar = ({
    */
 
   const mobileBento = (
-    <div
-      className={cn(
-        "w-full lg:hidden",
-        "rounded-[24px]",
-        "border border-foreground/[0.13]",
-        "bg-background/70",
-        "p-3",
-        "!text-foreground dark:!text-white",
-        "shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)]",
-        "backdrop-blur-2xl"
-      )}
-    >
+  <div
+    className={cn(
+      "w-full lg:hidden",
+      "rounded-[24px]",
+      "border border-foreground/[0.13]",
+      "bg-transparent",
+      "p-3",
+      "text-foreground dark:text-white",
+      "shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)]"
+    )}
+  >
+
       <div className="grid grid-cols-1 gap-2.5">
         {/* Location */}
         <div className="h-[72px]">
@@ -1327,7 +1382,7 @@ const SearchBar = ({
 
         {/* Mobile Filter Workspace */}
         {showFilters && isFilterOpen && (
-          <div className="overflow-hidden rounded-[16px] border border-foreground/10 bg-foreground/[0.025]">
+<div className="overflow-hidden rounded-[16px] border border-foreground/[0.10] bg-background/10 backdrop-blur-md text-foreground dark:text-white">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3">
               <div>

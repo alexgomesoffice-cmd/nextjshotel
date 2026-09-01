@@ -80,7 +80,7 @@ export default function FavoritesPage() {
               <HotelCard 
                 key={hotel.id} 
                 {...hotel} 
-                roomListMaxHeight="h-[180px]"
+                roomListMaxHeight="h-[300px]"
               />
             ))}
           </div>

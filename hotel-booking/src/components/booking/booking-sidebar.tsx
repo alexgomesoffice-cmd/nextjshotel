@@ -16,6 +16,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
 import { format, differenceInCalendarDays, addDays } from "date-fns";
 import { Loader2 } from "lucide-react";
+import {
+  getBookingWindowStart,
+  getBookingWindowEnd,
+  validateBookingDateRange,
+  MAX_STAY_NIGHTS,
+} from "@/lib/date-policy";
 
 const PENDING_BOOKING_KEY = "myhotels:pending-reservation";
 
@@ -71,6 +77,7 @@ export default function BookingSidebar({
   const router = useRouter();
   const [isReserving, setIsReserving] = useState(false);
   const [reserveError, setReserveError] = useState<string | null>(null);
+  const [dateValidationError, setDateValidationError] = useState<string | null>(null);
   const [specialRequest, setSpecialRequest] = useState("");
   const restoredPendingState = useRef(false);
 
@@ -135,7 +142,14 @@ export default function BookingSidebar({
 
   const handleDateSelect = (newDate: DateRange | undefined) => {
     setDate(newDate);
+    setDateValidationError(null);
+    
     if (newDate?.from && newDate?.to && onDatesChange) {
+      // Validate the date range
+      const validation = validateBookingDateRange(newDate.from, newDate.to);
+      if (!validation.isValid) {
+        setDateValidationError(validation.message);
+      }
       onDatesChange(format(newDate.from, "yyyy-MM-dd"), format(newDate.to, "yyyy-MM-dd"));
     }
   };
@@ -149,6 +163,13 @@ export default function BookingSidebar({
 
   const handleReserve = async () => {
     if (!hasSelections || !date?.from || !date?.to) return;
+
+    // Validate date range before attempting to reserve
+    const dateValidation = validateBookingDateRange(date.from, date.to);
+    if (!dateValidation.isValid) {
+      setDateValidationError(dateValidation.message);
+      return;
+    }
 
     let authResponse: Response;
     try {
@@ -281,19 +302,30 @@ export default function BookingSidebar({
             <div className="p-4 border-b border-border/40 bg-primary/5 flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-primary uppercase tracking-widest">Select Dates</span>
-                <span className="text-sm text-muted-foreground italic">Minimum 1 night stay</span>
+                <span className="text-sm text-muted-foreground italic">Maximum 3 weeks (21 nights)</span>
               </div>
               {date?.from && date?.to && (
                 <Button
                   variant="ghost"
                   size="sm"
                   className="text-xs h-7 hover:text-primary text-foreground"
-                  onClick={() => handleDateSelect({ from: undefined, to: undefined })}
+                  onClick={() => {
+                    handleDateSelect({ from: undefined, to: undefined });
+                    setDateValidationError(null);
+                  }}
                 >
                   Clear
                 </Button>
               )}
             </div>
+            {dateValidationError && (
+              <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
+                <div className="text-xs text-amber-700 dark:text-amber-200">
+                  {dateValidationError}
+                </div>
+              </div>
+            )}
             <Calendar
               initialFocus
               mode="range"
@@ -303,10 +335,12 @@ export default function BookingSidebar({
               numberOfMonths={1}
               className="p-3 w-full"
               disabled={(d) => {
-                const t = new Date(); t.setHours(0, 0, 0, 0);
-                const max = new Date(t); max.setFullYear(max.getFullYear() + 1);
-                return d < t || d > max;
+                const windowStart = getBookingWindowStart();
+                const windowEnd = getBookingWindowEnd();
+                return d < windowStart || d >= windowEnd;
               }}
+              fromDate={getBookingWindowStart()}
+              toDate={getBookingWindowEnd()}
             />
           </PopoverContent>
         </Popover>
@@ -410,9 +444,16 @@ export default function BookingSidebar({
           </div>
         )}
 
+        {dateValidationError && (
+          <div className="flex items-start gap-2 bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-400 rounded-lg px-3 py-2 text-sm">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{dateValidationError}</span>
+          </div>
+        )}
+
         <Button
           className="w-full h-12 text-base font-semibold rounded-xl"
-          disabled={isReserving || !hasSelections || !date?.from || !date?.to || nights < 1 || (selectionValidation && !selectionValidation.isValid)}
+          disabled={isReserving || !hasSelections || !date?.from || !date?.to || nights < 1 || !!dateValidationError || (selectionValidation && !selectionValidation.isValid)}
           onClick={handleReserve}
         >
           {isReserving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Reserving...</> : "Reserve Now"}

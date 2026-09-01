@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAuth } from "@/lib/auth-middleware";
 import { reserveBookingSchema } from "@/lib/validations/booking";
+import { validateBookingDateRange, getStayNights } from "@/lib/date-policy";
 import { getEffectivePriceRange } from "@/lib/pricing-resolver";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
@@ -62,26 +63,18 @@ export async function POST(req: NextRequest) {
 
     const checkInDate = new Date(check_in);
     const checkOutDate = new Date(check_out);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
 
     if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
       return NextResponse.json({ success: false, message: "Invalid dates provided" }, { status: 400 });
     }
-    if (checkInDate < today) {
-      return NextResponse.json({ success: false, message: "Check-in date cannot be in the past" }, { status: 400 });
-    }
-    if (checkOutDate <= checkInDate) {
-      return NextResponse.json({ success: false, message: "Check-out must be after check-in" }, { status: 400 });
+
+    // Validate using centralized date policy
+    const dateValidation = validateBookingDateRange(checkInDate, checkOutDate);
+    if (!dateValidation.isValid) {
+      return NextResponse.json({ success: false, message: dateValidation.message }, { status: 400 });
     }
 
-    const maxAllowedDate = new Date();
-    maxAllowedDate.setFullYear(maxAllowedDate.getFullYear() + 1);
-    if (checkInDate > maxAllowedDate || checkOutDate > maxAllowedDate) {
-      return NextResponse.json({ success: false, message: "Dates cannot be more than 1 year from today" }, { status: 400 });
-    }
-
-    const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
+    const nights = getStayNights(checkInDate, checkOutDate);
 
     const variantIds = [...new Set(room_selections.map((s) => s.variant_id))];
     const variants = await prisma.room_variants.findMany({

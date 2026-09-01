@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/jwt';
 import { isBlacklisted } from '@/lib/token-blacklist';
+import { validateBookingDateRange } from '@/lib/date-policy';
 
 // ─── Accommodation types ───────────────────────────────────────────────────────
 
@@ -152,6 +153,20 @@ export async function GET(req: NextRequest) {
     const checkIn       = searchParams.get('check_in');
     const checkOut      = searchParams.get('check_out');
     const hasDates      = !!(checkIn && checkOut);
+
+    // ─── Validate dates using centralized date policy ─────────────────────────
+    if (hasDates && checkIn && checkOut) {
+      const ci = new Date(checkIn);
+      const co = new Date(checkOut);
+      if (isNaN(ci.getTime()) || isNaN(co.getTime())) {
+        return NextResponse.json({ success: false, message: 'Invalid date format' }, { status: 400 });
+      }
+
+      const dateValidation = validateBookingDateRange(ci, co);
+      if (!dateValidation.isValid) {
+        return NextResponse.json({ success: false, message: dateValidation.message }, { status: 400 });
+      }
+    }
 
     // Parse capacity parameters
     const requestedGuests: number | null = guestsParam ? parseInt(guestsParam) : null;

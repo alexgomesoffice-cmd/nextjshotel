@@ -28,6 +28,8 @@ export interface SearchSuggestion {
   address?: string;
 }
 
+type ActiveOverlay = "location" | "guest" | null;
+
 const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -36,7 +38,7 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
   const [date, setDate] = useState<DateRange | undefined>(undefined);
   const [guests, setGuests] = useState(1);
   const [rooms, setRooms] = useState(1);
-  const [isGuestOpen, setIsGuestOpen] = useState(false);
+  const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay>(null);
 
   const [suggestions, setSuggestions] = useState<{
     hotels: SearchSuggestion[];
@@ -44,6 +46,13 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
   }>({ hotels: [], cities: [] });
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
   const locationInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef<number>(0);
+  const searchBarRef = useRef<HTMLDivElement>(null);
+
+  // Derived values (read-only, never set directly)
+  const isGuestOpen = activeOverlay === "guest";
+  const isLocationSuggestionsOpen = activeOverlay === "location";
 
   // Pre-fill from URL params on mount
   useEffect(() => {
@@ -68,15 +77,71 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
     if (Number.isFinite(queryRooms) && queryRooms > 0) setRooms(queryRooms);
   }, [searchParams]);
 
+  // Outside click handler for both Location and Guest overlays
+  useEffect(() => {
+    if (activeOverlay === null) return;
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+
+      // Check if click is inside the SearchBar
+      if (searchBarRef.current?.contains(target)) {
+        return;
+      }
+
+      setActiveOverlay(null);
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [activeOverlay]);
+
+  // Escape key handler
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setActiveOverlay(null);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
+
   const handleLocationChange = async (value: string) => {
     setSearchLocation(value);
+    
+    // IMMEDIATELY set active overlay to location, closing guest
+    setActiveOverlay("location");
+
+    // Abort previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
     if (value.length >= 1) {
       setIsLoadingSuggestions(true);
+      const currentRequestId = ++requestIdRef.current;
+      const currentAbortController = new AbortController();
+      abortControllerRef.current = currentAbortController;
+
       try {
         const [citiesRes, hotelsRes] = await Promise.all([
-          fetch(`/api/public/cities?q=${encodeURIComponent(value)}`),
-          fetch(`/api/public/hotels?location=${encodeURIComponent(value)}&limit=5`),
+          fetch(`/api/public/cities?q=${encodeURIComponent(value)}`, {
+            signal: currentAbortController.signal,
+          }),
+          fetch(`/api/public/hotels?location=${encodeURIComponent(value)}&limit=5`, {
+            signal: currentAbortController.signal,
+          }),
         ]);
+
+        // If request was aborted, don't update state
+        if (currentAbortController.signal.aborted) {
+          return;
+        }
 
         const next: { hotels: SearchSuggestion[]; cities: SearchSuggestion[] } = {
           hotels: [],
@@ -97,20 +162,41 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
               .map((h: any) => ({ id: h.id, name: h.name, type: "hotel", city: h.city, address: h.address }));
           }
         }
-        setSuggestions(next);
-      } catch {
-        setSuggestions({ hotels: [], cities: [] });
+
+        // Only update state if:
+        // 1. Request is still active (not aborted)
+        // 2. This is still the latest request (requestId matches)
+        // 3. activeOverlay is still "location" (user hasn't switched to guest)
+        if (!currentAbortController.signal.aborted && currentRequestId === requestIdRef.current) {
+          setSuggestions(next);
+          // Open suggestions only if we have results AND overlay is still location
+          if ((next.hotels.length > 0 || next.cities.length > 0) && activeOverlay === "location") {
+            setActiveOverlay("location");
+          } else if (next.hotels.length === 0 && next.cities.length === 0) {
+            setActiveOverlay(null);
+          }
+        }
+      } catch (error) {
+        // Ignore abort errors
+        if (error instanceof Error && error.name !== "AbortError") {
+          setSuggestions({ hotels: [], cities: [] });
+          if (currentRequestId === requestIdRef.current) {
+            setActiveOverlay(null);
+          }
+        }
       } finally {
         setIsLoadingSuggestions(false);
       }
     } else {
       setSuggestions({ hotels: [], cities: [] });
+      setActiveOverlay(null);
     }
   };
 
   const handleSuggestionSelect = (s: SearchSuggestion) => {
     setSearchLocation(s.type === "hotel" ? `${s.name}, ${s.city}` : s.name);
     setSuggestions({ hotels: [], cities: [] });
+    setActiveOverlay(null);
   };
 
   const handleSearch = () => {
@@ -129,12 +215,25 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
     router.push(`/search?${params.toString()}`, { scroll: false });
   };
 
-  const hasSuggestions =
-    suggestions.hotels.length > 0 || suggestions.cities.length > 0;
+  const handleGuestTriggerClick = () => {
+    if (activeOverlay === "guest") {
+      setActiveOverlay(null);
+      return;
+    }
+
+    // Abort active location request and clear suggestions
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setSuggestions({ hotels: [], cities: [] });
+    requestIdRef.current += 1;
+
+    setActiveOverlay("guest");
+  };
 
   return (
     <div className="w-full max-w-5xl mx-auto">
-      <div className="glass rounded-2xl p-3 sm:p-4 shadow-lg border border-border/50 hover:border-primary/40 transition-colors relative">
+      <div ref={searchBarRef} className="glass rounded-2xl p-3 sm:p-4 shadow-lg border border-border/50 hover:border-primary/40 transition-colors relative">
         <div className="grid grid-cols-1 sm:grid-cols-[2fr_1.8fr_1.2fr_auto] gap-3 sm:gap-4">
 
           {/* Location */}
@@ -142,81 +241,71 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block pl-1 group-focus-within:text-primary transition-colors">
               Location
             </label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <div className="relative">
-                  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                  <Input
-                    ref={locationInputRef}
-                    placeholder="Where are you going?"
-                    value={searchLocation}
-                    onChange={(e) => handleLocationChange(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        setSuggestions({ hotels: [], cities: [] });
-                        handleSearch();
-                      }
-                    }}
-                    className="pl-12 h-12 rounded-xl border-border/40 hover:border-primary/40 focus:border-primary transition-all bg-secondary/30"
-                  />
-                  {isLoadingSuggestions && (
-                    <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                  )}
-                </div>
-              </PopoverTrigger>
-
-              {hasSuggestions && (
-                <PopoverContent
-                  align="start"
-                  side="bottom"
-                  sideOffset={6}
-                  className="w-(--radix-popover-trigger-width) p-0 overflow-hidden"
-                  onOpenAutoFocus={(e) => e.preventDefault()}
-                >
-                  <div className="bg-popover border border-border/40 rounded-lg shadow-2xl max-h-72 overflow-y-auto custom-scrollbar"
-                  data-lenis-prevent="true"
-                  data-lenis-prevent-wheel="true"
-                  data-lenis-prevent-touch="true"
-                  >
-                    {suggestions.hotels.length > 0 && (
-                      <div className={cn(suggestions.cities.length > 0 ? "border-b border-border/40" : "", "p-2")}>
-                        <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Hotels</div>
-                        {suggestions.hotels.map((h) => (
-                          <button
-                            key={`hotel-${h.id}`}
-                            onClick={() => handleSuggestionSelect(h)}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors"
-                          >
-                            <Hotel className="h-4 w-4 text-primary shrink-0" />
-                            <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium truncate">{h.name}</div>
-                                {h.address && <div className="text-xs text-muted-foreground truncate">{h.address}</div>}
-                                <div className="text-xs text-muted-foreground/70 truncate">{h.city}</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {suggestions.cities.length > 0 && (
-                      <div className="p-2">
-                        <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Locations</div>
-                        {suggestions.cities.map((city) => (
-                          <button
-                            key={`city-${city.id}`}
-                            onClick={() => handleSuggestionSelect(city)}
-                            className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors"
-                          >
-                            <MapPin className="h-4 w-4 text-primary shrink-0" />
-                            <span className="text-sm font-medium">{city.name}</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    
-                  </div>
-                </PopoverContent>
+            <div className="relative">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Input
+                ref={locationInputRef}
+                placeholder="Where are you going?"
+                value={searchLocation}
+                onChange={(e) => handleLocationChange(e.target.value)}
+                onFocus={() => setActiveOverlay("location")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    setSuggestions({ hotels: [], cities: [] });
+                    setActiveOverlay(null);
+                    handleSearch();
+                  }
+                }}
+                className="pl-12 h-12 rounded-xl border-border/40 hover:border-primary/40 focus:border-primary transition-all bg-secondary/30"
+              />
+              {isLoadingSuggestions && (
+                <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
               )}
-            </Popover>
+            </div>
+
+            {/* Location suggestions — absolute positioned div (not Radix Popover) */}
+            {activeOverlay === "location" && (suggestions.hotels.length > 0 || suggestions.cities.length > 0) && (
+              <div className="absolute left-0 right-0 top-[calc(100%+6px)] bg-popover border border-border/40 rounded-lg shadow-2xl max-h-72 overflow-y-auto custom-scrollbar z-50"
+                data-lenis-prevent="true"
+                data-lenis-prevent-wheel="true"
+                data-lenis-prevent-touch="true"
+              >
+                {suggestions.hotels.length > 0 && (
+                  <div className={cn(suggestions.cities.length > 0 ? "border-b border-border/40" : "", "p-2")}>
+                    <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Hotels</div>
+                    {suggestions.hotels.map((h) => (
+                      <button
+                        key={`hotel-${h.id}`}
+                        onClick={() => handleSuggestionSelect(h)}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors"
+                      >
+                        <Hotel className="h-4 w-4 text-primary shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <div className="text-sm font-medium truncate">{h.name}</div>
+                            {h.address && <div className="text-xs text-muted-foreground truncate">{h.address}</div>}
+                            <div className="text-xs text-muted-foreground/70 truncate">{h.city}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {suggestions.cities.length > 0 && (
+                  <div className="p-2">
+                    <div className="text-xs font-semibold text-muted-foreground mb-2 px-2">Locations</div>
+                    {suggestions.cities.map((city) => (
+                      <button
+                        key={`city-${city.id}`}
+                        onClick={() => handleSuggestionSelect(city)}
+                        className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-accent rounded-md transition-colors"
+                      >
+                        <MapPin className="h-4 w-4 text-primary shrink-0" />
+                        <span className="text-sm font-medium">{city.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Stay Dates — DateRange (same as hero-search) */}
@@ -295,20 +384,25 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block pl-1">
               Guests &amp; Rooms
             </label>
-            <Popover open={isGuestOpen} onOpenChange={setIsGuestOpen}>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center justify-between w-full h-12 rounded-xl border border-border/50 bg-secondary/30 px-4 text-sm hover:border-primary/40 transition-all"
-                >
-                  <Users className="h-5 w-5 text-muted-foreground mr-2 shrink-0" />
-                  <span className="truncate text-left flex-1">
-                    {guests} {guests === 1 ? "Guest" : "Guests"} · {rooms}{" "}
-                    {rooms === 1 ? "Room" : "Rooms"}
-                  </span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-64 rounded-xl p-4 space-y-4" align="start" sideOffset={8}>
+            <button
+              type="button"
+              data-guest-trigger
+              onClick={handleGuestTriggerClick}
+              className="flex items-center justify-between w-full h-12 rounded-xl border border-border/50 bg-secondary/30 px-4 text-sm hover:border-primary/40 transition-all"
+            >
+              <Users className="h-5 w-5 text-muted-foreground mr-2 shrink-0" />
+              <span className="truncate text-left flex-1">
+                {guests} {guests === 1 ? "Guest" : "Guests"} · {rooms}{" "}
+                {rooms === 1 ? "Room" : "Rooms"}
+              </span>
+            </button>
+
+            {/* Guest dropdown — absolute positioned div (not Radix Popover) */}
+            {isGuestOpen && (
+              <div
+                data-guest-popover
+                className="absolute left-0 top-[calc(100%+8px)] w-64 bg-popover border border-border/40 rounded-xl shadow-2xl p-4 space-y-4 z-50"
+              >
                 {/* Guests */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Guests</span>
@@ -355,8 +449,8 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                     </button>
                   </div>
                 </div>
-              </PopoverContent>
-            </Popover>
+              </div>
+            )}
           </div>
 
           {/* Search button */}

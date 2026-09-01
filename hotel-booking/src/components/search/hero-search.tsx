@@ -102,8 +102,13 @@ const SearchBar = ({
   const [guests, setGuests] = useState(1);
   const [rooms, setRooms] = useState(1);
 
-  const [isGuestOpen, setIsGuestOpen] = useState(false);
+  type ActiveOverlay = "location" | "guest" | null;
+  const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  // Derived values (read-only, never set directly)
+  const isGuestOpen = activeOverlay === "guest";
+  const isLocationSuggestionsOpen = activeOverlay === "location";
 
   const [suggestions, setSuggestions] = useState<{
     hotels: SearchSuggestion[];
@@ -115,6 +120,8 @@ const SearchBar = ({
 
   const [isLoadingSuggestions, setIsLoadingSuggestions] =
     useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef<number>(0);
 
   const [hotelTypeOptions, setHotelTypeOptions] = useState<
     { id: number; name: string }[]
@@ -228,8 +235,7 @@ const SearchBar = ({
         !clickedPopover
       ) {
         setIsFilterOpen(false);
-        setIsGuestOpen(false);
-
+        setActiveOverlay(null);
         setSuggestions({
           hotels: [],
           cities: [],
@@ -240,8 +246,7 @@ const SearchBar = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsFilterOpen(false);
-        setIsGuestOpen(false);
-
+        setActiveOverlay(null);
         setSuggestions({
           hotels: [],
           cities: [],
@@ -275,28 +280,47 @@ const SearchBar = ({
   async (value: string) => {
     setSearchLocation(value);
 
-    // Don't fetch suggestions until at least 3 characters
+    // IMMEDIATELY set active overlay to location, closing guest
+    setActiveOverlay("location");
+
+    // Don't fetch suggestions until at least 2 characters
     if (value.trim().length < 2) {
       setSuggestions({
         hotels: [],
         cities: [],
       });
-
       setIsLoadingSuggestions(false);
-
       return;
     }
 
     setIsLoadingSuggestions(true);
+
+    // Abort previous request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const currentRequestId = ++requestIdRef.current;
+    const currentAbortController = new AbortController();
+    abortControllerRef.current = currentAbortController;
 
     try {
       const encoded = encodeURIComponent(value.trim());
 
       const [citiesResponse, hotelsResponse] =
         await Promise.all([
-          fetch(`/api/public/cities?q=${encoded}`),
-          fetch(`/api/public/hotels?location=${encoded}`),
+          fetch(`/api/public/cities?q=${encoded}`, {
+            signal: currentAbortController.signal,
+          }),
+          fetch(`/api/public/hotels?location=${encoded}`, {
+            signal: currentAbortController.signal,
+          }),
         ]);
+
+      // If request was aborted, don't update state
+      if (currentAbortController.signal.aborted) {
+        return;
+      }
 
       const next: {
         hotels: SearchSuggestion[];
@@ -338,12 +362,30 @@ const SearchBar = ({
         }
       }
 
-      setSuggestions(next);
-    } catch {
-      setSuggestions({
-        hotels: [],
-        cities: [],
-      });
+      // Only update state if:
+      // 1. Request is still active (not aborted)
+      // 2. This is still the latest request (requestId matches)
+      // 3. activeOverlay is still "location" (user hasn't switched to guest)
+      if (!currentAbortController.signal.aborted && currentRequestId === requestIdRef.current) {
+        setSuggestions(next);
+        // Keep location overlay open if we have results
+        if (next.hotels.length > 0 || next.cities.length > 0) {
+          setActiveOverlay("location");
+        } else {
+          setActiveOverlay(null);
+        }
+      }
+    } catch (error) {
+      // Ignore abort errors
+      if (error instanceof Error && error.name !== "AbortError") {
+        setSuggestions({
+          hotels: [],
+          cities: [],
+        });
+        if (currentRequestId === requestIdRef.current) {
+          setActiveOverlay(null);
+        }
+      }
     } finally {
       setIsLoadingSuggestions(false);
     }
@@ -367,6 +409,7 @@ const SearchBar = ({
       hotels: [],
       cities: [],
     });
+    setActiveOverlay(null);
   };
 
   /*
@@ -531,13 +574,18 @@ const SearchBar = ({
         onChange={(event) =>
           void handleLocationChange(event.target.value)
         }
+        onFocus={() => {
+          if (searchLocation.trim().length > 0) {
+            setActiveOverlay("location");
+          }
+        }}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
             setSuggestions({
               hotels: [],
               cities: [],
             });
-
+            setActiveOverlay(null);
             handleSearch();
           }
         }}
@@ -550,7 +598,7 @@ const SearchBar = ({
         <Loader2 className="absolute right-4 top-[58%] h-4 w-4 -translate-y-1/2 animate-spin text-foreground/60 dark:text-white/60" />
       )}
 
-      {(suggestions.hotels.length > 0 ||
+      {isLocationSuggestionsOpen && (suggestions.hotels.length > 0 ||
         suggestions.cities.length > 0) && (
         <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] overflow-hidden rounded-2xl border border-foreground/10 bg-background/95 text-foreground shadow-2xl backdrop-blur-2xl custom-scrollbar"
               data-lenis-prevent
@@ -766,7 +814,21 @@ const SearchBar = ({
     <div className="relative h-full">
       <button
         type="button"
-        onClick={() => setIsGuestOpen((current) => !current)}
+        onClick={() => {
+          if (activeOverlay === "guest") {
+            setActiveOverlay(null);
+            return;
+          }
+
+          // Abort active location request and clear suggestions
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+          setSuggestions({ hotels: [], cities: [] });
+          requestIdRef.current += 1;
+
+          setActiveOverlay("guest");
+        }}
         className={cn(
           cellClass,
           "flex h-full w-full items-center justify-between px-4 pt-5 !text-foreground dark:!text-white"

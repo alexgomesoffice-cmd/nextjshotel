@@ -32,6 +32,16 @@ import { cn } from '@/lib/utils'
 import { useHotelAdminFeed } from '@/hooks/use-hotel-admin-feed'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 type BookingStatus = 'RESERVED' | 'BOOKED' | 'EXPIRED' | 'CANCELLED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW'
 
@@ -77,6 +87,9 @@ export default function HotelAdminBookingsPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [hotelId, setHotelId] = useState<number | null>(null)
+  // NO_SHOW confirmation dialog state
+  const [noShowDialogOpen, setNoShowDialogOpen] = useState(false)
+  const [pendingNoShowRef, setPendingNoShowRef] = useState<string | null>(null)
 
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
@@ -135,7 +148,13 @@ export default function HotelAdminBookingsPage() {
 
   async function performAction(reference: string, action: string) {
     const labels: Record<string, string> = { check_in: 'Check in', check_out: 'Check out', cancel: 'Cancel', no_show: 'No Show' }
-    if ((action === 'cancel' || action === 'no_show') && !confirm(`${labels[action]} booking ${reference}?`)) return
+    // NO_SHOW uses a proper AlertDialog — do not use browser confirm().
+    if (action === 'no_show') {
+      setPendingNoShowRef(reference)
+      setNoShowDialogOpen(true)
+      return
+    }
+    if (action === 'cancel' && !confirm(`${labels[action]} booking ${reference}?`)) return
     try {
       setActionLoading(reference + action)
       const res = await fetch(`/api/hotel-admin/bookings/${reference}/status`, {
@@ -152,6 +171,32 @@ export default function HotelAdminBookingsPage() {
       }
     } catch {
       toast({ title: 'Error', description: `Failed to perform action`, variant: 'destructive' })
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  async function confirmNoShow() {
+    if (!pendingNoShowRef) return
+    const reference = pendingNoShowRef
+    setNoShowDialogOpen(false)
+    setPendingNoShowRef(null)
+    try {
+      setActionLoading(reference + 'no_show')
+      const res = await fetch(`/api/hotel-admin/bookings/${reference}/status`, {
+        method: 'PATCH', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'no_show' }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        toast({ title: 'Done', description: data.message, variant: 'success' })
+        fetchBookings()
+      } else {
+        toast({ title: 'Error', description: data.message, variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Failed to mark booking as No Show', variant: 'destructive' })
     } finally {
       setActionLoading(null)
     }
@@ -448,6 +493,31 @@ export default function HotelAdminBookingsPage() {
           </div>
         </div>
       )}
+
+      {/* NO_SHOW confirmation dialog — shared across all table rows */}
+      <AlertDialog open={noShowDialogOpen} onOpenChange={(open: boolean) => {
+        setNoShowDialogOpen(open)
+        if (!open) setPendingNoShowRef(null)
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark this booking as No Show?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This means the guest did not arrive. The reserved room(s) will be released and become available again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              onClick={confirmNoShow}
+            >
+              <UserX className="h-4 w-4 mr-1.5" />
+              Confirm No Show
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

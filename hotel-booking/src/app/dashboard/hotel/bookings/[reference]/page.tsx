@@ -21,6 +21,16 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Separator } from '@/components/ui/separator'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 type BookingStatus = 'RESERVED' | 'BOOKED' | 'EXPIRED' | 'CANCELLED' | 'CHECKED_IN' | 'CHECKED_OUT' | 'NO_SHOW'
 
@@ -58,6 +68,7 @@ export default function HotelAdminBookingDetailPage() {
   const [booking, setBooking] = useState<BookingDetail | null>(null)
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(false)
+  const [noShowOpen, setNoShowOpen] = useState(false)
 
   const reload = async () => {
     const res = await fetch(`/api/hotel-admin/bookings/${reference}`, { credentials: 'include' })
@@ -70,7 +81,9 @@ export default function HotelAdminBookingDetailPage() {
   }, [reference])
 
   async function performAction(action: string, label: string) {
-    if ((action === 'cancel' || action === 'no_show') && !confirm(`${label} this booking?`)) return
+    // NO_SHOW uses a proper AlertDialog (see JSX below) — never a bare confirm().
+    // Other destructive actions still use a simple confirm for now.
+    if (action === 'cancel' && !confirm(`${label} this booking?`)) return
     try {
       setActing(true)
       const res = await fetch(`/api/hotel-admin/bookings/${reference}/status`, {
@@ -134,19 +147,25 @@ export default function HotelAdminBookingDetailPage() {
         </div>
         <div className="flex items-center gap-2">
           {booking.status === 'BOOKED' && (
-            <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700" disabled={acting} onClick={() => performAction('check_in', 'Check in')}>
-              <LogIn className="h-4 w-4" /> Check In
-            </Button>
-          )}
-          {booking.status === 'CHECKED_IN' && (
             <>
-              <Button size="sm" className="gap-1.5" disabled={acting} onClick={() => performAction('check_out', 'Check out')}>
-                <LogOut className="h-4 w-4" /> Check Out
+              <Button size="sm" className="gap-1.5 bg-green-600 hover:bg-green-700" disabled={acting} onClick={() => performAction('check_in', 'Check in')}>
+                <LogIn className="h-4 w-4" /> Check In
               </Button>
-              <Button size="sm" variant="outline" className="gap-1.5 text-orange-600 border-orange-300 hover:bg-orange-50" disabled={acting} onClick={() => performAction('no_show', 'No Show')}>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-1.5 text-orange-600 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/30"
+                disabled={acting}
+                onClick={() => setNoShowOpen(true)}
+              >
                 <UserX className="h-4 w-4" /> No Show
               </Button>
             </>
+          )}
+          {booking.status === 'CHECKED_IN' && (
+            <Button size="sm" className="gap-1.5" disabled={acting} onClick={() => performAction('check_out', 'Check out')}>
+              <LogOut className="h-4 w-4" /> Check Out
+            </Button>
           )}
           {['RESERVED', 'BOOKED', 'CHECKED_IN'].includes(booking.status) && (
             <Button size="sm" variant="outline" className="gap-1.5 text-destructive border-red-300 hover:bg-red-50" disabled={acting} onClick={() => performAction('cancel', 'Cancel')}>
@@ -244,6 +263,32 @@ export default function HotelAdminBookingDetailPage() {
           </Card>
         </div>
       </div>
+
+      {/* NO_SHOW confirmation dialog — opens when hotel admin clicks "No Show" on a BOOKED booking */}
+      <AlertDialog open={noShowOpen} onOpenChange={setNoShowOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark this booking as No Show?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This means the guest did not arrive. The reserved room(s) will be released and become available again.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={acting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={acting}
+              className="bg-orange-600 hover:bg-orange-700 text-white"
+              onClick={async () => {
+                setNoShowOpen(false)
+                await performAction('no_show', 'No Show')
+              }}
+            >
+              <UserX className="h-4 w-4 mr-1.5" />
+              Confirm No Show
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

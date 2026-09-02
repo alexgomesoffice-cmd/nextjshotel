@@ -16,7 +16,9 @@ const ALLOWED_FROM = {
   check_in: ['BOOKED'],
   check_out: ['CHECKED_IN'],
   cancel: ['RESERVED', 'BOOKED', 'CHECKED_IN'],
-  no_show: ['CHECKED_IN'],
+  // BOOKED → NO_SHOW: guest did not arrive (no check-in yet)
+  // CHECKED_IN → NO_SHOW: kept for backward-compat (e.g. accidental check-in)
+  no_show: ['BOOKED', 'CHECKED_IN'],
 } as const
 
 const schema = z.object({
@@ -60,7 +62,7 @@ export async function PATCH(
     if (!(ALLOWED_FROM[action] as readonly string[]).includes(booking.status)) {
       return NextResponse.json({
         success: false,
-        message: `Cannot ${action.replace('_', ' ')} from ${booking.status.toLowerCase().replace('_', ' ')} status`
+        message: `Booking cannot be marked as ${action.replace(/_/g, ' ')} from its current status.`
       }, { status: 400 })
     }
 
@@ -87,7 +89,12 @@ export async function PATCH(
               where: { id: roomBooking.room_detail_id },
               data: { status: 'CHECKED_IN' },
             }))
-          : action === 'check_out'
+          : (action === 'check_out' || (action === 'no_show' && booking.status === 'CHECKED_IN'))
+          // check_out always resets to AVAILABLE.
+          // no_show from CHECKED_IN also resets to AVAILABLE because the
+          // check_in action previously set room_details.status = CHECKED_IN.
+          // no_show from BOOKED does NOT need this — BOOKED never changes
+          // room_details.status from its resting AVAILABLE state.
           ? booking.room_bookings.map((roomBooking) => prisma.room_details.update({
               where: { id: roomBooking.room_detail_id },
               data: { status: 'AVAILABLE' },

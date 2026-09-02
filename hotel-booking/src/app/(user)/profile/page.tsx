@@ -2,15 +2,32 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-  User, Mail, Phone, MapPin, Calendar, Shield, Edit2, Save, X,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Shield,
+  Edit2,
+  Save,
+  X,
   CheckCircle2,
+  CreditCard,
+  HeartPulse,
+  Globe2,
+  LockKeyhole,
 } from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -38,14 +55,35 @@ interface UserProfile {
   images: { id: number; image_url: string }[]
 }
 
+function getInitials(name: string) {
+  if (!name) return 'U'
+
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('')
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return '—'
+
+  return new Date(value).toLocaleDateString('en-BD', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+
   const { toast } = useToast()
 
-  // Edit form state
   const [form, setForm] = useState({
     name: '',
     phone: '',
@@ -58,44 +96,69 @@ export default function ProfilePage() {
     emergency_contact: '',
   })
 
+  const populateForm = (p: UserProfile) => {
+    setForm({
+      name: p.name || '',
+      phone: p.detail?.phone || '',
+      dob: p.detail?.dob
+        ? new Date(p.detail.dob).toISOString().split('T')[0]
+        : '',
+      gender: p.detail?.gender || '',
+      address: p.detail?.address || '',
+      country: p.detail?.country || 'Bangladesh',
+      nid_no: p.detail?.nid_no || '',
+      passport: p.detail?.passport || '',
+      emergency_contact: p.detail?.emergency_contact || '',
+    })
+  }
+
   const fetchProfile = useCallback(async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/user/profile', { credentials: 'include' })
+
+      const res = await fetch('/api/user/profile', {
+        credentials: 'include',
+      })
+
       const data = await res.json()
+
       if (data.success) {
         const p: UserProfile = data.data
+
         setProfile(p)
-        setForm({
-          name: p.name || '',
-          phone: p.detail?.phone || '',
-          dob: p.detail?.dob ? new Date(p.detail.dob).toISOString().split('T')[0] : '',
-          gender: p.detail?.gender || '',
-          address: p.detail?.address || '',
-          country: p.detail?.country || 'Bangladesh',
-          nid_no: p.detail?.nid_no || '',
-          passport: p.detail?.passport || '',
-          emergency_contact: p.detail?.emergency_contact || '',
-        })
+        populateForm(p)
       } else {
-        toast({ title: 'Error', description: data.message, variant: 'destructive' })
+        toast({
+          title: 'Error',
+          description: data.message,
+          variant: 'destructive',
+        })
       }
     } catch {
-      toast({ title: 'Error', description: 'Failed to load profile', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to load profile',
+        variant: 'destructive',
+      })
     } finally {
       setLoading(false)
     }
   }, [toast])
 
-  useEffect(() => { fetchProfile() }, [fetchProfile])
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
 
   const handleSave = async () => {
     try {
       setSaving(true)
+
       const res = await fetch('/api/user/profile', {
         method: 'PATCH',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           name: form.name || undefined,
           detail: {
@@ -110,16 +173,31 @@ export default function ProfilePage() {
           },
         }),
       })
+
       const data = await res.json()
+
       if (data.success) {
-        toast({ title: 'Saved', description: 'Profile updated successfully', variant: 'success' })
+        toast({
+          title: 'Profile updated',
+          description: 'Your profile has been updated successfully.',
+          variant: 'success',
+        })
+
         setEditing(false)
         await fetchProfile()
       } else {
-        toast({ title: 'Error', description: data.message, variant: 'destructive' })
+        toast({
+          title: 'Error',
+          description: data.message,
+          variant: 'destructive',
+        })
       }
     } catch {
-      toast({ title: 'Error', description: 'Failed to save profile', variant: 'destructive' })
+      toast({
+        title: 'Error',
+        description: 'Failed to save profile',
+        variant: 'destructive',
+      })
     } finally {
       setSaving(false)
     }
@@ -127,28 +205,28 @@ export default function ProfilePage() {
 
   const handleCancelEdit = () => {
     if (profile) {
-      setForm({
-        name: profile.name || '',
-        phone: profile.detail?.phone || '',
-        dob: profile.detail?.dob ? new Date(profile.detail.dob).toISOString().split('T')[0] : '',
-        gender: profile.detail?.gender || '',
-        address: profile.detail?.address || '',
-        country: profile.detail?.country || 'Bangladesh',
-        nid_no: profile.detail?.nid_no || '',
-        passport: profile.detail?.passport || '',
-        emergency_contact: profile.detail?.emergency_contact || '',
-      })
+      populateForm(profile)
     }
+
     setEditing(false)
   }
 
   if (loading) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-10 space-y-6">
-        <Skeleton className="h-8 w-48" />
-        <Card className="glass-strong"><CardContent className="pt-6 space-y-4">
-          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-10 w-full" />)}
-        </CardContent></Card>
+      <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-8">
+        <div className="animate-pulse space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+
+          <Skeleton className="h-36 w-full rounded-xl" />
+
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+            <Skeleton className="h-[500px] rounded-xl" />
+            <Skeleton className="h-[400px] rounded-xl" />
+          </div>
+        </div>
       </div>
     )
   }
@@ -156,187 +234,592 @@ export default function ProfilePage() {
   if (!profile) return null
 
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-10 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">My Profile</h1>
-          <p className="text-muted-foreground mt-1">Manage your personal information</p>
-        </div>
-        {!editing ? (
-          <Button variant="outline" className="gap-2" onClick={() => setEditing(true)}>
-            <Edit2 className="h-4 w-4" /> Edit Profile
-          </Button>
-        ) : (
-          <div className="flex gap-2">
-            <Button variant="outline" className="gap-2" onClick={handleCancelEdit} disabled={saving}>
-              <X className="h-4 w-4" /> Cancel
+    <div className="min-h-full">
+      <div className="mx-auto w-full max-w-6xl px-6 py-8 lg:px-8">
+        {/* Page heading */}
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              My Profile
+            </h1>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Manage your personal information and account details.
+            </p>
+          </div>
+
+          {!editing ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-2"
+              onClick={() => setEditing(true)}
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+              Edit Profile
             </Button>
-            <Button className="gap-2" onClick={handleSave} disabled={saving}>
-              <Save className="h-4 w-4" /> {saving ? 'Saving...' : 'Save Changes'}
+          ) : (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-2"
+                onClick={handleCancelEdit}
+                disabled={saving}
+              >
+                <X className="h-3.5 w-3.5" />
+                Cancel
+              </Button>
+
+              <Button
+                size="sm"
+                className="h-9 gap-2"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                <Save className="h-3.5 w-3.5" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Profile header */}
+        <Card className="overflow-hidden border-border/60 bg-card shadow-sm">
+          <div className="relative">
+            {/* subtle background */}
+            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-r from-primary/[0.08] via-primary/[0.03] to-transparent" />
+
+            <div className="relative flex flex-col gap-5 p-6 sm:flex-row sm:items-center">
+              {/* Avatar */}
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-xl font-semibold text-primary">
+                {getInitials(profile.name)}
+              </div>
+
+              {/* User information */}
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                    {profile.name}
+                  </h2>
+
+                  {profile.email_verified ? (
+                    <Badge
+                      variant="outline"
+                      className="gap-1 border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                      Verified
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/20 bg-amber-500/10 text-amber-400"
+                    >
+                      Email unverified
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Mail className="h-3.5 w-3.5" />
+                    {profile.email}
+                  </span>
+
+                  <span className="hidden text-border sm:inline">•</span>
+
+                  <span>
+                    Member since{' '}
+                    {new Date(profile.created_at).toLocaleDateString('en-BD', {
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Main layout */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+          {/* Main information */}
+          <div className="min-w-0 space-y-6">
+            {/* Personal Information */}
+            <Card className="border-border/60 bg-card shadow-sm">
+              <CardHeader className="border-b border-border/50 px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <User className="h-4 w-4" />
+                  </div>
+
+                  <div>
+                    <CardTitle className="text-sm font-semibold">
+                      Personal information
+                    </CardTitle>
+
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Your basic personal and contact information.
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
+                  {/* Full name */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="p-name"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Full name
+                    </Label>
+
+                    {editing ? (
+                      <Input
+                        id="p-name"
+                        value={form.name}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            name: e.target.value,
+                          }))
+                        }
+                        className="h-10"
+                      />
+                    ) : (
+                      <div className="flex min-h-10 items-center text-sm font-medium text-foreground">
+                        {profile.name || '—'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Email */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="p-email"
+                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      Email address
+                    </Label>
+
+                    <div className="flex min-h-10 items-center">
+                      <div className="flex w-full items-center justify-between gap-3 rounded-md border border-border/40 bg-muted/20 px-3 py-2.5">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {profile.email}
+                        </span>
+
+                        <LockKeyhole className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="p-phone"
+                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                      Phone number
+                    </Label>
+
+                    {editing ? (
+                      <Input
+                        id="p-phone"
+                        placeholder="+880..."
+                        value={form.phone}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            phone: e.target.value,
+                          }))
+                        }
+                        className="h-10"
+                      />
+                    ) : (
+                      <div className="flex min-h-10 items-center text-sm font-medium text-foreground">
+                        {profile.detail?.phone || '—'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Date of birth */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="p-dob"
+                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                      <Calendar className="h-3.5 w-3.5" />
+                      Date of birth
+                    </Label>
+
+                    {editing ? (
+                      <Input
+                        id="p-dob"
+                        type="date"
+                        value={form.dob}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            dob: e.target.value,
+                          }))
+                        }
+                        className="h-10"
+                      />
+                    ) : (
+                      <div className="flex min-h-10 items-center text-sm font-medium text-foreground">
+                        {formatDate(profile.detail?.dob)}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Gender */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      Gender
+                    </Label>
+
+                    {editing ? (
+                      <Select
+                        value={form.gender}
+                        onValueChange={(value) =>
+                          setForm((f) => ({
+                            ...f,
+                            gender: value,
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="h-10">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex min-h-10 items-center text-sm font-medium text-foreground">
+                        {profile.detail?.gender || '—'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Country */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="p-country"
+                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                      <Globe2 className="h-3.5 w-3.5" />
+                      Country
+                    </Label>
+
+                    {editing ? (
+                      <Input
+                        id="p-country"
+                        value={form.country}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            country: e.target.value,
+                          }))
+                        }
+                        className="h-10"
+                      />
+                    ) : (
+                      <div className="flex min-h-10 items-center text-sm font-medium text-foreground">
+                        {profile.detail?.country || 'Bangladesh'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Address */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label
+                      htmlFor="p-address"
+                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                      <MapPin className="h-3.5 w-3.5" />
+                      Address
+                    </Label>
+
+                    {editing ? (
+                      <Input
+                        id="p-address"
+                        placeholder="Your address"
+                        value={form.address}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            address: e.target.value,
+                          }))
+                        }
+                        className="h-10"
+                      />
+                    ) : (
+                      <div className="flex min-h-10 items-center text-sm font-medium text-foreground">
+                        {profile.detail?.address || '—'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Identity Documents */}
+            <Card className="border-border/60 bg-card shadow-sm">
+              <CardHeader className="border-b border-border/50 px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-500/10 text-violet-400">
+                    <CreditCard className="h-4 w-4" />
+                  </div>
+
+                  <div>
+                    <CardTitle className="text-sm font-semibold">
+                      Identity documents
+                    </CardTitle>
+
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Identification information associated with your account.
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-6">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  {/* NID */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="p-nid"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      NID number
+                    </Label>
+
+                    {editing ? (
+                      <Input
+                        id="p-nid"
+                        placeholder="National ID"
+                        value={form.nid_no}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            nid_no: e.target.value,
+                          }))
+                        }
+                        className="h-10"
+                      />
+                    ) : (
+                      <div className="flex min-h-10 items-center text-sm font-medium text-foreground">
+                        {profile.detail?.nid_no || '—'}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Passport */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="p-passport"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Passport number
+                    </Label>
+
+                    {editing ? (
+                      <Input
+                        id="p-passport"
+                        placeholder="Passport number"
+                        value={form.passport}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            passport: e.target.value,
+                          }))
+                        }
+                        className="h-10"
+                      />
+                    ) : (
+                      <div className="flex min-h-10 items-center text-sm font-medium text-foreground">
+                        {profile.detail?.passport || '—'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Sidebar */}
+          <aside className="space-y-6">
+            {/* Account status */}
+            <Card className="border-border/60 bg-card shadow-sm">
+              <CardHeader className="border-b border-border/50 px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                    <Shield className="h-4 w-4" />
+                  </div>
+
+                  <div>
+                    <CardTitle className="text-sm font-semibold">
+                      Account
+                    </CardTitle>
+
+                    <p className="text-[11px] text-muted-foreground">
+                      Your account status
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">
+                    Email status
+                  </span>
+
+                  {profile.email_verified ? (
+                    <Badge
+                      variant="outline"
+                      className="border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                    >
+                      Verified
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/20 bg-amber-500/10 text-amber-400"
+                    >
+                      Unverified
+                    </Badge>
+                  )}
+                </div>
+
+                <Separator className="my-4" />
+
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-sm text-muted-foreground">
+                    Member since
+                  </span>
+
+                  <span className="text-right text-sm font-medium text-foreground">
+                    {new Date(profile.created_at).toLocaleDateString('en-BD', {
+                      month: 'short',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Emergency contact */}
+            <Card className="border-border/60 bg-card shadow-sm">
+              <CardHeader className="border-b border-border/50 px-5 py-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-400">
+                    <HeartPulse className="h-4 w-4" />
+                  </div>
+
+                  <div>
+                    <CardTitle className="text-sm font-semibold">
+                      Emergency contact
+                    </CardTitle>
+
+                    <p className="text-[11px] text-muted-foreground">
+                      Used when assistance is needed
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+
+              <CardContent className="p-5">
+                {editing ? (
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="p-emergency"
+                      className="text-xs font-medium text-muted-foreground"
+                    >
+                      Contact information
+                    </Label>
+
+                    <Input
+                      id="p-emergency"
+                      placeholder="Name or phone number"
+                      value={form.emergency_contact}
+                      onChange={(e) =>
+                        setForm((f) => ({
+                          ...f,
+                          emergency_contact: e.target.value,
+                        }))
+                      }
+                      className="h-10"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                      Contact
+                    </p>
+
+                    <p className="mt-1.5 text-sm font-medium text-foreground">
+                      {profile.detail?.emergency_contact || 'Not provided'}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Privacy / account note */}
+            <div className="rounded-xl border border-border/60 bg-muted/[0.12] p-5">
+              <div className="flex items-start gap-3">
+                <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    Your information
+                  </p>
+
+                  <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                    Keep your contact and identification information accurate
+                    so we can provide a better experience and reach you when
+                    necessary.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        {/* Mobile save bar */}
+        {editing && (
+          <div className="mt-6 flex justify-end gap-2 border-t border-border/50 pt-5 lg:hidden">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancelEdit}
+              disabled={saving}
+            >
+              <X className="mr-2 h-3.5 w-3.5" />
+              Cancel
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saving}
+            >
+              <Save className="mr-2 h-3.5 w-3.5" />
+              {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
         )}
       </div>
-
-      {/* Account Info Card */}
-      <Card className="glass-strong">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Shield className="h-4 w-4 text-primary" /> Account Information
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-primary text-2xl font-bold">
-              {profile.name.charAt(0).toUpperCase()}
-            </div>
-            <div>
-              <p className="font-semibold text-lg">{profile.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{profile.email}</span>
-                {profile.email_verified ? (
-                  <Badge variant="outline" className="bg-green-500/20 text-green-700 border-green-500/30 text-xs">
-                    <CheckCircle2 className="h-3 w-3 mr-1" /> Verified
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-amber-500/20 text-amber-700 border-amber-500/30 text-xs">
-                    Unverified
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Member since {new Date(profile.created_at).toLocaleDateString('en-BD', { month: 'long', year: 'numeric' })}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Personal Details Card */}
-      <Card className="glass-strong">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4 text-primary" /> Personal Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {/* Full Name */}
-            <div className="space-y-1.5">
-              <Label htmlFor="p-name">Full Name</Label>
-              {editing ? (
-                <Input id="p-name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-              ) : (
-                <p className="text-sm font-medium py-2">{profile.name || '—'}</p>
-              )}
-            </div>
-
-            {/* Phone */}
-            <div className="space-y-1.5">
-              <Label htmlFor="p-phone" className="flex items-center gap-1">
-                <Phone className="h-3.5 w-3.5" /> Phone
-              </Label>
-              {editing ? (
-                <Input id="p-phone" placeholder="+880..." value={form.phone} onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))} />
-              ) : (
-                <p className="text-sm font-medium py-2">{profile.detail?.phone || '—'}</p>
-              )}
-            </div>
-
-            {/* Date of Birth */}
-            <div className="space-y-1.5">
-              <Label htmlFor="p-dob" className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" /> Date of Birth
-              </Label>
-              {editing ? (
-                <Input id="p-dob" type="date" value={form.dob} onChange={(e) => setForm((f) => ({ ...f, dob: e.target.value }))} />
-              ) : (
-                <p className="text-sm font-medium py-2">
-                  {profile.detail?.dob ? new Date(profile.detail.dob).toLocaleDateString('en-BD', { day: 'numeric', month: 'long', year: 'numeric' }) : '—'}
-                </p>
-              )}
-            </div>
-
-            {/* Gender */}
-            <div className="space-y-1.5">
-              <Label>Gender</Label>
-              {editing ? (
-                <Select value={form.gender} onValueChange={(v) => setForm((f) => ({ ...f, gender: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <p className="text-sm font-medium py-2">{profile.detail?.gender || '—'}</p>
-              )}
-            </div>
-
-            {/* Country */}
-            <div className="space-y-1.5">
-              <Label htmlFor="p-country" className="flex items-center gap-1">
-                <MapPin className="h-3.5 w-3.5" /> Country
-              </Label>
-              {editing ? (
-                <Input id="p-country" value={form.country} onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))} />
-              ) : (
-                <p className="text-sm font-medium py-2">{profile.detail?.country || 'Bangladesh'}</p>
-              )}
-            </div>
-
-            {/* Emergency Contact */}
-            <div className="space-y-1.5">
-              <Label htmlFor="p-emergency">Emergency Contact</Label>
-              {editing ? (
-                <Input id="p-emergency" placeholder="Name or phone" value={form.emergency_contact} onChange={(e) => setForm((f) => ({ ...f, emergency_contact: e.target.value }))} />
-              ) : (
-                <p className="text-sm font-medium py-2">{profile.detail?.emergency_contact || '—'}</p>
-              )}
-            </div>
-
-            {/* Address — full width */}
-            <div className="sm:col-span-2 space-y-1.5">
-              <Label htmlFor="p-address">Address</Label>
-              {editing ? (
-                <Input id="p-address" placeholder="Your address" value={form.address} onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))} />
-              ) : (
-                <p className="text-sm font-medium py-2">{profile.detail?.address || '—'}</p>
-              )}
-            </div>
-          </div>
-
-          <Separator className="my-5" />
-
-          {/* ID Documents */}
-          <div>
-            <p className="text-sm font-semibold mb-4 flex items-center gap-2">
-              <Shield className="h-4 w-4 text-primary" /> Identity Documents
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <div className="space-y-1.5">
-                <Label htmlFor="p-nid">NID Number</Label>
-                {editing ? (
-                  <Input id="p-nid" placeholder="National ID" value={form.nid_no} onChange={(e) => setForm((f) => ({ ...f, nid_no: e.target.value }))} />
-                ) : (
-                  <p className="text-sm font-medium py-2">{profile.detail?.nid_no || '—'}</p>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="p-passport">Passport Number</Label>
-                {editing ? (
-                  <Input id="p-passport" placeholder="Passport number" value={form.passport} onChange={(e) => setForm((f) => ({ ...f, passport: e.target.value }))} />
-                ) : (
-                  <p className="text-sm font-medium py-2">{profile.detail?.passport || '—'}</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   )
 }

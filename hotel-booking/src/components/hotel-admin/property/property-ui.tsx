@@ -97,65 +97,170 @@ export const SectionShell = ({
 }
 
 /* ---- PropertyHero: top hotel identity card ---- */
-export const PropertyHero = ({ hotel, pendingName }: { hotel: any; pendingName?: string }) => {
-  const stars = Math.round(Number(hotel?.detail?.star_rating ?? 0))
-  const status = hotel?.approval_status as string
+export const PropertyHero = ({
+  hotel,
+  pendingName,
+}: {
+  hotel: any;
+  pendingName?: string;
+}) => {
+  const stars = Math.round(Number(hotel?.detail?.star_rating ?? 0));
+  const status = hotel?.approval_status as string;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-emerald-500/10 via-card to-card p-6 animate-fade-in-up">
-      <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
-      <div className="relative flex flex-col md:flex-row md:items-center gap-6">
-        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shadow-lg shrink-0 overflow-hidden">
+    <div className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm animate-fade-in-up">
+      <div className="grid min-h-[250px] md:h-[270px] lg:grid-cols-[42%_58%]">
+        {/* Property Image */}
+        <div className="relative min-h-[220px] overflow-hidden md:min-h-0">
           {hotel?.images?.[0]?.image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={hotel.images[0].image_url} alt="" className="h-full w-full object-cover" />
+            <img
+              src={hotel.images[0].image_url}
+              alt={hotel?.name || "Property"}
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.03]"
+            />
           ) : (
-            <Hotel className="h-9 w-9 text-primary-foreground" />
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-2xl font-bold truncate">{hotel?.name}</h2>
-            {stars > 0 && (
-              <div className="flex items-center gap-0.5">
-                {Array.from({ length: stars }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
-                ))}
-              </div>
-            )}
-          </div>
-          {pendingName && (
-            <div className="mt-1 inline-flex items-center gap-1.5 text-xs text-amber-600 bg-amber-500/10 border border-amber-500/30 rounded-md px-2 py-0.5">
-              Pending: <span className="font-medium">{pendingName}</span>
+            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-emerald-600 to-green-700">
+              <Hotel className="h-12 w-12 text-white/80" />
             </div>
           )}
-          <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-            {hotel?.detail?.description || 'No description yet — add one from the General tab.'}
-          </p>
-          <div className="flex flex-wrap gap-x-6 gap-y-1 mt-3 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" /> {hotel?.city?.name ?? '—'}</span>
-            <span>{hotel?.hotel_type?.name ?? '—'}</span>
+
+          {/* Subtle image overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/5 via-transparent to-black/25" />
+
+          {/* Image label */}
+          <div className="absolute bottom-4 left-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-black/35 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-md">
+              <Hotel className="h-3 w-3" />
+              Property
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {status === 'PUBLISHED' ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-green-500/10 text-green-500 border border-green-500/20">
-              <CheckCircle2 className="h-3 w-3" /> LIVE
-            </span>
-          ) : status === 'SUSPENDED' ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-destructive/10 text-destructive border border-destructive/20">
-              <AlertTriangle className="h-3 w-3" /> SUSPENDED
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-secondary text-muted-foreground border border-border">
-              <Clock className="h-3 w-3" /> NOT PUBLISHED YET
-            </span>
-          )}
+
+        {/* Property Information */}
+        <div className="relative flex min-w-0 flex-col justify-between p-5 sm:p-6 lg:p-7">
+          {/* Decorative glow */}
+          <div className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-emerald-500/8 blur-3xl" />
+
+          <div className="relative min-w-0">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <div className="mb-1.5 flex items-center gap-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Property overview
+                  </span>
+                </div>
+
+                <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                  <h2 className="truncate text-xl font-bold tracking-tight text-foreground sm:text-2xl">
+                    {hotel?.name || "Unnamed Property"}
+                  </h2>
+
+                  {stars > 0 && (
+                    <div className="flex shrink-0 items-center gap-0.5 rounded-md bg-amber-500/10 px-1.5 py-1">
+                      {Array.from({ length: stars }).map((_, i) => (
+                        <Star
+                          key={i}
+                          className="h-3 w-3 fill-amber-400 text-amber-400"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status */}
+              <div className="shrink-0">
+                {status === "PUBLISHED" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-green-500/20 bg-green-500/10 px-2.5 py-1.5 text-[10px] font-semibold text-green-600">
+                    <CheckCircle2 className="h-3 w-3" />
+                    LIVE
+                  </span>
+                ) : status === "SUSPENDED" ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-destructive/20 bg-destructive/10 px-2.5 py-1.5 text-[10px] font-semibold text-destructive">
+                    <AlertTriangle className="h-3 w-3" />
+                    SUSPENDED
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1.5 text-[10px] font-semibold text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    NOT PUBLISHED
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Pending name */}
+            {pendingName && (
+              <div className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-amber-500/25 bg-amber-500/10 px-2 py-1 text-[10px] text-amber-600">
+                <Clock className="h-3 w-3" />
+                Pending:
+                <span className="font-semibold">{pendingName}</span>
+              </div>
+            )}
+
+            {/* Description */}
+            <p className="mt-3 line-clamp-2 max-w-2xl text-xs leading-5 text-muted-foreground sm:text-sm">
+              {hotel?.detail?.description ||
+                "No description yet — add one from the General tab."}
+            </p>
+
+            {/* Meta */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2">
+                <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Location
+                  </p>
+                  <p className="text-xs font-medium text-foreground">
+                    {hotel?.city?.name ?? "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="inline-flex items-center gap-2 rounded-lg border border-border/70 bg-muted/30 px-3 py-2">
+                <Hotel className="h-3.5 w-3.5 text-emerald-600" />
+
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Type
+                  </p>
+                  <p className="text-xs font-medium text-foreground">
+                    {hotel?.hotel_type?.name ?? "—"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom status line */}
+          <div className="relative mt-4 flex items-center gap-2 border-t border-border/60 pt-3">
+            <div
+              className={`h-1.5 w-1.5 rounded-full ${
+                status === "PUBLISHED"
+                  ? "bg-green-500"
+                  : status === "SUSPENDED"
+                    ? "bg-destructive"
+                    : "bg-amber-500"
+              }`}
+            />
+
+            <p className="truncate text-[11px] text-muted-foreground">
+              {status === "PUBLISHED"
+                ? "Your property is currently visible to guests."
+                : status === "SUSPENDED"
+                  ? "Your property is currently suspended."
+                  : "Complete your property setup to publish."}
+            </p>
+          </div>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 /* ---- Pending review banner (case is PENDING) ---- */
 export const PendingReviewBanner = ({

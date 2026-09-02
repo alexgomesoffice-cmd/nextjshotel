@@ -27,8 +27,6 @@ export default function HotelSettingsPage() {
     reception_no2: '',
     description: '',
     short_description: '',
-    check_in_time: '14:00',
-    check_out_time: '12:00',
     star_rating: '3',
     advance_deposit_percent: 0,
     cancellation_policy: 'FLEXIBLE',
@@ -82,8 +80,6 @@ export default function HotelSettingsPage() {
             reception_no2: hotel.detail?.reception_no2 || '',
             description: hotel.detail?.description || '',
             short_description: hotel.detail?.short_description || '',
-            check_in_time: hotel.detail?.check_in_time || '14:00',
-            check_out_time: hotel.detail?.check_out_time || '12:00',
             star_rating: hotel.detail?.star_rating?.toString() || '3',
             advance_deposit_percent: hotel.detail?.advance_deposit_percent || 0,
             cancellation_policy: hotel.detail?.cancellation_policy || 'FLEXIBLE',
@@ -136,8 +132,6 @@ export default function HotelSettingsPage() {
         reception_no2: form.reception_no2 && form.reception_no2.trim() !== '' ? form.reception_no2 : null,
         description: form.description && form.description.trim() !== '' ? form.description : null,
         short_description: form.short_description && form.short_description.trim() !== '' ? form.short_description : null,
-        check_in_time: form.check_in_time && form.check_in_time.trim() !== '' ? form.check_in_time : '14:00',
-        check_out_time: form.check_out_time && form.check_out_time.trim() !== '' ? form.check_out_time : '12:00',
         star_rating: form.star_rating ? parseFloat(form.star_rating) : 3,
         advance_deposit_percent: isNaN(parseInt(form.advance_deposit_percent as any)) ? 0 : parseInt(form.advance_deposit_percent as any),
         cancellation_policy: form.cancellation_policy || 'FLEXIBLE',
@@ -589,33 +583,6 @@ export default function HotelSettingsPage() {
         </TabsContent>
 
         <TabsContent value="policies" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Standard Times</CardTitle>
-              <CardDescription>Default check-in and check-out times for the hotel.</CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="check_in">Default Check-in Time</Label>
-                <Input
-                  id="check_in"
-                  type="time"
-                  value={form.check_in_time}
-                  onChange={e => setForm({ ...form, check_in_time: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="check_out">Default Check-out Time</Label>
-                <Input
-                  id="check_out"
-                  type="time"
-                  value={form.check_out_time}
-                  onChange={e => setForm({ ...form, check_out_time: e.target.value })}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle>Ratings & Bookings</CardTitle>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import {
-  Hotel, MapPin, Building, Star, Clock, Info, Shield, Save, CheckCircle2,
+  Hotel, MapPin, Building, Star, Info, Shield, Save, CheckCircle2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -26,8 +26,6 @@ export default function HotelDetailsPage() {
     longitude: '',
     star_rating: '',
     description: '',
-    check_in_time: '14:00',
-    check_out_time: '12:00',
     advance_deposit_percent: '0',
     cancellation_policy: 'FLEXIBLE',
     cancellation_hours: '',
@@ -62,8 +60,6 @@ export default function HotelDetailsPage() {
           longitude: h.longitude?.toString() || '',
           star_rating: d.star_rating?.toString() || '',
           description: d.description || '',
-          check_in_time: d.check_in_time || '14:00',
-          check_out_time: d.check_out_time || '12:00',
           advance_deposit_percent: d.advance_deposit_percent?.toString() || '0',
           cancellation_policy: d.cancellation_policy || 'FLEXIBLE',
           cancellation_hours: d.cancellation_hours?.toString() || '',
@@ -104,8 +100,6 @@ export default function HotelDetailsPage() {
         longitude: form.longitude ? parseFloat(form.longitude) : null,
         star_rating: form.star_rating ? parseInt(form.star_rating) : null,
         description: form.description,
-        check_in_time: form.check_in_time,
-        check_out_time: form.check_out_time,
         advance_deposit_percent: parseInt(form.advance_deposit_percent) || 0,
         cancellation_policy: form.cancellation_policy,
         cancellation_hours: form.cancellation_policy === 'CUSTOM' ? parseInt(form.cancellation_hours) : null,
@@ -308,29 +302,6 @@ export default function HotelDetailsPage() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <Separator />
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Check-in</Label>
-                  <Input
-                    type="time"
-                    value={form.check_in_time}
-                    onChange={e => setForm(f => ({ ...f, check_in_time: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Check-out</Label>
-                  <Input
-                    type="time"
-                    value={form.check_out_time}
-                    onChange={e => setForm(f => ({ ...f, check_out_time: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <Separator />
 
               <div className="space-y-1.5">
                 <Label className="flex items-center justify-between">

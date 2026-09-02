@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   Hotel, LayoutDashboard, BedDouble, Calendar, DollarSign,
   MessageSquare, Settings, LogOut, Menu, X, Bell, Users, ClipboardList,
-  UserCog, Sparkles, PackagePlus, Activity,
+  UserCog, Sparkles, PackagePlus, Activity, Clock3,
   Building,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -103,6 +103,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
       label: 'Property',
       items: [
         { icon: Hotel, label: 'Property', path: '/dashboard/hotel/listing' },
+        { icon: Clock3, label: 'Check-in Policy', path: '/dashboard/hotel/policy' },
         { icon: ClipboardList, label: 'Draft Center', path: '/dashboard/hotel/drafts', badge: draftBadge },
         { icon: PackagePlus, label: 'Master Data Requests', path: '/dashboard/hotel/master-data-requests' },
       ],

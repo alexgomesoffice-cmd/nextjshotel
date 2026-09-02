@@ -5,6 +5,12 @@ import { z } from 'zod'
 // even though .jpg/.jpeg share the same MIME type. Enforced by filename
 // extension at the API layer (see hotels/route.ts), not just here.
 const documentUrl = z.string().optional()
+const hotelTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be in HH:mm format')
+
+export const hotelPolicySchema = z.object({
+  check_in_time: hotelTime,
+  check_out_time: hotelTime,
+})
 
 // Hotel creation schema (system admin) — one big transaction:
 // hotels + hotel_details + hotel_owner_details(+images) + hotel_admins(+details+images) + hotel_documents
@@ -28,6 +34,8 @@ export const createHotelSchema = z.object({
     emergency_contact_phone1: z.string().optional(),
     emergency_contact_phone2: z.string().optional(),
     emergency_contact_email: z.string().optional(),
+    check_in_time: hotelTime.optional().default('14:00'),
+    check_out_time: hotelTime.optional().default('12:00'),
   }),
   owner: z.object({
     full_name: z.string().min(1, "Owner's full name is required"),

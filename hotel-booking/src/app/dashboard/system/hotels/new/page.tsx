@@ -73,6 +73,7 @@ export default function AddHotelPage() {
       star_rating: '', website: '', reception_no1: '', reception_no2: '',
       emergency_contact_name: '', emergency_contact_designation: '',
       emergency_contact_phone1: '', emergency_contact_phone2: '', emergency_contact_email: '',
+      check_in_time: '14:00', check_out_time: '12:00',
     },
     owner: { full_name: '', phone: '', address: '', dob: '', nid_no: '', passport: '', email: '', photo_url: '' },
     admin: {
@@ -129,6 +130,8 @@ export default function AddHotelPage() {
     if (!form.hotel.zip_code.trim()) e['hotel.zip_code'] = 'Zip code is required.'
     if (!form.details.star_rating) e['details.star_rating'] = 'Star rating is required.'
     if (!form.details.reception_no1.trim()) e['details.reception_no1'] = 'Reception No. 1 is required.'
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.details.check_in_time)) e['details.check_in_time'] = 'Enter a valid check-in time.'
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.details.check_out_time)) e['details.check_out_time'] = 'Enter a valid check-out time.'
     if (!form.owner.full_name.trim()) e['owner.full_name'] = "Owner's full name is required."
     if (!form.owner.phone.trim()) e['owner.phone'] = "Owner's phone is required."
     if (!form.owner.address.trim()) e['owner.address'] = "Owner's address is required."
@@ -250,6 +253,24 @@ export default function AddHotelPage() {
           <div className="space-y-1.5">
             <Label>Map Location</Label>
             <Input value={form.hotel.map_location} onChange={(e) => setSection('hotel', 'map_location', e.target.value)} placeholder="Google Maps link" />
+          </div>
+        </div>
+      </section>
+
+      {/* Stay Policy */}
+      <section className="space-y-3 rounded-md border border-border/60 p-4">
+        <h3 className="text-sm font-semibold">Stay Policy</h3>
+        <p className="text-xs text-muted-foreground">Standard arrival and departure times for this property.</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="check_in_time">Check-in Time</Label>
+            <Input id="check_in_time" type="time" value={form.details.check_in_time} onChange={(e) => setSection('details', 'check_in_time', e.target.value)} />
+            {err('details.check_in_time')}
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="check_out_time">Check-out Time</Label>
+            <Input id="check_out_time" type="time" value={form.details.check_out_time} onChange={(e) => setSection('details', 'check_out_time', e.target.value)} />
+            {err('details.check_out_time')}
           </div>
         </div>
       </section>

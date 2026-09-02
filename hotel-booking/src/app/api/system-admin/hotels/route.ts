@@ -234,6 +234,8 @@ export async function POST(req: NextRequest) {
           emergency_contact_phone1: details.emergency_contact_phone1,
           emergency_contact_phone2: details.emergency_contact_phone2,
           emergency_contact_email: details.emergency_contact_email,
+          check_in_time: details.check_in_time,
+          check_out_time: details.check_out_time,
         },
       })
 

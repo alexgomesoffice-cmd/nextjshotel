@@ -1,6 +1,6 @@
 // filepath: src/app/api/hotel-admin/guests/[id]/route.ts
 // GET  /api/hotel-admin/guests/[id]
-// Full guest detail for one booking. [id] = user_bookings.id (integer).
+// Full guest detail for one guest. [id] = end_user.id (integer).
 // Auth: HOTEL_ADMIN or HOTEL_SUB_ADMIN. Ownership enforced via hotel_id from JWT.
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -20,63 +20,68 @@ export async function GET(
   }
 
   const { id: idStr } = await params
-  const bookingId = parseInt(idStr, 10)
-  if (isNaN(bookingId)) {
-    return NextResponse.json({ success: false, message: 'Invalid booking id' }, { status: 400 })
+  const endUserId = parseInt(idStr, 10)
+  if (isNaN(endUserId)) {
+    return NextResponse.json({ success: false, message: 'Invalid guest id' }, { status: 400 })
   }
 
   try {
-    const booking = await prisma.user_bookings.findUnique({
-      where: { id: bookingId },
+    const user = await prisma.end_users.findUnique({
+      where: { id: endUserId },
       include: {
-        end_user: {
-          include: {
-            detail: true,
-            images: {
-              where:   { is_active: true },
-              orderBy: { created_at: 'desc' },
-              take:    1,
-            },
-          },
+        detail: true,
+        images: {
+          where:   { is_active: true },
+          orderBy: { created_at: 'desc' },
+          take:    1,
         },
-        room_bookings: {
+        bookings: {
+          where: { hotel_id: hotelId },
+          orderBy: { check_in: 'desc' },
           include: {
-            room_type: true,
-            room_variant: {
+            room_bookings: {
               include: {
-                variant_images: {
-                  orderBy: [{ is_cover: 'desc' }, { sort_order: 'asc' }],
-                  take:    1,
+                room_type: true,
+                room_variant: {
+                  include: {
+                    variant_images: {
+                      orderBy: [{ is_cover: 'desc' }, { sort_order: 'asc' }],
+                      take:    1,
+                    },
+                    bed_types: {
+                      include: { bed_type: true },
+                    },
+                    facilities: {
+                      include: { facility: true },
+                    },
+                  },
                 },
-                bed_types: {
-                  include: { bed_type: true },
-                },
-                facilities: {
-                  include: { facility: true },
+                room_detail: true,
+                nightly_rates: {
+                  orderBy: { stay_date: 'asc' },
                 },
               },
+              orderBy: { id: 'asc' },
             },
-            room_detail: true,
-            nightly_rates: {
-              orderBy: { stay_date: 'asc' },
-            },
-          },
-          orderBy: { id: 'asc' },
-        },
+          }
+        }
       },
     })
 
-    if (!booking) {
-      return NextResponse.json({ success: false, message: 'Booking not found' }, { status: 404 })
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Guest not found' }, { status: 404 })
     }
 
-    // Ownership check — hotel_id must match the authenticated hotel
-    if (booking.hotel_id !== hotelId) {
-      return NextResponse.json({ success: false, message: 'Forbidden' }, { status: 403 })
+    // A guest must have at least one qualifying booking at this hotel to be visible
+    const validStatuses = ['BOOKED', 'CHECKED_IN', 'CHECKED_OUT', 'NO_SHOW', 'CANCELLED']
+    const hotelBookings = user.bookings.filter(b => validStatuses.includes(b.status))
+
+    if (hotelBookings.length === 0) {
+      return NextResponse.json({ success: false, message: 'Guest not found at your hotel' }, { status: 404 })
     }
 
-    // Serialize to plain JSON (Decimal → number, Date → ISO string)
-    const out = {
+    // Serialize bookings
+    const mapBooking = (booking: typeof hotelBookings[0]) => ({
       id:                booking.id,
       booking_reference: booking.booking_reference,
       status:            booking.status,
@@ -89,24 +94,11 @@ export async function GET(
       created_at:        booking.created_at.toISOString(),
       reserved_until:    booking.reserved_until?.toISOString() ?? null,
 
-      guest: {
-        id:    booking.end_user.id,
-        name:  booking.end_user.name,
-        email: booking.end_user.email,
-        image: booking.end_user.images[0]?.image_url ?? null,
-        phone:   booking.end_user.detail?.phone   ?? null,
-        dob:     booking.end_user.detail?.dob?.toISOString() ?? null,
-        gender:  booking.end_user.detail?.gender  ?? null,
-        address: booking.end_user.detail?.address ?? null,
-        country: booking.end_user.detail?.country ?? null,
-      },
-
       room_bookings: booking.room_bookings.map(rb => ({
         id:             rb.id,
         price_per_night: Number(rb.price_per_night),
         nights:         rb.nights,
         subtotal:       Number(rb.subtotal),
-
         room_type_name: rb.room_type.name,
 
         room_variant: {
@@ -135,6 +127,30 @@ export async function GET(
           pricing_rule_name: nr.pricing_rule_name ?? null,
         })),
       })),
+    })
+
+    const serializedBookings = hotelBookings.map(mapBooking)
+    const currentStays = serializedBookings.filter(b => b.status === 'CHECKED_IN')
+    const upcomingStays = serializedBookings.filter(b => b.status === 'BOOKED')
+    const previousStays = serializedBookings.filter(b => b.status === 'CHECKED_OUT')
+    const bookingHistory = serializedBookings
+
+    const out = {
+      guest: {
+        id:      user.id,
+        name:    user.name,
+        email:   user.email,
+        image:   user.images[0]?.image_url ?? null,
+        phone:   user.detail?.phone   ?? null,
+        dob:     user.detail?.dob?.toISOString() ?? null,
+        gender:  user.detail?.gender  ?? null,
+        address: user.detail?.address ?? null,
+        country: user.detail?.country ?? null,
+      },
+      currentStays,
+      upcomingStays,
+      previousStays,
+      bookingHistory
     }
 
     return NextResponse.json({ success: true, data: out })

@@ -48,8 +48,8 @@ export default function ExpandableDescription({
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl transition-[height] duration-200 ease-out ${canExpand ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60' : ''}`}
-      style={{ height: isExpanded ? 'auto' : `${collapsedHeight}px` }}
+      className={`relative flex flex-col overflow-hidden rounded-2xl transition-[max-height] duration-1000 ease-in-out ${canExpand ? 'cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60' : ''}`}
+      style={{ maxHeight: isExpanded ? '200rem' : `${collapsedHeight}px` }}
       role={canExpand ? 'button' : undefined}
       tabIndex={canExpand ? 0 : undefined}
       aria-expanded={canExpand ? isExpanded : undefined}

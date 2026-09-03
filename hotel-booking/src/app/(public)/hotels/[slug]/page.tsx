@@ -16,6 +16,7 @@ import ExpandableDescription from "@/components/hotel/expandable-description";
 import HotelLocationMap from "@/components/hotel/hotel-location-map";
 import { HOTEL_LOCATION_COLLAPSED_HEIGHT } from "@/components/hotel/hotel-location-section";
 import { resolvePriceForDate, type ResolvedPrice } from "@/lib/pricing-resolver";
+import SectionNavigation from "@/components/hotel/section-navigation";
 
 // Local type that satisfies resolvePriceForDate's PricingRuleLike parameter.
 // Derived from the Prisma payload shape — avoids `as any` while keeping the
@@ -219,8 +220,21 @@ export default async function HotelDetailPage({
         <div className="mb-12">
           <HotelImagesGalleryClient images={hotel.images} />
         </div>
+
+        {/* Section Navigation Strip */}
+        <SectionNavigation
+          sections={[
+            { id: 'rooms-booking', label: 'Rooms & Booking' },
+            { id: 'overview', label: 'Overview' },
+            { id: 'hotel-amenities', label: 'Hotel Amenities' },
+            { id: 'check-in-hour', label: 'Check-in Hour' },
+            { id: 'contact', label: 'Contact' },
+            { id: 'reviews', label: 'Review' },
+          ]}
+        />
+
         {/* Available Rooms + Booking Sidebar */}
-        <div id="rooms" className="pt-12 border-t border-border/50 scroll-mt-28">
+        <div id="rooms-booking" className="pt-12 border-t border-border/50 scroll-mt-24">
           {hotel.room_types && hotel.room_types.length > 0 ? (
             <RoomSelector
               roomTypes={hotel.room_types.map((room) => {
@@ -278,21 +292,24 @@ export default async function HotelDetailPage({
         {/* About, map, amenities and policies */}
         <div className="space-y-12 mb-12">
 
-          {/* Description and map remain separate components; this grid owns their layout. */}
-          <div className="grid items-start gap-8 pt-12 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
-            <section className="glass rounded-2xl shadow-md">
-              <ExpandableDescription title="About this property" text={hotel.detail?.description} collapsedHeight={HOTEL_LOCATION_COLLAPSED_HEIGHT} />
-            </section>
+          {/* Overview Section */}
+          <section id="overview" className="scroll-mt-24">
+            {/* Description and map remain separate components; this grid owns their layout. */}
+            <div className="grid items-start gap-8 pt-12 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+              <div className="glass rounded-2xl shadow-md">
+                <ExpandableDescription title="About this property" text={hotel.detail?.description} collapsedHeight={HOTEL_LOCATION_COLLAPSED_HEIGHT} />
+              </div>
 
-            <section className="flex flex-col gap-4 lg:sticky lg:top-28" style={{ height: HOTEL_LOCATION_COLLAPSED_HEIGHT }}>
-              <h2 className="text-2xl font-bold">Hotel location</h2>
-              <HotelLocationMap mapUrl={hotel.map_location} className="min-h-0 flex-1" />
-            </section>
-          </div>
+              <div className="flex flex-col gap-4 lg:sticky lg:top-28" style={{ height: HOTEL_LOCATION_COLLAPSED_HEIGHT }}>
+                <h2 className="text-2xl font-bold">Hotel location</h2>
+                <HotelLocationMap mapUrl={hotel.map_location} className="min-h-0 flex-1" />
+              </div>
+            </div>
+          </section>
 
-          {/* Amenities */}
+          {/* Hotel Amenities Section */}
           {allAmenities.length > 0 && (
-            <section className="glass p-6 rounded-2xl shadow-md">
+            <section id="hotel-amenities" className="glass p-6 rounded-2xl shadow-md scroll-mt-24">
               <h2 className="text-2xl font-bold mb-6 ">Property Amenities</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-4 gap-x-6">
                 {allAmenities.map((amenity, idx) => (
@@ -305,181 +322,167 @@ export default async function HotelDetailPage({
             </section>
           )}
 
-          {/* Contact & Web */}
-          {/* Things to know */}
-{/* Things to know */}
-{/* Things to know */}
-{(
-  hotel.detail?.check_in_time ||
-  hotel.detail?.check_out_time ||
-  hotel.policies.length > 0 ||
-  hotel.detail?.reception_no1 ||
-  hotel.detail?.reception_no2 ||
-  hotel.detail?.website
-) && (
-  <section className="glass rounded-3xl p-8 shadow-md">
-    <h2 className="text-2xl font-bold mb-8">Things to know</h2>
+          {/* Check-in Hour Section */}
+          {(hotel.detail?.check_in_time || hotel.detail?.check_out_time) && (
+            <section id="check-in-hour" className="glass rounded-3xl p-8 shadow-md scroll-mt-24">
+              <div className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Clock className="h-5 w-5" />
+                  </div>
 
-    {/* Top Cards */}
-    <div className="grid gap-6 lg:grid-cols-2">
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      Check-in & Check-out
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Hotel timings
+                    </p>
+                  </div>
+                </div>
 
-      {/* Check In / Out */}
-      {(hotel.detail?.check_in_time || hotel.detail?.check_out_time) && (
-        <div className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Clock className="h-5 w-5" />
-            </div>
+                <div className="space-y-4">
+                  {hotel.detail?.check_in_time && (
+                    <div className="flex items-center justify-between border-b border-border/40 pb-3">
+                      <span className="text-muted-foreground">
+                        Check-in
+                      </span>
 
-            <div>
-              <h3 className="font-semibold text-lg">
-                Check-in & Check-out
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Hotel timings
-              </p>
-            </div>
-          </div>
+                      <span className="font-semibold">
+                        {formatTime12(hotel.detail.check_in_time)}
+                      </span>
+                    </div>
+                  )}
 
-          <div className="space-y-4">
-            {hotel.detail?.check_in_time && (
-              <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                <span className="text-muted-foreground">
-                  Check-in
-                </span>
+                  {hotel.detail?.check_out_time && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">
+                        Check-out
+                      </span>
 
-                <span className="font-semibold">
-                  {formatTime12(hotel.detail.check_in_time)}
-                </span>
+                      <span className="font-semibold">
+                        {formatTime12(hotel.detail.check_out_time)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
-
-            {hotel.detail?.check_out_time && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">
-                  Check-out
-                </span>
-
-                <span className="font-semibold">
-                  {formatTime12(hotel.detail.check_out_time)}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+            </section>
+          )}
 
       {/* Contact */}
       {(hotel.detail?.reception_no1 ||
         hotel.detail?.reception_no2 ||
         hotel.detail?.website) && (
-        <div className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
-          <div className="mb-5 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-              <Phone className="h-5 w-5" />
-            </div>
+        <section id="contact" className="glass rounded-3xl p-8 shadow-md scroll-mt-24">
+          <div className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg">
+                <div className="mb-5 flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Phone className="h-5 w-5" />
+                  </div>
 
-            <div>
-              <h3 className="font-semibold text-lg">
-                Contact
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Reach the property
-              </p>
-            </div>
-          </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      Contact
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Reach the property
+                    </p>
+                  </div>
+                </div>
 
-          <div className="space-y-4">
+                <div className="space-y-4">
 
-            {hotel.detail?.reception_no1 && (
-              <a
-                href={`tel:${hotel.detail.reception_no1}`}
-                className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
-              >
-                <span className="text-muted-foreground">
-                  Reception
-                </span>
+                  {hotel.detail?.reception_no1 && (
+                    <a
+                      href={`tel:${hotel.detail.reception_no1}`}
+                      className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      <span className="text-muted-foreground">
+                        Reception
+                      </span>
 
-                <span className="font-medium">
-                  {hotel.detail.reception_no1}
-                </span>
-              </a>
-            )}
+                      <span className="font-medium">
+                        {hotel.detail.reception_no1}
+                      </span>
+                    </a>
+                  )}
 
-            {hotel.detail?.reception_no2 && (
-              <a
-                href={`tel:${hotel.detail.reception_no2}`}
-                className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
-              >
-                <span className="text-muted-foreground">
-                  Alternate
-                </span>
+                  {hotel.detail?.reception_no2 && (
+                    <a
+                      href={`tel:${hotel.detail.reception_no2}`}
+                      className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      <span className="text-muted-foreground">
+                        Alternate
+                      </span>
 
-                <span className="font-medium">
-                  {hotel.detail.reception_no2}
-                </span>
-              </a>
-            )}
+                      <span className="font-medium">
+                        {hotel.detail.reception_no2}
+                      </span>
+                    </a>
+                  )}
 
-            {hotel.detail?.website && (
-              <a
-                href={
-                  hotel.detail.website.startsWith("http")
-                    ? hotel.detail.website
-                    : `https://${hotel.detail.website}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
-              >
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <Globe className="h-4 w-4" />
-                  Website
-                </span>
+                  {hotel.detail?.website && (
+                    <a
+                      href={
+                        hotel.detail.website.startsWith("http")
+                          ? hotel.detail.website
+                          : `https://${hotel.detail.website}`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between rounded-xl border border-border/50 px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      <span className="flex items-center gap-2 text-muted-foreground">
+                        <Globe className="h-4 w-4" />
+                        Website
+                      </span>
 
-                <span className="truncate max-w-[180px] font-medium text-primary">
-                  {hotel.detail.website.replace(/^https?:\/\//, "")}
-                </span>
-              </a>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-
-    {/* Policies — replaces the old single cancellation_policy string.
-        The current schema stores policies as named records on the hotel. */}
-    {hotel.policies.length > 0 && (
-      <div className="mt-6 space-y-4">
-        {hotel.policies.map((policy) => (
-          <div
-            key={policy.id}
-            className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg"
-          >
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                <Shield className="h-5 w-5" />
+                      <span className="truncate max-w-[180px] font-medium text-primary">
+                        {hotel.detail.website.replace(/^https?:\/\//, "")}
+                      </span>
+                    </a>
+                  )}
+                </div>
               </div>
+            </section>
+          )}
 
-              <div>
-                <h3 className="font-semibold text-lg">{policy.name}</h3>
-                <p className="text-sm text-muted-foreground">Hotel policy</p>
-              </div>
+          {/* Policies */}
+          {hotel.policies.length > 0 && (
+            <div className="space-y-4">
+              {hotel.policies.map((policy) => (
+                <div
+                  key={policy.id}
+                  className="rounded-2xl border border-border/60 bg-background/40 p-6 transition-all hover:border-primary/40 hover:shadow-lg glass"
+                >
+                  <div className="mb-5 flex items-center gap-3">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Shield className="h-5 w-5" />
+                    </div>
+
+                    <div>
+                      <h3 className="font-semibold text-lg">{policy.name}</h3>
+                      <p className="text-sm text-muted-foreground">Hotel policy</p>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-border/50 bg-background/50 p-5">
+                    <p className="leading-7 text-muted-foreground whitespace-pre-wrap">
+                      {policy.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
             </div>
+          )}
 
-            <div className="rounded-xl border border-border/50 bg-background/50 p-5">
-              <p className="leading-7 text-muted-foreground whitespace-pre-wrap">
-                {policy.description}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </section>
-
-
-)}
+          {/* Reviews Section - Placeholder for future implementation */}
+          <section id="reviews" className="scroll-mt-24">
+            {/* This section is reserved for future reviews implementation */}
+            {/* No UI is rendered here until reviews feature is added */}
+          </section>
         </div>
       </div>
     </div>

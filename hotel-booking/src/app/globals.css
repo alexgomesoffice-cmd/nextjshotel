@@ -80,6 +80,10 @@
    BASE
 ========================= */
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   * {
     border-color: hsl(var(--color-border));
   }

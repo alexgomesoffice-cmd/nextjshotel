@@ -10,7 +10,7 @@ import { prisma } from '@/lib/prisma'
 // ─────────────────────────────────────────────────────────────────────────
 
 // Which live table+field a HOTEL/HOTEL_OWNER/HOTEL_ADMIN field_name belongs to.
-const HOTEL_TABLE_FIELDS = new Set(['name', 'email', 'address', 'zip_code', 'map_location'])
+const HOTEL_TABLE_FIELDS = new Set(['name', 'email', 'address', 'zip_code'])
 const HOTEL_DETAILS_FIELDS = new Set([
   'description', 'reception_no1', 'reception_no2', 'star_rating', 'website',
   'check_in_time', 'check_out_time', 'advance_deposit_percent',

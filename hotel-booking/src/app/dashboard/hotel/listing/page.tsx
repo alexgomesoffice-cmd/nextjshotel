@@ -52,7 +52,6 @@ function fieldsFor(key: SectionKey, hotel: any): FieldDef[] {
       return [
         { entityType: 'HOTEL', entityId: null, fieldName: 'address', label: 'Full Address', currentValue: hotel?.address ?? '', multiline: true },
         { entityType: 'HOTEL', entityId: null, fieldName: 'zip_code', label: 'Zip / Postal Code', currentValue: hotel?.zip_code ?? '' },
-        { entityType: 'HOTEL', entityId: null, fieldName: 'map_location', label: 'Map Location', currentValue: hotel?.map_location ?? '', helper: 'Paste a Google Maps link.' },
         { entityType: 'HOTEL', entityId: null, fieldName: 'city', label: 'City', currentValue: hotel?.city?.name ?? '', locked: true, helper: 'Contact System Admin to change.' },
       ]
     case 'contacts':
@@ -305,9 +304,6 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
           <Row label="Zip Code" value={hotel?.zip_code} pending={p('HOTEL', 'zip_code')} />
           <div className="col-span-2">
             <Row label="Address" value={hotel?.address} pending={p('HOTEL', 'address')} />
-          </div>
-          <div className="col-span-2">
-            <Row label="Map Location" value={hotel?.map_location} pending={p('HOTEL', 'map_location')} />
           </div>
         </div>
       )

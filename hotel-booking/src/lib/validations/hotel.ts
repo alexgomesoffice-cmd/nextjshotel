@@ -6,6 +6,16 @@ import { z } from 'zod'
 // extension at the API layer (see hotels/route.ts), not just here.
 const documentUrl = z.string().optional()
 const hotelTime = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be in HH:mm format')
+const mapEmbedUrlMessage = 'Please paste the Google Maps Embed URL. In Google Maps, use Share → Embed a map and copy the embed URL.'
+const mapEmbedUrl = z.string().url('Please enter a valid URL.').refine((value) => {
+  if (!value) return true
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' && url.hostname === 'www.google.com' && url.pathname === '/maps/embed'
+  } catch {
+    return false
+  }
+}, mapEmbedUrlMessage).optional().or(z.literal(''))
 
 export const hotelPolicySchema = z.object({
   check_in_time: hotelTime,
@@ -22,7 +32,7 @@ export const createHotelSchema = z.object({
     city_id: z.number().int().positive('City is required'),
     hotel_type_id: z.number().int().positive('Hotel type is required'),
     zip_code: z.string().min(1, 'Zip code is required'),
-    map_location: z.string().max(2000, 'Map location URL is too long').optional().or(z.literal('')),
+    map_location: mapEmbedUrl,
   }),
   details: z.object({
     star_rating: z.number().min(1).max(5, 'Star rating is required'),
@@ -80,7 +90,7 @@ export const updateHotelSchema = z.object({
   city_id: z.number().int().positive().optional(),
   hotel_type_id: z.number().int().positive().optional(),
   zip_code: z.string().optional(),
-  map_location: z.string().max(2000, 'Map location URL is too long').optional().or(z.literal('')),
+  map_location: mapEmbedUrl,
   star_rating: z.number().min(1).max(5).optional(),
   website: z.string().optional(),
   reception_no1: z.string().optional(),

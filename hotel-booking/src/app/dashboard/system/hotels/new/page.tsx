@@ -130,6 +130,7 @@ export default function AddHotelPage() {
     if (!form.hotel.zip_code.trim()) e['hotel.zip_code'] = 'Zip code is required.'
     if (!form.details.star_rating) e['details.star_rating'] = 'Star rating is required.'
     if (!form.details.reception_no1.trim()) e['details.reception_no1'] = 'Reception No. 1 is required.'
+    if (form.hotel.map_location && !isGoogleMapsEmbedUrl(form.hotel.map_location)) e['hotel.map_location'] = 'Please paste the Google Maps Embed URL. In Google Maps, use Share → Embed a map and copy the embed URL.'
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.details.check_in_time)) e['details.check_in_time'] = 'Enter a valid check-in time.'
     if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.details.check_out_time)) e['details.check_out_time'] = 'Enter a valid check-out time.'
     if (!form.owner.full_name.trim()) e['owner.full_name'] = "Owner's full name is required."
@@ -141,6 +142,13 @@ export default function AddHotelPage() {
     if (form.admin.admin_password.length < 6) e['admin.admin_password'] = 'Password must be at least 6 characters.'
     setErrors(e)
     return Object.keys(e).length === 0
+  }
+
+  const isGoogleMapsEmbedUrl = (value: string) => {
+    try {
+      const url = new URL(value)
+      return url.protocol === 'https:' && url.hostname === 'www.google.com' && url.pathname === '/maps/embed'
+    } catch { return false }
   }
 
   const handleSubmit = async () => {
@@ -250,9 +258,11 @@ export default function AddHotelPage() {
             <Label>Website</Label>
             <Input value={form.details.website} onChange={(e) => setSection('details', 'website', e.target.value)} />
           </div>
-          <div className="space-y-1.5">
-            <Label>Map Location</Label>
-            <Input value={form.hotel.map_location} onChange={(e) => setSection('hotel', 'map_location', e.target.value)} placeholder="Google Maps link" />
+          <div className="col-span-2 space-y-1.5">
+            <Label>Google Maps Embed URL</Label>
+            <Input value={form.hotel.map_location} onChange={(e) => setSection('hotel', 'map_location', e.target.value)} placeholder="https://www.google.com/maps/embed?pb=..." />
+            <p className="text-xs text-muted-foreground">Open the hotel in Google Maps → Share → Embed a map → copy the map URL and paste it here.</p>
+            {err('hotel.map_location')}
           </div>
         </div>
       </section>

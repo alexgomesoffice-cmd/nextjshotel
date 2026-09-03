@@ -13,6 +13,8 @@ import {
 import HotelImagesGalleryClient from "./hotel-images-client";
 import RoomSelector from "@/components/booking/room-selector";
 import ExpandableDescription from "@/components/hotel/expandable-description";
+import HotelLocationMap from "@/components/hotel/hotel-location-map";
+import { HOTEL_LOCATION_COLLAPSED_HEIGHT } from "@/components/hotel/hotel-location-section";
 import { resolvePriceForDate, type ResolvedPrice } from "@/lib/pricing-resolver";
 
 // Local type that satisfies resolvePriceForDate's PricingRuleLike parameter.
@@ -273,17 +275,20 @@ export default async function HotelDetailPage({
             </div>
           )}
         </div>
-        {/* About, Amenities, Policies — full width, no sidebar */}
+        {/* About, map, amenities and policies */}
         <div className="space-y-12 mb-12">
 
-          {/* Description */}
-          <section className="glass mt-24 rounded-2xl shadow-md">
-            <h2 className="text-2xl font-bold m-6 rounded ">About this property</h2>
-            <ExpandableDescription
-              text={hotel.detail?.description}
-              maxLines={3}
-            />
-          </section>
+          {/* Description and map remain separate components; this grid owns their layout. */}
+          <div className="grid items-start gap-8 pt-12 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+            <section className="glass rounded-2xl shadow-md">
+              <ExpandableDescription title="About this property" text={hotel.detail?.description} collapsedHeight={HOTEL_LOCATION_COLLAPSED_HEIGHT} />
+            </section>
+
+            <section className="flex flex-col gap-4 lg:sticky lg:top-28" style={{ height: HOTEL_LOCATION_COLLAPSED_HEIGHT }}>
+              <h2 className="text-2xl font-bold">Hotel location</h2>
+              <HotelLocationMap mapUrl={hotel.map_location} className="min-h-0 flex-1" />
+            </section>
+          </div>
 
           {/* Amenities */}
           {allAmenities.length > 0 && (

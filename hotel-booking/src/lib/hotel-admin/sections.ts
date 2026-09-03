@@ -22,7 +22,7 @@ export const SECTION_META: Record<SectionKey, { title: string; description: stri
 
 const HOTEL_FIELD_GROUPS: Record<string, SectionKey> = {
   name: 'general', star_rating: 'general', description: 'general',
-  address: 'location', zip_code: 'location', map_location: 'location',
+  address: 'location', zip_code: 'location',
   email: 'contacts', reception_no1: 'contacts', reception_no2: 'contacts', website: 'contacts',
   emergency_contact_name: 'contacts', emergency_contact_designation: 'contacts',
   emergency_contact_phone1: 'contacts', emergency_contact_phone2: 'contacts', emergency_contact_email: 'contacts',
@@ -41,7 +41,7 @@ export function sectionKeyFor(entityType: string, fieldName: string | null): Sec
 /** Human label for a field, keyed by entity_type:field_name. */
 export const FIELD_LABELS: Record<string, string> = {
   'HOTEL:name': 'Hotel Name', 'HOTEL:star_rating': 'Star Rating', 'HOTEL:description': 'Description',
-  'HOTEL:address': 'Full Address', 'HOTEL:zip_code': 'Zip / Postal Code', 'HOTEL:map_location': 'Map Location',
+  'HOTEL:address': 'Full Address', 'HOTEL:zip_code': 'Zip / Postal Code',
   'HOTEL:email': 'Official Email', 'HOTEL:reception_no1': 'Reception Number 1', 'HOTEL:reception_no2': 'Reception Number 2',
   'HOTEL:website': 'Website', 'HOTEL:emergency_contact_name': 'Emergency Contact Name',
   'HOTEL:emergency_contact_designation': 'Emergency Contact Designation', 'HOTEL:emergency_contact_phone1': 'Emergency Phone 1',

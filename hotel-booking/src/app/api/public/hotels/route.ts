@@ -418,12 +418,17 @@ export async function GET(req: NextRequest) {
     const formattedHotels = hotels.map((hotel) => {
       const rts = hotel.room_types as Array<Record<string, unknown>>;
 
-      const allVariantPrices: number[] = [];
+      let startingPricing: SearchVariantPrice | null = null;
       for (const rt of rts) {
         const variants = (rt.room_variants as Array<Record<string, unknown>> | undefined) ?? [];
-        for (const v of variants) allVariantPrices.push(resolveSearchPrice(v).effectivePrice);
+        for (const v of variants) {
+          const pricing = resolveSearchPrice(v);
+          if (!startingPricing || pricing.effectivePrice < startingPricing.effectivePrice) {
+            startingPricing = pricing;
+          }
+        }
       }
-      const startingPrice = allVariantPrices.length > 0 ? Math.min(...allVariantPrices) : null;
+      const startingPrice = startingPricing?.effectivePrice ?? null;
 
       const base = {
         id:             hotel.id,
@@ -435,6 +440,7 @@ export async function GET(req: NextRequest) {
         guest_rating:   hotel.detail?.guest_rating ? Number(hotel.detail.guest_rating) : null,
         cover_image:    hotel.images[0]?.image_url || null,
         starting_price: startingPrice,
+        starting_discount: startingPricing?.discount ?? null,
         address:        hotel.address,
         amenities:      (hotel.hotel_amenities || [])
           .slice(0, 3)

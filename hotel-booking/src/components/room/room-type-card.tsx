@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { getAmenityIcon } from "@/lib/amenity-icons";
-import { cn } from "@/lib/utils";
+import { cn, formatDiscountLabel } from "@/lib/utils";
 import {
   canVariantAccommodate,
   getRecommendedQuantity,
@@ -209,8 +209,8 @@ function VariantRow({
           </p>
           <p className="text-[11px] text-muted-foreground">per night</p>
           {variant.pricing.discount && (
-            <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-              {variant.pricing.discount.type === 'PERCENTAGE' ? `${variant.pricing.discount.value}% OFF` : `TK ${variant.pricing.discount.amount.toLocaleString()} OFF`}
+            <span className="inline-block mt-1 max-w-full text-[10px] font-semibold leading-tight px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+              {formatDiscountLabel(variant.pricing.discount)}
             </span>
           )}
         </div>
@@ -341,8 +341,8 @@ const RoomTypeCard = ({
                   <span className="text-sm font-normal text-muted-foreground ml-1">/ night</span>
                 </p>
                 {cheapestVariant?.pricing.discount && (
-                  <span className="inline-block mt-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                    {cheapestVariant.pricing.discount.type === 'PERCENTAGE' ? `${cheapestVariant.pricing.discount.value}% OFF` : `TK ${cheapestVariant.pricing.discount.amount.toLocaleString()} OFF`}
+                  <span className="inline-block mt-1 max-w-[220px] text-[10px] font-semibold leading-tight px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                    {formatDiscountLabel(cheapestVariant.pricing.discount)}
                   </span>
                 )}
               </div>

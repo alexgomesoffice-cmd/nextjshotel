@@ -7,7 +7,7 @@ import {
   Users, BedDouble, ArrowUpRight,
   CheckCircle2, AlertTriangle, Info,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn, formatDiscountLabel } from '@/lib/utils';
 import FavoriteButton from './favorite-button';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -54,6 +54,7 @@ export interface HotelCardProps {
   cover_image:       string | null;
   address?:          string;
   starting_price?:   number;
+  starting_discount?: RoomTypeStrip['discount'];
   room_types?:       RoomTypeStrip[];
   total_room_types?: number;
   amenities?:        string[];
@@ -216,10 +217,8 @@ function RoomRow({
 
   <div className="flex items-center justify-end gap-2">
     {hasDiscount && rt.discount && (
-      <span className="text-[9px] font-semibold text-primary">
-        {rt.discount.type === 'PERCENTAGE'
-          ? `${rt.discount.value}% OFF`
-          : `TK ${rt.discount.amount.toLocaleString()} OFF`}
+      <span className="max-w-[150px] text-right text-[9px] font-semibold leading-tight text-primary">
+        {formatDiscountLabel(rt.discount)}
       </span>
     )}
 
@@ -289,6 +288,7 @@ const HotelCard = ({
   cover_image,
   address,
   starting_price,
+  starting_discount,
   room_types,
   total_room_types,
   has_dates,
@@ -408,6 +408,11 @@ const HotelCard = ({
                   </p>
                 ) : (
                   <p className="text-[11px] text-white/70">N/A</p>
+                )}
+                {starting_discount && starting_discount.amount > 0 && (
+                  <p className="mt-1 max-w-[180px] text-[10px] font-semibold leading-tight text-white/85">
+                    {formatDiscountLabel(starting_discount)}
+                  </p>
                 )}
               </div>
             </div>

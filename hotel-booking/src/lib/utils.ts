@@ -14,6 +14,21 @@ export function formatBDT(amount: number | string): string {
   }).format(Number(amount))
 }
 
+export function formatDiscountLabel(discount: {
+  name?: string | null
+  type: 'PERCENTAGE' | 'FIXED_AMOUNT'
+  value: number
+  amount: number
+}): string {
+  const amountLabel = discount.type === 'PERCENTAGE'
+    ? `${discount.value}% OFF`
+    : `TK ${discount.amount.toLocaleString()} OFF`
+
+  return discount.name?.trim()
+    ? `${discount.name} ${amountLabel}`
+    : amountLabel
+}
+
 export function slugify(text: string): string {
   return text
     .toLowerCase()

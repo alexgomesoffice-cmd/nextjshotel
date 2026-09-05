@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getLenis } from "@/components/ui/SmoothScroll";
+import { formatDiscountLabel } from "@/lib/utils";
 
 interface RoomImage {
   id: number;
@@ -667,7 +668,7 @@ const RoomDetailModal = ({
                       "
                     >
                       <Tag className="h-3 w-3" />
-                      {room.pricing.discount.name}
+                      {formatDiscountLabel(room.pricing.discount)}
                     </div>
                   )}
                 </div>

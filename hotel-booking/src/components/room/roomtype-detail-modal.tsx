@@ -18,6 +18,7 @@ import {
 import { getAmenityIcon } from "@/lib/amenity-icons";
 import { Button } from "@/components/ui/button";
 import { getLenis } from "@/components/ui/SmoothScroll";
+import { formatDiscountLabel } from "@/lib/utils";
 
 interface RoomTypeImage {
   id: number;
@@ -435,6 +436,11 @@ useEffect(() => {
               <p className="mt-0.5 text-xs text-muted-foreground">
                 per night
               </p>
+              {cheapestVariant?.pricing.discount && (
+                <p className="mt-1 max-w-[240px] text-[10px] font-semibold leading-tight text-primary">
+                  {formatDiscountLabel(cheapestVariant.pricing.discount)}
+                </p>
+              )}
             </div>
 
             <Button

@@ -206,7 +206,7 @@ export default function RoomSelector({
     return allPrices.length > 0 ? Math.min(...allPrices) : undefined;
   }, [roomTypes]);
 
-  // Calculate if the selected rooms can accommodate the guests AND respect room limit
+  // Calculate whether the selected rooms can accommodate the guests.
   const selectionValidation = useMemo(() => {
     if (selectedVariants.length === 0) {
       return { isValid: false, message: "" };
@@ -228,14 +228,6 @@ export default function RoomSelector({
       }
     }
 
-    // Check room limit first (this is a hard constraint from search)
-    if (requestedRooms !== null && requestedRooms !== undefined && totalRooms > requestedRooms) {
-      return {
-        isValid: false,
-        message: `You selected ${totalRooms} room${totalRooms !== 1 ? 's' : ''}, but your search allows up to ${requestedRooms}. Select fewer rooms.`,
-      };
-    }
-
     // Then check guest capacity
     if (totalCapacity < sidebarGuests) {
       return {
@@ -244,8 +236,8 @@ export default function RoomSelector({
       };
     }
 
-    return { isValid: true, message: "" };
-  }, [selectedVariants, sidebarGuests, requestedRooms, roomTypes]);
+    return { isValid: true, message: "", totalRooms };
+  }, [selectedVariants, sidebarGuests, roomTypes]);
 
   return (
     <div>

@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     const [
       hotelsTotal,
       hotelsPublished,
-      hotelsDraft,
+      hotelsUnpublished,
       hotelsSuspended,
       usersTotal,
       usersBlocked,
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       // Hotels
       prisma.hotels.count({ where: { deleted_at: null } }),
       prisma.hotels.count({ where: { deleted_at: null, approval_status: 'PUBLISHED' } }),
-      prisma.hotels.count({ where: { deleted_at: null, approval_status: 'DRAFT' } }),
+      prisma.hotels.count({ where: { deleted_at: null, approval_status: 'UNPUBLISHED' } }),
       prisma.hotels.count({ where: { deleted_at: null, approval_status: 'SUSPENDED' } }),
 
       // End users
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
         hotels: {
           total: hotelsTotal,
           published: hotelsPublished,
-          draft: hotelsDraft,
+          draft: hotelsUnpublished,
           suspended: hotelsSuspended,
         },
         users: {

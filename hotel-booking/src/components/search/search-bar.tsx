@@ -16,9 +16,16 @@ import {
   Plus,
   Hotel,
   Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import {
+  getBookingWindowEnd,
+  getBookingWindowStart,
+  getMaxCheckOutDate,
+  validateBookingDateRange,
+} from "@/lib/date-policy";
 
 export interface SearchSuggestion {
   id: number;
@@ -36,6 +43,7 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
 
   const [searchLocation, setSearchLocation] = useState("");
   const [date, setDate] = useState<DateRange | undefined>(undefined);
+  const [dateValidationError, setDateValidationError] = useState<string | null>(null);
   const [guests, setGuests] = useState(1);
   const [rooms, setRooms] = useState(1);
   const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay>(null);
@@ -72,6 +80,15 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
     } else {
       setDate({ from: new Date(), to: addDays(new Date(), 3) });
     }
+
+    setDateValidationError(
+      queryCheckIn && queryCheckOut
+        ? (() => {
+            const validation = validateBookingDateRange(queryCheckIn, queryCheckOut);
+            return validation.isValid ? null : validation.message;
+          })()
+        : null,
+    );
 
     if (Number.isFinite(queryGuests) && queryGuests > 0) setGuests(queryGuests);
     if (Number.isFinite(queryRooms) && queryRooms > 0) setRooms(queryRooms);
@@ -199,7 +216,28 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
     setActiveOverlay(null);
   };
 
+  const handleDateChange = (newDate: DateRange | undefined) => {
+    setDate(newDate);
+    setDateValidationError(null);
+
+    if (newDate?.from && newDate?.to) {
+      const validation = validateBookingDateRange(newDate.from, newDate.to);
+      if (!validation.isValid) setDateValidationError(validation.message);
+    }
+  };
+
   const handleSearch = () => {
+    if (!date?.from || !date?.to) {
+      setDateValidationError("Please select check-in and check-out dates.");
+      return;
+    }
+
+    const validation = validateBookingDateRange(date.from, date.to);
+    if (!validation.isValid) {
+      setDateValidationError(validation.message);
+      return;
+    }
+
     // Preserve existing params (e.g. filter sidebar selections) so they don't reset
     const params = new URLSearchParams(searchParams.toString());
     if (searchLocation) params.set("location", searchLocation);
@@ -355,24 +393,42 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                       variant="ghost"
                       size="sm"
                       className="text-xs h-7 hover:text-primary"
-                      onClick={() => setDate({ from: undefined, to: undefined })}
+                      onClick={() => {
+                        setDate({ from: undefined, to: undefined });
+                        setDateValidationError(null);
+                      }}
                     >
                       Clear
                     </Button>
                   )}
                 </div>
+                {dateValidationError && (
+                  <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3">
+                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
+                    <div className="text-xs text-amber-700 dark:text-amber-200">{dateValidationError}</div>
+                  </div>
+                )}
                 <Calendar
                   initialFocus
                   mode="range"
                   defaultMonth={date?.from}
                   selected={date}
-                  onSelect={setDate}
+                  onSelect={handleDateChange}
                   numberOfMonths={1}
                   disabled={(d) => {
-                    const t = new Date(); t.setHours(0, 0, 0, 0);
-                    const max = new Date(t); max.setFullYear(max.getFullYear() + 1);
-                    return d < t || d > max;
+                    const windowStart = getBookingWindowStart();
+                    const windowEnd = getBookingWindowEnd();
+                    if (d < windowStart || d >= windowEnd) return true;
+
+                    if (date?.from && !date?.to) {
+                      const maxCheckOut = getMaxCheckOutDate(date.from);
+                      return d <= date.from || d > maxCheckOut;
+                    }
+
+                    return false;
                   }}
+                  fromDate={getBookingWindowStart()}
+                  toDate={getBookingWindowEnd()}
                   className="p-3 w-full"
                 />
               </PopoverContent>

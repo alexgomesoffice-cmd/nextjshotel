@@ -194,7 +194,7 @@ export default function AddHotelPage() {
       <section className="space-y-3 rounded-md border border-border/60 p-4">
         <h3 className="text-sm font-semibold">Basic Information</h3>
         <p className="text-xs text-muted-foreground">Core property identity and public contact information.</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Hotel Name <span className="text-red-500">*</span></Label>
             <Input value={form.hotel.name} onChange={(e) => setSection('hotel', 'name', e.target.value)} />
@@ -230,7 +230,7 @@ export default function AddHotelPage() {
             </Select>
             {err('details.star_rating')}
           </div>
-          <div className="col-span-2 space-y-1.5">
+          <div className="space-y-1.5 sm:col-span-2">
             <Label>Full Address <span className="text-red-500">*</span></Label>
             <Input value={form.hotel.address} onChange={(e) => setSection('hotel', 'address', e.target.value)} />
             {err('hotel.address')}
@@ -271,7 +271,7 @@ export default function AddHotelPage() {
       <section className="space-y-3 rounded-md border border-border/60 p-4">
         <h3 className="text-sm font-semibold">Stay Policy</h3>
         <p className="text-xs text-muted-foreground">Standard arrival and departure times for this property.</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="check_in_time">Check-in Time</Label>
             <Input id="check_in_time" type="time" value={form.details.check_in_time} onChange={(e) => setSection('details', 'check_in_time', e.target.value)} />
@@ -289,7 +289,7 @@ export default function AddHotelPage() {
       <section className="space-y-3 rounded-md border border-border/60 p-4">
         <h3 className="text-sm font-semibold">Owner Information</h3>
         <p className="text-xs text-muted-foreground">Legal owner of the property.</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label>Full Name <span className="text-red-500">*</span></Label>
             <Input value={form.owner.full_name} onChange={(e) => setSection('owner', 'full_name', e.target.value)} />
@@ -300,7 +300,7 @@ export default function AddHotelPage() {
             <Input value={form.owner.phone} onChange={(e) => setSection('owner', 'phone', e.target.value)} />
             {err('owner.phone')}
           </div>
-          <div className="col-span-2 space-y-1.5">
+          <div className="space-y-1.5 sm:col-span-2">
             <Label>Address <span className="text-red-500">*</span></Label>
             <Input value={form.owner.address} onChange={(e) => setSection('owner', 'address', e.target.value)} />
             {err('owner.address')}

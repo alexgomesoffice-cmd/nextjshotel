@@ -18,7 +18,7 @@ interface HotelImagesGalleryProps {
 const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps) => {
   if (!images || images.length === 0) {
     return (
-      <div className="w-full h-100 md:h-125 bg-muted rounded-3xl flex items-center justify-center">
+      <div className="flex h-64 w-full items-center justify-center rounded-3xl bg-muted sm:h-80 lg:h-125">
         <p className="text-muted-foreground">No images available for this property.</p>
       </div>
     );
@@ -30,7 +30,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
   // Render different layouts based on image count
   if (sortedImages.length === 1) {
     return (
-      <div className="relative w-full h-100 md:h-125 rounded-3xl overflow-hidden group">
+      <div className="group relative h-64 w-full overflow-hidden rounded-3xl sm:h-80 lg:h-125">
         <Image
           src={sortedImages[0].image_url}
           alt="Hotel property"
@@ -43,7 +43,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
 
   if (sortedImages.length === 2) {
     return (
-      <div className="grid grid-cols-2 gap-2 h-100 md:h-125 rounded-3xl overflow-hidden">
+      <div className="grid h-64 grid-cols-2 gap-2 overflow-hidden rounded-3xl sm:h-80 lg:h-125">
         {sortedImages.map((img, i) => (
           <div key={img.id} className="relative w-full h-full group">
               <Image
@@ -65,7 +65,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
   const remainingCount = images.length - 5;
 
   return (
-    <div className="relative h-100 md:h-125 rounded-xl overflow-hidden group">
+    <div className="group relative h-64 overflow-hidden rounded-xl sm:h-80 lg:h-125">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 h-full">
         {/* Left: Main large image */}
         <div className="relative h-full w-full overflow-hidden">

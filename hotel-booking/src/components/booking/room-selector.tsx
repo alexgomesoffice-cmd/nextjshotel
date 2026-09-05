@@ -274,8 +274,8 @@ export default function RoomSelector({
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 items-start xl:grid-cols-3">
+        <div className="xl:col-span-2">
           <RoomsSectionClient
             roomTypes={filteredRoomTypes}
             quantities={quantities}
@@ -291,7 +291,7 @@ export default function RoomSelector({
           )}
         </div>
 
-        <div className="lg:col-span-1 sticky top-24">
+        <div className="xl:col-span-1 xl:sticky xl:top-24">
           <BookingSidebar
             hotelId={hotelIdNum}
             selectedVariants={selectedVariants}

@@ -261,16 +261,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div className="flex min-w-0 flex-1 flex-col">
         {/* ── Top bar ── */}
         <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/60 bg-background/95 px-4 backdrop-blur">
-          <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+          <div className="min-w-0 flex items-center gap-1.5 truncate text-[13px] text-muted-foreground">
             <span>Admin</span>
             <span className="text-muted-foreground/40">/</span>
-            <span className="text-foreground">{crumb}</span>
+            <span className="truncate text-foreground">{crumb}</span>
           </div>
 
           {/* Search — visual only for now. Wiring this up to an actual
               command palette (⌘K) is deferred until components/ui/command.tsx
               is built; this button intentionally does nothing yet. */}
-          <div className="mx-auto w-full max-w-md">
+          <div className="mx-auto hidden w-full max-w-md md:block">
             <button className="flex w-full items-center gap-2 rounded-sm border border-border/60 bg-secondary/40 px-2.5 py-1.5 text-left text-xs text-muted-foreground hover:border-border hover:bg-secondary/70">
               <Search className="h-3.5 w-3.5" />
               <span className="flex-1">Search cases, hotels, users…</span>
@@ -281,7 +281,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-sm border border-border/60 bg-secondary/40 px-2 py-1.5 text-xs hover:bg-secondary">
               <Plus className="h-3.5 w-3.5" />
-              New
+              <span className="hidden sm:inline">New</span>
               <ChevronDown className="h-3 w-3 opacity-60" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">

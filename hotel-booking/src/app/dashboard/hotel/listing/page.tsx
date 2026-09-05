@@ -288,7 +288,7 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
   switch (sectionKey) {
     case 'general':
       return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Row label="Hotel Name" value={hotel?.name} pending={p('HOTEL', 'name')} />
           <Row label="Hotel Type" value={hotel?.hotel_type?.name} />
           <Row label="Star Rating" value={d.star_rating != null ? String(d.star_rating) : ''} pending={p('HOTEL', 'star_rating')} />
@@ -299,7 +299,7 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
       )
     case 'location':
       return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Row label="City" value={hotel?.city?.name} />
           <Row label="Zip Code" value={hotel?.zip_code} pending={p('HOTEL', 'zip_code')} />
           <div className="col-span-2">
@@ -309,7 +309,7 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
       )
     case 'contacts':
       return (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Row label="Email" value={hotel?.email} pending={p('HOTEL', 'email')} />
           <Row label="Reception 1" value={d.reception_no1} pending={p('HOTEL', 'reception_no1')} />
           <Row label="Reception 2" value={d.reception_no2} pending={p('HOTEL', 'reception_no2')} />
@@ -324,7 +324,7 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
         <div className="flex flex-wrap gap-1.5">
           {items.length === 0 && <p className="text-sm text-muted-foreground">No amenities selected yet.</p>}
           {items.map((a: string) => (
-            <span key={a} className="text-[11px] px-2.5 py-1 rounded-full bg-gradient-to-br from-fuchsia-500/10 to-pink-500/10 text-foreground border border-fuchsia-500/20">{a}</span>
+            <span key={a} className="rounded-full border border-fuchsia-500/20 bg-linear-to-br from-fuchsia-500/10 to-pink-500/10 px-2.5 py-1 text-[11px] text-foreground">{a}</span>
           ))}
         </div>
       )
@@ -332,7 +332,7 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
     case 'gallery': {
       const images = hotel?.images ?? []
       return (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {images.slice(0, 8).map((img: any) => (
             <div key={img.id} className="aspect-square rounded-lg bg-secondary/50 border border-border overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -360,7 +360,7 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
     case 'business': {
       const documents = hotel?.documents ?? []
       return (
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {documents.length === 0 && <p className="text-sm text-muted-foreground col-span-2">No documents uploaded yet.</p>}
           {documents.slice(0, 6).map((doc: any) => (
             <div key={doc.id} className="flex items-center gap-2 p-2 rounded-lg border border-border/60 bg-secondary/30 min-w-0">

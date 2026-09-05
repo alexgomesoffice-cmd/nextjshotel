@@ -87,7 +87,7 @@ export function HeroSection() {
   if (!currentSlide) return null;
 
   return (
-<section className="relative h-[100svh] min-h-[720px] overflow-visible">
+<section className="relative h-[100svh] min-h-[640px] overflow-visible sm:min-h-[720px]">
 
       {/* ================================================================
           HERO IMAGE CAROUSEL

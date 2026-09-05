@@ -83,7 +83,7 @@ const handlePageChange = (newPage: number) => {
               </div>
             ) : hotels.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
+                <div className="grid grid-cols-1 gap-6 items-start xl:grid-cols-2">
                   {hotels.map((hotel) => (
                     <div key={hotel.id} className="w-full">
                       <HotelCard

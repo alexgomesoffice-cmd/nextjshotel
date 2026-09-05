@@ -168,14 +168,14 @@ export default function SystemAdminPage() {
   }, [overview])
 
   return (
-    <div className="mx-auto max-w-[1200px] space-y-6 px-6 py-5">
-      <header className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/80 p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
-        <div>
+    <div className="mx-auto w-full max-w-300 space-y-6 px-4 py-4 sm:px-6 sm:py-5">
+      <header className="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm sm:p-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">Operations</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Platform overview and actions that need your attention.</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Dashboard</h1>
+          <p className="mt-1 max-w-prose text-sm text-muted-foreground">Platform overview and actions that need your attention.</p>
         </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
+        <div className="inline-flex max-w-full items-center gap-2 self-start rounded-full border border-border/60 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground lg:self-auto">
           <LayoutGrid className="h-3.5 w-3.5" />
           System Admin
         </div>
@@ -190,7 +190,7 @@ export default function SystemAdminPage() {
         </Card>
       ) : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 2xl:grid-cols-4">
         <StatCard
           label="Total Hotels"
           value={overview?.hotels.total ?? 0}
@@ -316,7 +316,7 @@ export default function SystemAdminPage() {
                   ))}
                 </div>
               ) : notifications.length === 0 ? (
-                <div className="flex min-h-[160px] items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 text-center text-sm text-muted-foreground">
+                <div className="flex min-h-40 items-center justify-center rounded-xl border border-dashed border-border/70 bg-muted/20 px-4 text-center text-sm text-muted-foreground">
                   No recent platform activity.
                 </div>
               ) : (

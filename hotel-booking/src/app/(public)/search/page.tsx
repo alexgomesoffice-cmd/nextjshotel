@@ -102,6 +102,22 @@ function SearchContent() {
 
   useEffect(() => {
     const fetchHotels = async () => {
+      if ((checkIn && !checkOut) || (!checkIn && checkOut)) {
+        setHotels([]);
+        setTotalResults(0);
+        setTotalPages(1);
+        setIsLoading(false);
+        return;
+      }
+
+      if (checkIn && checkOut && !validateBookingDateRange(checkIn, checkOut).isValid) {
+        setHotels([]);
+        setTotalResults(0);
+        setTotalPages(1);
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
         const params = new URLSearchParams(searchParams.toString());
@@ -268,7 +284,7 @@ function SearchContent() {
 
               {/* Results */}
               {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <HotelCardSkeleton key={i} />
                   ))}
@@ -277,7 +293,7 @@ function SearchContent() {
                 <>
                   {/* ── Tiered layout when guests param is present ── */}
                   {hasGuestsParam ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
+                    <div className="grid grid-cols-1 gap-6 items-start xl:grid-cols-2">
 
                       {/* PRIMARY tier */}
                       {primaryHotels.map((hotel) => (

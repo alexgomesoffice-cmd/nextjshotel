@@ -125,7 +125,7 @@ export default function SubAdminPage() {
       </div>
 
       {/* Room Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Total Rooms" value={stats.rooms.total} icon={Bed} color="bg-primary/10 text-primary" loading={loading} />
         <StatCard title="Available" value={stats.rooms.available} icon={CheckCircle2} color="bg-green-500/10 text-green-600" loading={loading} />
         <StatCard title="Occupied" value={stats.rooms.occupied} icon={AlertCircle} color="bg-blue-500/10 text-blue-600" loading={loading} />
@@ -133,7 +133,7 @@ export default function SubAdminPage() {
       </div>
 
       {/* Booking Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Total Bookings" value={stats.bookings.total} icon={Calendar} color="bg-primary/10 text-primary" loading={loading} />
         <StatCard title="Reserved" value={stats.bookings.reserved} icon={Clock} color="bg-amber-500/10 text-amber-600" loading={loading} />
         <StatCard title="Confirmed" value={stats.bookings.booked} icon={CheckCircle2} color="bg-blue-500/10 text-blue-600" loading={loading} />

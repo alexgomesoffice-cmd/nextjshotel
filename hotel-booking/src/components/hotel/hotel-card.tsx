@@ -15,7 +15,15 @@ import FavoriteButton from './favorite-button';
 export interface RoomTypeStrip {
   id:              number;
   name:            string;
-  base_price:      number;
+  base_price:      number | null;
+  effective_price?: number | null;
+  discount?: {
+    ruleId: number;
+    name: string;
+    type: 'PERCENTAGE' | 'FIXED_AMOUNT';
+    value: number;
+    amount: number;
+  } | null;
   max_occupancy:   number;
   room_size:       string | null;
   cover_image:     string | null;
@@ -53,6 +61,7 @@ export interface HotelCardProps {
   checkIn?:          string;
   checkOut?:         string;
   guests?:           number;
+  rooms?:            number;
   roomListMaxHeight?: string;
   minPrice?:         number;
   maxPrice?:         number;
@@ -64,13 +73,25 @@ export interface HotelCardProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function buildRoomUrl(slug: string, roomTypeId: number, checkIn?: string, checkOut?: string, guests?: number) {
+function buildHotelQuery(checkIn?: string, checkOut?: string, guests?: number, rooms?: number) {
   const p = new URLSearchParams();
   if (checkIn)  p.set('check_in',  checkIn);
   if (checkOut) p.set('check_out', checkOut);
-  if (guests)   p.set('guests',    String(guests));
+  if (guests && guests > 0) p.set('guests', String(guests));
+  if (rooms && rooms > 0)   p.set('rooms', String(rooms));
+  return p;
+}
+
+function buildRoomUrl(slug: string, roomTypeId: number, checkIn?: string, checkOut?: string, guests?: number, rooms?: number) {
+  const p = buildHotelQuery(checkIn, checkOut, guests, rooms);
   p.set('room_type', String(roomTypeId));
   return `/hotels/${slug}?${p.toString()}#available-rooms`;
+}
+
+function getDisplayPrice(basePrice?: number | null, effectivePrice?: number | null) {
+  if (typeof effectivePrice === 'number' && Number.isFinite(effectivePrice)) return effectivePrice;
+  if (typeof basePrice === 'number' && Number.isFinite(basePrice)) return basePrice;
+  return 0;
 }
 
 // ─── Accommodation Badge ──────────────────────────────────────────────────────
@@ -126,20 +147,21 @@ function RoomRow({
   checkIn,
   checkOut,
   guests,
-  guestCount,
+  rooms,
 }: {
   rt:         RoomTypeStrip;
   slug:       string;
   checkIn?:   string;
   checkOut?:  string;
   guests?:    number;
-  guestCount: number;
+  rooms?:      number;
 }) {
-  const capacityOk = !guestCount || rt.max_occupancy >= guestCount;
   const isAvail    = !rt.dates_filtered || rt.available_count > 0;
-  const disabled   = !capacityOk || !isAvail;
+  const disabled   = !isAvail;
+  const displayPrice = getDisplayPrice(rt.base_price, rt.effective_price);
+  const hasDiscount = Boolean(rt.discount && rt.discount.amount > 0);
 
-  const href = disabled ? undefined : buildRoomUrl(slug, rt.id, checkIn, checkOut, guests);
+  const href = disabled ? undefined : buildRoomUrl(slug, rt.id, checkIn, checkOut, guests, rooms);
 
   const rowContent = (
     <div
@@ -171,10 +193,6 @@ function RoomRow({
           <div className="absolute inset-0 flex items-center justify-center bg-background/75">
             <span className="text-[9px] font-black tracking-widest text-destructive">FULL</span>
           </div>
-        ) : !capacityOk ? (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/75">
-            <span className="text-[9px] font-black tracking-wide text-amber-500 text-center leading-tight px-1">Doesnt fit guest count</span>
-          </div>
         ) : rt.available_count > 0 && rt.dates_filtered ? (
           <div className="absolute bottom-1.5 left-1.5 rounded bg-green-500 px-1.5 py-0.5 text-[9px] font-bold text-white linen-none">
             {rt.available_count} left
@@ -190,10 +208,22 @@ function RoomRow({
               {rt.name}
             </h4>
             <div className="text-right shrink-0">
+              {hasDiscount && (
+                <p className="text-[10px] text-muted-foreground line-through">
+                  TK {Number(rt.base_price).toLocaleString()}
+                </p>
+              )}
               <p className="text-[15px] font-bold leading-none tracking-tight text-foreground">
-                TK {Number(rt.base_price).toLocaleString()}
+                TK {displayPrice.toLocaleString()}
               </p>
               <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">night</p>
+              {hasDiscount && rt.discount && (
+                <span className="text-[9px] font-semibold text-primary">
+                  {rt.discount.type === 'PERCENTAGE'
+                    ? `${rt.discount.value}% OFF`
+                    : `TK ${rt.discount.amount.toLocaleString()} OFF`}
+                </span>
+              )}
             </div>
           </div>
 
@@ -212,7 +242,7 @@ function RoomRow({
 
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-wrap gap-1">
-            {isAvail && capacityOk && (
+            {isAvail && (
               <span className="rounded-md bg-green-500/10 text-green-600 px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wide dark:bg-green-500/20 dark:text-green-400">
                 Available
               </span>
@@ -257,6 +287,7 @@ const HotelCard = ({
   checkIn,
   checkOut,
   guests,
+  rooms,
   amenities,
   roomListMaxHeight,
   minPrice,
@@ -265,11 +296,13 @@ const HotelCard = ({
   isFavorited = false,
   favoritePage = false,
 }: HotelCardProps) => {
-  const dateParams = checkIn && checkOut
-    ? `?check_in=${checkIn}&check_out=${checkOut}&guests=${guests || 1}`
-    : '';
-  const hotelUrl  = `/hotels/${slug}${dateParams}`;
-  const guestNum  = guests ?? 0;
+  const hotelQuery = buildHotelQuery(checkIn, checkOut, guests, rooms);
+  const hotelUrl  = hotelQuery.toString()
+    ? `/hotels/${slug}?${hotelQuery.toString()}`
+    : `/hotels/${slug}`;
+  const displayStartingPrice = typeof starting_price === 'number' && Number.isFinite(starting_price)
+    ? starting_price
+    : null;
 
   const hasRoomStrip = !!room_types && room_types.length > 0;
 
@@ -360,9 +393,9 @@ const HotelCard = ({
               
               <div className="text-right">
                 <p className="text-[9px] uppercase tracking-[0.2em] text-white/60">From</p>
-                {starting_price ? (
+                {displayStartingPrice !== null ? (
                   <p className="text-xl font-bold leading-none">
-                    TK {Number(starting_price).toLocaleString()}
+                    TK {displayStartingPrice.toLocaleString()}
                     <span className="ml-0.5 text-[10px] tracking-wide text-white/70">/nt</span>
                   </p>
                 ) : (
@@ -413,21 +446,16 @@ const HotelCard = ({
           >
             {[...room_types!]
               .sort((a, b) => {
-                const aCapacityOk = !guestNum || a.max_occupancy >= guestNum;
                 const aAvail = !a.dates_filtered || a.available_count > 0;
-                const aDisabled = !aCapacityOk || !aAvail;
-
-                const bCapacityOk = !guestNum || b.max_occupancy >= guestNum;
                 const bAvail = !b.dates_filtered || b.available_count > 0;
-                const bDisabled = !bCapacityOk || !bAvail;
 
-                if (aDisabled !== bDisabled) return aDisabled ? 1 : -1;
+                if (aAvail !== bAvail) return aAvail ? -1 : 1;
 
                 if (minPrice || maxPrice) {
                   const minP = minPrice ?? 0;
                   const maxP = maxPrice ?? Infinity;
-                  const aMatches = a.base_price >= minP && a.base_price <= maxP;
-                  const bMatches = b.base_price >= minP && b.base_price <= maxP;
+                  const aMatches = getDisplayPrice(a.base_price, a.effective_price) >= minP && getDisplayPrice(a.base_price, a.effective_price) <= maxP;
+                  const bMatches = getDisplayPrice(b.base_price, b.effective_price) >= minP && getDisplayPrice(b.base_price, b.effective_price) <= maxP;
                   
                   if (aMatches && !bMatches) return -1;
                   if (!aMatches && bMatches) return 1;
@@ -443,7 +471,7 @@ const HotelCard = ({
                 checkIn={checkIn}
                 checkOut={checkOut}
                 guests={guests}
-                guestCount={guestNum}
+                rooms={rooms}
               />
             ))}
           </div>

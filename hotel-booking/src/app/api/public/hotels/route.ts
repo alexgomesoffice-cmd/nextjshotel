@@ -3,12 +3,25 @@ import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/jwt';
 import { isBlacklisted } from '@/lib/token-blacklist';
 import { validateBookingDateRange } from '@/lib/date-policy';
+import { resolvePriceForDate, type PricingRuleLike } from '@/lib/pricing-resolver';
 
 // ─── Accommodation types ───────────────────────────────────────────────────────
 
 interface VariantCapacity {
   max_occupancy: number;
   available_count: number;
+}
+
+interface SearchVariantPrice {
+  basePrice: number;
+  effectivePrice: number;
+  discount: {
+    ruleId: number;
+    name: string;
+    type: 'PERCENTAGE' | 'FIXED_AMOUNT';
+    value: number;
+    amount: number;
+  } | null;
 }
 
 export interface AccommodationResult {
@@ -172,6 +185,15 @@ export async function GET(req: NextRequest) {
     const requestedGuests: number | null = guestsParam ? parseInt(guestsParam) : null;
     // null = unbounded (guest supplied no room limit)
     const requestedRooms:  number | null = roomsParam  ? parseInt(roomsParam)  : null;
+    const pricingDate = checkIn && !isNaN(new Date(checkIn).getTime())
+      ? new Date(checkIn)
+      : new Date();
+
+    const resolveSearchPrice = (variant: Record<string, unknown>): SearchVariantPrice => {
+      const basePrice = Number(String(variant.price));
+      const rules = (variant.pricing_rules as PricingRuleLike[] | undefined) ?? [];
+      return resolvePriceForDate(basePrice, rules, pricingDate);
+    };
 
     // ─── Resolve Authentication for Favorites ───────────────────────────────────
     let endUserId: number | null = null;
@@ -294,6 +316,9 @@ export async function GET(req: NextRequest) {
               select: {
                 id:            true,
                 price:         true,
+                pricing_rules: {
+                  where: { status: 'ACTIVE' },
+                },
                 max_occupancy: true,
                 room_size:     true,
                 bed_types: {
@@ -378,7 +403,7 @@ export async function GET(req: NextRequest) {
           const prices: number[] = [];
           for (const rt of rts) {
             const variants = (rt.room_variants as Array<Record<string, unknown>> | undefined) ?? [];
-            for (const v of variants) prices.push(Number(String(v.price)));
+            for (const v of variants) prices.push(resolveSearchPrice(v).effectivePrice);
           }
           return prices.length > 0 ? Math.min(...prices) : Infinity;
         };
@@ -396,7 +421,7 @@ export async function GET(req: NextRequest) {
       const allVariantPrices: number[] = [];
       for (const rt of rts) {
         const variants = (rt.room_variants as Array<Record<string, unknown>> | undefined) ?? [];
-        for (const v of variants) allVariantPrices.push(Number(String(v.price)));
+        for (const v of variants) allVariantPrices.push(resolveSearchPrice(v).effectivePrice);
       }
       const startingPrice = allVariantPrices.length > 0 ? Math.min(...allVariantPrices) : null;
 
@@ -427,8 +452,14 @@ export async function GET(req: NextRequest) {
         const rtRec    = rt as Record<string, unknown>;
         const variants = (rtRec.room_variants as Array<Record<string, unknown>> | undefined) ?? [];
 
-        const sorted   = [...variants].sort((a, b) => Number(String(a.price)) - Number(String(b.price)));
-        const cheapest = sorted[0] as Record<string, unknown> | undefined;
+        const sorted = variants
+          .map((variant) => ({
+            variant,
+            pricing: resolveSearchPrice(variant),
+          }))
+          .sort((a, b) => a.pricing.effectivePrice - b.pricing.effectivePrice);
+        const cheapest = sorted[0]?.variant;
+        const cheapestPricing = sorted[0]?.pricing;
 
         const bedTypes = cheapest
           ? ((cheapest.bed_types as Array<Record<string, unknown>>) ?? []).map((rbt) => ({
@@ -456,7 +487,9 @@ export async function GET(req: NextRequest) {
         return {
           id:              rtRec.id,
           name:            rtRec.name,
-          base_price:      cheapest ? Number(String(cheapest.price)) : null,
+          base_price:      cheapestPricing?.basePrice ?? null,
+          effective_price: cheapestPricing?.effectivePrice ?? null,
+          discount:        cheapestPricing?.discount ?? null,
           max_occupancy:   cheapest?.max_occupancy ?? null,
           room_size:       cheapest ? ((cheapest.room_size as string) ?? null) : null,
           cover_image:     coverImage,

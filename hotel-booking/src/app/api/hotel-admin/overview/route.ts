@@ -37,10 +37,10 @@ export async function GET(req: NextRequest) {
       prisma.room_types.count({ where: { hotel_id: hotelId, is_active: true } }),
       
       // Physical Rooms
-      prisma.room_details.count({ where: { room_type: { hotel_id: hotelId }, deleted_at: null } }),
-      prisma.room_details.count({ where: { room_type: { hotel_id: hotelId }, deleted_at: null, status: 'AVAILABLE' } }),
-      prisma.room_details.count({ where: { room_type: { hotel_id: hotelId }, deleted_at: null, status: 'UNAVAILABLE' } }),
-      prisma.room_details.count({ where: { room_type: { hotel_id: hotelId }, deleted_at: null, status: 'MAINTENANCE' } }),
+      prisma.room_details.count({ where: { room_variant: { room_type: { hotel_id: hotelId } }, deleted_at: null } }),
+      prisma.room_details.count({ where: { room_variant: { room_type: { hotel_id: hotelId } }, deleted_at: null, status: 'AVAILABLE' } }),
+      prisma.room_details.count({ where: { room_variant: { room_type: { hotel_id: hotelId } }, deleted_at: null, status: { in: ['BOOKED', 'CHECKED_IN'] } } }),
+      prisma.room_details.count({ where: { room_variant: { room_type: { hotel_id: hotelId } }, deleted_at: null, status: 'MAINTENANCE' } }),
 
       // Bookings
       prisma.user_bookings.count({ where: { hotel_id: hotelId } }),

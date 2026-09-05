@@ -208,23 +208,31 @@ function RoomRow({
               {rt.name}
             </h4>
             <div className="text-right shrink-0">
-              {hasDiscount && (
-                <p className="text-[10px] text-muted-foreground line-through">
-                  TK {Number(rt.base_price).toLocaleString()}
-                </p>
-              )}
-              <p className="text-[15px] font-bold leading-none tracking-tight text-foreground">
-                TK {displayPrice.toLocaleString()}
-              </p>
-              <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">night</p>
-              {hasDiscount && rt.discount && (
-                <span className="text-[9px] font-semibold text-primary">
-                  {rt.discount.type === 'PERCENTAGE'
-                    ? `${rt.discount.value}% OFF`
-                    : `TK ${rt.discount.amount.toLocaleString()} OFF`}
-                </span>
-              )}
-            </div>
+  {hasDiscount && (
+    <p className="text-[10px] text-muted-foreground line-through">
+      TK {Number(rt.base_price).toLocaleString()}
+    </p>
+  )}
+
+  <div className="flex items-center justify-end gap-2">
+    {hasDiscount && rt.discount && (
+      <span className="text-[9px] font-semibold text-primary">
+        {rt.discount.type === 'PERCENTAGE'
+          ? `${rt.discount.value}% OFF`
+          : `TK ${rt.discount.amount.toLocaleString()} OFF`}
+      </span>
+    )}
+
+    <p className="text-[15px] font-bold leading-none tracking-tight text-foreground">
+      TK {displayPrice.toLocaleString()}
+    </p>
+  </div>
+
+  <p className="text-[9px] uppercase tracking-wider text-muted-foreground mt-0.5">
+    night
+  </p>
+</div>
+
           </div>
 
           <div className="mt-1 flex items-center gap-2.5 text-[11px] text-muted-foreground">

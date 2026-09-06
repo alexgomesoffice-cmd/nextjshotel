@@ -32,6 +32,7 @@ interface RoomsSectionClientProps {
   guests?: number;
   highlightedRoomTypeId?: number;
   onClearHighlight?: () => void;
+  activeRoomTypeId?: number;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -43,6 +44,7 @@ export default function RoomsSectionClient({
   guests = 1,
   highlightedRoomTypeId,
   onClearHighlight,
+  activeRoomTypeId,
 }: RoomsSectionClientProps) {
   const [modalRoom, setModalRoom] = useState<RoomType | null>(null);
   const [modalVariant, setModalVariant] = useState<{ variant: RoomVariant; roomType: RoomType } | null>(null);
@@ -102,6 +104,8 @@ export default function RoomsSectionClient({
               forceExpanded={roomType.id === highlightedRoomTypeId}
               isHighlighted={roomType.id === highlightedRoomTypeId}
               onClearHighlight={onClearHighlight}
+              isSelectionDisabled={activeRoomTypeId !== undefined && activeRoomTypeId !== roomType.id}
+              activeRoomTypeName={roomTypes.find((type) => type.id === activeRoomTypeId)?.name}
             />
           );
         })}

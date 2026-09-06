@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth-middleware';
 import { emitToRoom } from '@/lib/socket-emit';
+import { OneRoomTypeBookingError, hasMultipleRoomTypes } from '@/lib/booking-room-type';
 
 type Params = { params: Promise<{ reference: string }> };
 
@@ -61,16 +62,56 @@ export async function POST(req: NextRequest, { params }: Params) {
       );
     }
 
-    await prisma.$transaction([
-      prisma.user_bookings.update({
+    const confirmation = await prisma.$transaction(async (tx) => {
+      const currentBooking = await tx.user_bookings.findUnique({
         where: { id: booking.id },
+        include: {
+          room_bookings: {
+            select: { room_variant: { select: { room_type_id: true } } },
+          },
+        },
+      });
+
+      if (!currentBooking || currentBooking.status !== 'RESERVED') {
+        return { expired: false, alreadyChanged: true };
+      }
+
+      if (currentBooking.reserved_until && new Date(currentBooking.reserved_until) < new Date()) {
+        await tx.user_bookings.update({
+          where: { id: currentBooking.id },
+          data: { status: 'EXPIRED', reserved_until: null },
+        });
+        await tx.room_trackers.deleteMany({ where: { booking_id: currentBooking.id, status: 'RESERVED' } });
+        return { expired: true, alreadyChanged: false };
+      }
+
+      if (hasMultipleRoomTypes(currentBooking.room_bookings.map((roomBooking) => roomBooking.room_variant.room_type_id))) {
+        throw new OneRoomTypeBookingError();
+      }
+
+      await tx.user_bookings.update({
+        where: { id: currentBooking.id },
         data: { status: 'BOOKED', reserved_until: null },
-      }),
-      prisma.room_trackers.updateMany({
-        where: { booking_id: booking.id, status: 'RESERVED' },
+      });
+      await tx.room_trackers.updateMany({
+        where: { booking_id: currentBooking.id, status: 'RESERVED' },
         data: { status: 'BOOKED' },
-      }),
-    ]);
+      });
+      return { expired: false, alreadyChanged: false };
+    });
+
+    if (confirmation.expired) {
+      return NextResponse.json(
+        { success: false, message: 'Reservation has expired. Please book again.' },
+        { status: 409 }
+      );
+    }
+    if (confirmation.alreadyChanged) {
+      return NextResponse.json(
+        { success: false, message: `Booking is already ${booking.status}` },
+        { status: 400 }
+      );
+    }
 
     // ── Live updates ──────────────────────────────────────────────────────────
     // 1. Notify hotel admin
@@ -91,6 +132,9 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ success: true, message: 'Booking confirmed' });
   } catch (error: unknown) {
     console.error('confirm booking error:', error);
+    if (error instanceof OneRoomTypeBookingError) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 400 });
+    }
     const message = error instanceof Error ? error.message : 'Internal error';
     return NextResponse.json({ success: false, message }, { status: 500 });
   }

@@ -5,6 +5,7 @@ import { AlertTriangle } from "lucide-react";
 import RoomsSectionClient, { type RoomType } from "@/components/room/rooms-section-client";
 import BookingSidebar, { type SelectedVariant } from "./booking-sidebar";
 import { useHotelAvailability } from "@/hooks/use-hotel-availability";
+import { ONE_ROOM_TYPE_BOOKING_MESSAGE } from "@/lib/booking-room-type";
 
 const PENDING_BOOKING_KEY = "myhotels:pending-reservation";
 
@@ -165,8 +166,19 @@ export default function RoomSelector({
   const roomTypes = useHotelAvailability(hotelIdNum, internalRoomTypes, onRefreshNeeded);
 
   const handleQuantityChange = (variantId: number, qty: number) => {
+    if (qty > 0) {
+      const selectedRoomTypeIds = new Set(
+        roomTypes.flatMap((roomType) => roomType.room_variants
+          .filter((variant) => (quantities[variant.id] ?? 0) > 0)
+          .map(() => roomType.id))
+      );
+      const targetRoomType = roomTypes.find((roomType) => roomType.room_variants.some((variant) => variant.id === variantId));
+      if (targetRoomType && selectedRoomTypeIds.size > 0 && !selectedRoomTypeIds.has(targetRoomType.id)) return;
+    }
     setQuantities(prev => ({ ...prev, [variantId]: qty }));
   };
+
+  const clearSelectedRooms = () => setQuantities({});
 
   const handleSidebarGuestsChange = (newGuests: number) => {
     setSidebarGuests(newGuests);
@@ -201,6 +213,9 @@ export default function RoomSelector({
     return result;
   }, [quantities, roomTypes]);
 
+  const activeRoomTypeId = selectedVariants[0]?.roomTypeId ?? null;
+  const activeRoomTypeName = selectedVariants[0]?.roomTypeName ?? null;
+
   const lowestPrice = useMemo(() => {
     const allPrices = roomTypes.flatMap(rt => rt.room_variants.map(v => v.pricing.effectivePrice));
     return allPrices.length > 0 ? Math.min(...allPrices) : undefined;
@@ -214,6 +229,12 @@ export default function RoomSelector({
 
     let totalCapacity = 0;
     let totalRooms = 0;
+    if (new Set(selectedVariants.map((variant) => variant.roomTypeId)).size > 1) {
+      return {
+        isValid: false,
+        message: ONE_ROOM_TYPE_BOOKING_MESSAGE,
+      };
+    }
     for (const selectedVar of selectedVariants) {
       // Find the variant to get its max_occupancy
       for (const rt of roomTypes) {
@@ -266,6 +287,21 @@ export default function RoomSelector({
         </div>
       )}
 
+      {activeRoomTypeName && activeRoomTypeId !== null && (
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-primary/5 border border-primary/20 rounded-xl px-4 py-3 text-sm mb-4">
+          <p className="text-foreground">
+            <span className="font-semibold">{activeRoomTypeName}</span> is active for this booking. You can add other variants from this room type.
+          </p>
+          <button
+            type="button"
+            onClick={clearSelectedRooms}
+            className="shrink-0 text-primary font-semibold hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          >
+            Change room type
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-6 items-start xl:grid-cols-3">
         <div className="xl:col-span-2">
           <RoomsSectionClient
@@ -275,6 +311,7 @@ export default function RoomSelector({
             guests={sidebarGuests}
             highlightedRoomTypeId={highlightedRoomTypeId ?? undefined}
             onClearHighlight={() => setHighlightedRoomTypeId(null)}
+            activeRoomTypeId={activeRoomTypeId ?? undefined}
           />
           {filteredRoomTypes.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground border border-border/30 rounded-2xl">

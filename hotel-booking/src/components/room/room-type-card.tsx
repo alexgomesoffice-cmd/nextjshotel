@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import {
   Users,
@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
+  LockKeyhole,
 } from "lucide-react";
 
 import { getAmenityIcon } from "@/lib/amenity-icons";
@@ -62,6 +63,8 @@ export interface RoomTypeCardProps {
   isHighlighted?: boolean;
   onClearHighlight?: () => void;
   onViewRoomDetails?: (variantId: number) => void;
+  isSelectionDisabled?: boolean;
+  activeRoomTypeName?: string;
 }
 
 // ─── Variant Row ─────────────────────────────────────────────────────────────
@@ -275,13 +278,19 @@ const RoomTypeCard = ({
   type_images, room_type_amenities, available_rooms_count,
   room_variants, onViewDetails, selectedQuantities, onQuantityChange,
   guests = 1, forceExpanded = false, isHighlighted = false, onClearHighlight,
-  onViewRoomDetails
+  onViewRoomDetails, isSelectionDisabled = false, activeRoomTypeName
 }: RoomTypeCardProps) => {
-  const [isExpanded, setIsExpanded] = useState(forceExpanded);
+  const [isExpanded, setIsExpanded] = useState(forceExpanded && !isSelectionDisabled);
   const coverImage = type_images?.[0]?.image_url || null;
   const totalSelected = Object.values(selectedQuantities).reduce((a, b) => a + b, 0);
   const isUnavailable = available_rooms_count === 0;
-  const shouldExpand = forceExpanded || isExpanded;
+  const shouldExpand = !isSelectionDisabled && (forceExpanded || isExpanded);
+
+  useEffect(() => {
+    if (!isSelectionDisabled) return;
+    const resetExpansion = window.setTimeout(() => setIsExpanded(false), 0);
+    return () => window.clearTimeout(resetExpansion);
+  }, [isSelectionDisabled]);
   // "From" price — the cheapest currently-effective variant price, since
   // Room Type no longer carries its own price (that moved to Variant).
   const cheapestVariant = room_variants.reduce<RoomVariant | null>((min, v) =>
@@ -295,13 +304,15 @@ const RoomTypeCard = ({
         isHighlighted && "ring-2 ring-primary/70 shadow-[0_0_0_4px_rgba(59,130,246,0.12)]",
         isUnavailable
           ? "opacity-60 border-border/30"
+          : isSelectionDisabled
+            ? "border-border/30"
           : shouldExpand || totalSelected > 0
             ? "border-primary/70"
             : "border-border/30 hover:border-border/50"
       )}
     >
       {/* ── Card Header: image LEFT + info RIGHT ── */}
-      <div className={cn("select-none", isUnavailable && "cursor-not-allowed")}> 
+      <div className={cn("select-none", (isUnavailable || isSelectionDisabled) && "cursor-not-allowed")}>
         {/* Side-by-side row */}
         <div className="flex min-h-52.5 flex-col sm:flex-row">
 
@@ -326,9 +337,22 @@ const RoomTypeCard = ({
           <div className="flex-1 min-w-0 p-4 sm:p-5 flex flex-col">
             {/* Name + price */}
             <div className="flex items-start justify-between gap-4">
-              <h3 className="font-bold text-xl text-foreground leading-tight">
-                {name}
-              </h3>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-bold text-xl text-foreground leading-tight">{name}</h3>
+                  {!isSelectionDisabled && totalSelected > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 border border-primary/20 rounded-md px-2 py-1">
+                      Active room type
+                    </span>
+                  )}
+                </div>
+                {isSelectionDisabled && (
+                  <div className="mt-2 flex items-start gap-2 text-xs text-muted-foreground" role="status">
+                    <LockKeyhole className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden="true" />
+                    <span>Not selectable because this booking already uses {activeRoomTypeName || "another room type"}.</span>
+                  </div>
+                )}
+              </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">From</p>
                 {cheapestVariant?.pricing.discount && (
@@ -392,9 +416,12 @@ const RoomTypeCard = ({
                 </button>
               )}
               <button
+                type="button"
+                disabled={isUnavailable || isSelectionDisabled}
+                aria-label={isSelectionDisabled ? `${name} unavailable because another room type is selected` : undefined}
                 onClick={e => {
                   e.stopPropagation();
-                  if (isUnavailable) return;
+                  if (isUnavailable || isSelectionDisabled) return;
                   if (isHighlighted && isExpanded) {
                     onClearHighlight?.();
                     setIsExpanded(false);

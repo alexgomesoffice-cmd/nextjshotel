@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, ShieldCheck, Info, AlertTriangle, User, Mail } from "lucide-react";
 import Link from "next/link";
+import { ONE_ROOM_TYPE_BOOKING_MESSAGE } from "@/lib/booking-room-type";
 
 interface BookingClientProps {
   bookingData: {
@@ -34,9 +35,10 @@ interface UserProfile {
 
 export default function BookingClient({ bookingData }: BookingClientProps) {
   const router = useRouter();
+  const hasMultipleRoomTypes = new Set(bookingData.roomSelections.map((selection) => selection.roomTypeId)).size > 1;
   const [specialRequest, setSpecialRequest] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(hasMultipleRoomTypes ? ONE_ROOM_TYPE_BOOKING_MESSAGE : null);
 
   // Profile state
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -63,6 +65,10 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
 
   const handleBooking = async () => {
     if (!hasValidId) return;
+    if (hasMultipleRoomTypes) {
+      setError(ONE_ROOM_TYPE_BOOKING_MESSAGE);
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
 
@@ -187,7 +193,7 @@ export default function BookingClient({ bookingData }: BookingClientProps) {
           size="lg"
           className="w-full sm:w-auto text-lg h-14 px-10 rounded-xl"
           onClick={handleBooking}
-          disabled={isSubmitting || profileLoading || !hasValidId}
+          disabled={isSubmitting || profileLoading || !hasValidId || hasMultipleRoomTypes}
         >
           {isSubmitting ? (
             <>

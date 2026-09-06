@@ -7,6 +7,7 @@ import { getEffectivePriceRange } from "@/lib/pricing-resolver";
 import { Prisma } from "@prisma/client";
 import crypto from "crypto";
 import { emitToRoom } from "@/lib/socket-emit";
+import { OneRoomTypeBookingError, hasMultipleRoomTypes } from "@/lib/booking-room-type";
 
 /**
  * POST /api/bookings/reserve
@@ -91,6 +92,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: false, message: "Invalid room selection" }, { status: 400 });
       }
     }
+    if (hasMultipleRoomTypes(variants.map((variant) => variant.room_type_id))) {
+      return NextResponse.json({ success: false, message: new OneRoomTypeBookingError().message }, { status: 400 });
+    }
 
     const normalizedSelections = [...room_selections.reduce((groups, selection) => {
       const existing = groups.get(selection.variant_id);
@@ -110,6 +114,21 @@ export async function POST(req: NextRequest) {
     const totalQuantity = normalizedSelections.reduce((sum, s) => sum + s.quantity, 0);
 
     const bookingResult = await prisma.$transaction(async (tx) => {
+      const transactionVariants = await tx.room_variants.findMany({
+        where: { id: { in: variantIds } },
+        select: { id: true, room_type_id: true, room_type: { select: { hotel_id: true } } },
+      });
+      if (
+        transactionVariants.length !== variantIds.length ||
+        transactionVariants.some((variant) => variant.room_type.hotel_id !== hotel_id)
+      ) {
+        throw new Error("Invalid room selection");
+      }
+      if (hasMultipleRoomTypes(transactionVariants.map((variant) => variant.room_type_id))) {
+        throw new OneRoomTypeBookingError();
+      }
+      const transactionVariantMap = new Map(transactionVariants.map((variant) => [variant.id, variant]));
+
       let totalPrice = 0;
       const selectedRoomsByVariant: Array<{ roomTypeId: number; variantId: number; rooms: Array<{ id: number }> }> = [];
 
@@ -151,7 +170,11 @@ export async function POST(req: NextRequest) {
 
         const priceRange = priceRangeByVariant.get(selection.variant_id)!;
         totalPrice += priceRange.subtotal * selectedRooms.length;
-        selectedRoomsByVariant.push({ roomTypeId: selection.room_type_id, variantId: selection.variant_id, rooms: selectedRooms });
+        selectedRoomsByVariant.push({
+          roomTypeId: transactionVariantMap.get(selection.variant_id)!.room_type_id,
+          variantId: selection.variant_id,
+          rooms: selectedRooms,
+        });
       }
 
       const refCode = "SV-" + crypto.randomBytes(3).toString("hex").toUpperCase();
@@ -227,6 +250,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("Booking Error:", error);
+    if (error instanceof OneRoomTypeBookingError) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 400 });
+    }
     const message = error instanceof Error ? error.message : "Failed to process reservation";
     return NextResponse.json(
       { success: false, message },

@@ -270,7 +270,7 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-5xl mx-auto animate-fade-in">
       <div ref={searchBarRef} className="glass rounded-2xl p-3 sm:p-4 shadow-lg border border-border/50 hover:border-primary/40 transition-colors relative">
         <div className="grid grid-cols-1 sm:grid-cols-[2fr_1.8fr_1.2fr_auto] gap-3 sm:gap-4">
 

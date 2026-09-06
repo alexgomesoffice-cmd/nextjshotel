@@ -295,7 +295,7 @@ export default function BookingSidebar({
             </Button>
           </PopoverTrigger>
           <PopoverContent
-            className="w-(--radix-popover-trigger-width) p-0 rounded-2xl shadow-2xl border-primary/20 bg-popover text-popover-foreground backdrop-blur-md overflow-hidden animate-scale-in"
+            className="w-(--radix-popover-trigger-width) p-0 rounded-2xl shadow-2xl border-primary/20 bg-popover text-popover-foreground backdrop-blur-md overflow-hidden"
             align="center"
             sideOffset={8}
           >

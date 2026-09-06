@@ -598,85 +598,98 @@ const SearchBar = ({
         <Loader2 className="absolute right-4 top-[58%] h-4 w-4 -translate-y-1/2 animate-spin text-foreground/60 dark:text-white/60" />
       )}
 
-      {isLocationSuggestionsOpen && (suggestions.hotels.length > 0 ||
-        suggestions.cities.length > 0) && (
-        <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] overflow-hidden rounded-2xl border border-foreground/10 bg-background/95 text-foreground shadow-2xl backdrop-blur-2xl custom-scrollbar"
-              data-lenis-prevent
-              data-lenis-prevent-wheel
-              data-lenis-prevent-touch>
-          <div className="max-h-80 overflow-y-auto">
-            {suggestions.hotels.length > 0 && (
-              <div
-                className={cn(
-                  "p-2",
-                  suggestions.cities.length > 0 &&
-                    "border-b border-foreground/10"
-                )}
-              >
-                <div className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-foreground/40">
-                  Hotels
-                </div>
+      {(() => {
+        const showLocationSuggestions =
+          isLocationSuggestionsOpen &&
+          (suggestions.hotels.length > 0 || suggestions.cities.length > 0);
 
-                {suggestions.hotels.map((hotel) => (
-                  <button
-                    key={`hotel-${hotel.id}`}
-                    type="button"
-                    onClick={() =>
-                      handleSuggestionSelect(hotel)
-                    }
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
-                  >
-                    <Hotel className="h-4 w-4 shrink-0 text-primary" />
+        return (
+          <div
+            className={cn(
+              "absolute left-0 right-0 top-[calc(100%+10px)] z-[500] overflow-hidden rounded-2xl border border-foreground/10 bg-background/95 text-foreground shadow-2xl backdrop-blur-2xl custom-scrollbar transition-[opacity,transform] duration-200 ease-out",
+              showLocationSuggestions
+                ? "pointer-events-auto translate-y-0 opacity-100"
+                : "pointer-events-none -translate-y-1 opacity-0"
+            )}
+            data-lenis-prevent
+            data-lenis-prevent-wheel
+            data-lenis-prevent-touch
+            aria-hidden={!showLocationSuggestions}
+          >
+            <div className="max-h-80 overflow-y-auto">
+              {suggestions.hotels.length > 0 && (
+                <div
+                  className={cn(
+                    "p-2",
+                    suggestions.cities.length > 0 &&
+                      "border-b border-foreground/10"
+                  )}
+                >
+                  <div className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-foreground/40">
+                    Hotels
+                  </div>
 
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">
-                        {hotel.name}
+                  {suggestions.hotels.map((hotel) => (
+                    <button
+                      key={`hotel-${hotel.id}`}
+                      type="button"
+                      onClick={() =>
+                        handleSuggestionSelect(hotel)
+                      }
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                    >
+                      <Hotel className="h-4 w-4 shrink-0 text-primary" />
+
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-medium">
+                          {hotel.name}
+                        </div>
+
+                        {hotel.address && (
+                          <div className="truncate text-xs text-foreground/45">
+                            {hotel.address}
+                          </div>
+                        )}
+
+                        {hotel.city && (
+                          <div className="truncate text-[11px] text-foreground/35">
+                            {hotel.city}
+                          </div>
+                        )}
                       </div>
-
-                      {hotel.address && (
-                        <div className="truncate text-xs text-foreground/45">
-                          {hotel.address}
-                        </div>
-                      )}
-
-                      {hotel.city && (
-                        <div className="truncate text-[11px] text-foreground/35">
-                          {hotel.city}
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {suggestions.cities.length > 0 && (
-              <div className="p-2">
-                <div className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-foreground/40">
-                  Locations
+                    </button>
+                  ))}
                 </div>
+              )}
 
-                {suggestions.cities.map((city) => (
-                  <button
-                    key={`city-${city.id}`}
-                    type="button"
-                    onClick={() =>
-                      handleSuggestionSelect(city)
-                    }
-                    className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
-                  >
-                    <MapPin className="h-4 w-4 shrink-0 text-primary" />
+              {suggestions.cities.length > 0 && (
+                <div className="p-2">
+                  <div className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-foreground/40">
+                    Locations
+                  </div>
 
-                    <span className="truncate text-sm font-medium">
-                      {city.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
+                  {suggestions.cities.map((city) => (
+                    <button
+                      key={`city-${city.id}`}
+                      type="button"
+                      onClick={() =>
+                        handleSuggestionSelect(city)
+                      }
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                    >
+                      <MapPin className="h-4 w-4 shrink-0 text-primary" />
+
+                      <span className="truncate text-sm font-medium">
+                        {city.name}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 
@@ -856,76 +869,82 @@ const SearchBar = ({
         />
       </button>
 
-      {isGuestOpen && (
-        <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-[300px] rounded-2xl border border-foreground/10 bg-background/95 p-4 text-foreground shadow-2xl backdrop-blur-2xl">
-          {[
-            {
-              label: "Guests",
-              value: guests,
-              setter: setGuests,
-              max: 30,
-            },
-            {
-              label: "Rooms",
-              value: rooms,
-              setter: setRooms,
-              max: 10,
-            },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between py-2.5"
-            >
-              <div>
-                <span className="text-sm font-medium">
-                  {item.label}
-                </span>
+      <div
+        className={cn(
+          "absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-[300px] rounded-2xl border border-foreground/10 bg-background/95 p-4 text-foreground shadow-2xl backdrop-blur-2xl transition-[opacity,transform] duration-200 ease-out",
+          isGuestOpen
+            ? "pointer-events-auto translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-1 opacity-0"
+        )}
+        aria-hidden={!isGuestOpen}
+      >
+        {[
+          {
+            label: "Guests",
+            value: guests,
+            setter: setGuests,
+            max: 30,
+          },
+          {
+            label: "Rooms",
+            value: rooms,
+            setter: setRooms,
+            max: 10,
+          },
+        ].map((item) => (
+          <div
+            key={item.label}
+            className="flex items-center justify-between py-2.5"
+          >
+            <div>
+              <span className="text-sm font-medium">
+                {item.label}
+              </span>
 
-                <div className="mt-0.5 text-[10px] text-foreground/40">
-                  {item.label === "Guests"
-                    ? "People staying"
-                    : "Rooms required"}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() =>
-                    item.setter(
-                      Math.max(1, item.value - 1)
-                    )
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
-                  aria-label={`Decrease ${item.label}`}
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-
-                <span className="min-w-5 text-center text-sm font-semibold tabular-nums">
-                  {item.value}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    item.setter(
-                      Math.min(
-                        item.max,
-                        item.value + 1
-                      )
-                    )
-                  }
-                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
-                  aria-label={`Increase ${item.label}`}
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
+              <div className="mt-0.5 text-[10px] text-foreground/40">
+                {item.label === "Guests"
+                  ? "People staying"
+                  : "Rooms required"}
               </div>
             </div>
-          ))}
-        </div>
-      )}
+
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  item.setter(
+                    Math.max(1, item.value - 1)
+                  )
+                }
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
+                aria-label={`Decrease ${item.label}`}
+              >
+                <Minus className="h-4 w-4" />
+              </button>
+
+              <span className="min-w-5 text-center text-sm font-semibold tabular-nums">
+                {item.value}
+              </span>
+
+              <button
+                type="button"
+                onClick={() =>
+                  item.setter(
+                    Math.min(
+                      item.max,
+                      item.value + 1
+                    )
+                  )
+                }
+                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
+                aria-label={`Increase ${item.label}`}
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 

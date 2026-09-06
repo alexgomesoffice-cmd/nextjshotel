@@ -6,7 +6,14 @@ import { useEffect, useState } from "react";
 import SearchBar from "@/components/search/hero-search";
 import { cn } from "@/lib/utils";
 
-const fallbackSlides = [
+type HeroSlide = {
+  image: string;
+  eyebrow: string;
+  title: string;
+  description: string;
+};
+
+const fallbackSlides: HeroSlide[] = [
   {
     image: "/uploads/hotels/1.png",
     eyebrow: "CURATED STAYS",
@@ -42,7 +49,7 @@ const fallbackSlides = [
 export function HeroSection() {
   const [activeSlide, setActiveSlide] = useState(0);
   // Start empty — only populated after the fetch resolves
-  const [heroSlides, setHeroSlides] = useState<any[]>([]);
+  const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
 
   useEffect(() => {
     const fetchBanners = async () => {
@@ -51,7 +58,12 @@ export function HeroSection() {
         const data = await res.json();
         if (data.success && data.data.length > 0) {
           // CMS has banners — use them exclusively
-          const mappedBanners = data.data.map((banner: any) => ({
+          const mappedBanners = data.data.map((banner: {
+            image_url: string;
+            eyebrow: string;
+            title: string;
+            description: string;
+          }) => ({
             image: banner.image_url,
             eyebrow: banner.eyebrow,
             title: banner.title,
@@ -74,7 +86,7 @@ export function HeroSection() {
 
   useEffect(() => {
     if (heroSlides.length === 0) return;
-    
+
     const interval = window.setInterval(() => {
       setActiveSlide((current) => (current + 1) % heroSlides.length);
     }, 7000);
@@ -164,7 +176,7 @@ export function HeroSection() {
             {/* Supporting hero copy */}
             <div className="mb-5 flex flex-col items-start sm:mb-6">
               {/* Hero copy — drop-shadow aids readability on photograph */}
-              <div className="max-w-xl drop-shadow-[0_2px_20px_rgba(0,0,0,0.28)] dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.50)]">
+              <div key={currentSlide.title} className="max-w-xl hero-copy-enter drop-shadow-[0_2px_20px_rgba(0,0,0,0.28)] dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.50)]">
                 {/* Eyebrow badge — foreground-tinted in light, white-tinted in dark */}
                 <div className="mb-3 inline-flex items-center rounded-full border border-foreground/20 bg-foreground/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/75 backdrop-blur-md dark:border-white/20 dark:bg-white/10 dark:text-white/85">
                   {currentSlide.eyebrow}

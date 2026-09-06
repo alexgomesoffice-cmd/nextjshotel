@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Sparkles } from "lucide-react";
 import HotelCard, { type HotelCardProps } from "@/components/hotel/hotel-card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import Autoplay from "embla-carousel-autoplay";
 import {
@@ -12,6 +13,48 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+
+function FeaturedHotelCardSkeleton() {
+  return (
+    <div className="min-w-[320px] w-[320px] shrink-0 sm:min-w-[480px] sm:w-[480px] lg:min-w-[540px] lg:w-[540px]">
+      <div className="relative flex h-[610px] flex-col overflow-hidden rounded-[22px] border border-border bg-card shadow-sm">
+        <Skeleton className="h-[280px] w-full rounded-none" />
+
+        <div className="flex flex-1 flex-col border-t border-border/60 bg-card">
+          <div className="flex items-center justify-between px-5 py-3">
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-5 w-14 rounded-full" />
+          </div>
+
+          <div className="space-y-4 border-t border-border/60 px-3 py-3">
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="flex gap-3">
+                <Skeleton className="h-[90px] w-[140px] rounded-lg" />
+
+                <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+
+                  <div className="flex items-center justify-between gap-3">
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-7 w-12 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const FeaturedHotels = () => {
   const [hotels, setHotels] = useState<HotelCardProps[]>([]);
@@ -58,14 +101,12 @@ const FeaturedHotels = () => {
     return (
       <section className="py-24 bg-secondary/20">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-10 bg-muted rounded-md w-1/3"></div>
+          <div className="space-y-8">
+            <Skeleton className="h-10 w-1/3 rounded-md" />
+
             <div className="flex gap-6 overflow-hidden">
               {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="min-w-[320px] h-[450px] bg-muted rounded-3xl shrink-0"
-                />
+                <FeaturedHotelCardSkeleton key={i} />
               ))}
             </div>
           </div>

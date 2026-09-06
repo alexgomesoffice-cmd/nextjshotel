@@ -194,6 +194,154 @@
 /* =========================
    ANIMATIONS
 ========================= */
+
+/* =========================
+   POPOVER ANIMATIONS
+========================= */
+@keyframes popover-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -6px, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes popover-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, -4px, 0) scale(0.97);
+  }
+}
+
+@keyframes popover-in-top {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes popover-out-top {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(0, 4px, 0) scale(0.97);
+  }
+}
+
+@keyframes popover-in-left {
+  from {
+    opacity: 0;
+    transform: translate3d(6px, 0, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes popover-out-left {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(4px, 0, 0) scale(0.97);
+  }
+}
+
+@keyframes popover-in-right {
+  from {
+    opacity: 0;
+    transform: translate3d(-6px, 0, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes popover-out-right {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(-4px, 0, 0) scale(0.97);
+  }
+}
+
+.popover-content {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
+  will-change: transform, opacity;
+}
+
+.popover-content[data-state="open"] {
+  animation-name: popover-in;
+}
+
+.popover-content[data-state="closed"] {
+  animation-name: popover-out;
+  animation-duration: 220ms;
+}
+
+.popover-content[data-side="bottom"][data-state="open"] {
+  animation-name: popover-in;
+}
+
+.popover-content[data-side="bottom"][data-state="closed"] {
+  animation-name: popover-out;
+}
+
+.popover-content[data-side="top"][data-state="open"] {
+  animation-name: popover-in-top;
+}
+
+.popover-content[data-side="top"][data-state="closed"] {
+  animation-name: popover-out-top;
+}
+
+.popover-content[data-side="left"][data-state="open"] {
+  animation-name: popover-in-left;
+}
+
+.popover-content[data-side="left"][data-state="closed"] {
+  animation-name: popover-out-left;
+}
+
+.popover-content[data-side="right"][data-state="open"] {
+  animation-name: popover-in-right;
+}
+
+.popover-content[data-side="right"][data-state="closed"] {
+  animation-name: popover-out-right;
+}
+
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
@@ -237,6 +385,10 @@
 @media (prefers-reduced-motion: reduce) {
   .hero-copy-enter {
     animation: none;
+  }
+
+  .popover-content {
+    animation: none !important;
   }
 
   *, *::before, *::after {

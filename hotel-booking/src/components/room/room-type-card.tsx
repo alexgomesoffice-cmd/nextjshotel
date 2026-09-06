@@ -410,7 +410,12 @@ const RoomTypeCard = ({
               {onViewDetails && (
                 <button
                   onClick={e => { e.stopPropagation(); onViewDetails(); }}
-                  className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"
+                  className={cn(
+                    "inline-flex items-center gap-1.5 text-sm transition-colors",
+                    isSelectionDisabled
+                      ? "cursor-not-allowed text-primary"
+                      : "cursor-pointer text-primary hover:text-primary/80"
+                  )}
                 >
                   View Details
                 </button>
@@ -429,7 +434,12 @@ const RoomTypeCard = ({
                     setIsExpanded(!isExpanded);
                   }
                 }}
-                className="inline-flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1 hover:bg-primary/10 transition-colors"
+                className={cn(
+                  "inline-flex items-center gap-2 text-sm font-medium text-primary border border-primary/30 bg-primary/5 rounded-full px-3 py-1 transition-colors",
+                  isSelectionDisabled
+                    ? "cursor-not-allowed hover:bg-primary/5"
+                    : "cursor-pointer hover:bg-primary/10"
+                )}
               >
                 <span>{shouldExpand ? 'Hide room options' : `View ${room_variants.length} room option${room_variants.length !== 1 ? 's' : ''}`}</span>
                 <ChevronUp className={cn("h-4 w-4 transition-transform duration-200", !shouldExpand && "rotate-180")} />

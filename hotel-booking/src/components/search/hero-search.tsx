@@ -1219,7 +1219,7 @@ const SearchBar = ({
           isFilterOpen ? "max-w-[760px]" : "max-w-[760px]"
         )}
       >
-        <div className="grid h-full grid-cols-1 gap-2.5">
+        <div className="grid h-full grid-cols-1 gap-2.5 animate-hero-search-enter">
           {/* Location */}
           <div className="min-w-0">
             {locationField}
@@ -1394,7 +1394,7 @@ const SearchBar = ({
     )}
   >
 
-      <div className="grid grid-cols-1 gap-2.5">
+      <div className="grid grid-cols-1 gap-2.5 animate-hero-search-enter">
         {/* Location */}
         <div className="h-[72px]">
           {locationField}
@@ -1538,7 +1538,9 @@ const SearchBar = ({
         {desktopBento}
       </div>
 
-      {mobileBento}
+      <div className="w-full lg:hidden">
+        {mobileBento}
+      </div>
     </div>
   );
 };

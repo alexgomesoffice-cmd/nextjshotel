@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface City {
   id: number;
@@ -41,22 +43,44 @@ const DestinationsSection = () => {
 
   if (isLoading) {
     return (
-      <section className="pt-24 bg-background">
-        <div className="grid auto-rows-[200px] grid-cols-1 gap-4 sm:grid-cols-2 md:auto-rows-[260px] md:gap-5 lg:grid-cols-4">
-  {/* Tall Left */}
-  <div className="rounded-3xl bg-muted lg:row-span-2" />
+      <section className="relative overflow-hidden bg-background py-24">
+        <div className="pointer-events-none absolute top-0 right-0 h-96 w-96 translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
+        <div className="pointer-events-none absolute bottom-0 left-0 h-96 w-96 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent/5 blur-3xl" />
 
-  {/* Top Middle */}
-  <div className="rounded-3xl bg-muted" />
-  <div className="rounded-3xl bg-muted" />
+        <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-8">
+          <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-2xl space-y-4">
+              <Skeleton className="h-12 w-72 rounded-xl md:h-16" />
+              <Skeleton className="h-5 w-80 rounded-md" />
+            </div>
+            <Skeleton className="hidden h-12 w-44 rounded-full md:block" />
+          </div>
 
-  {/* Tall Right */}
-  <div className="rounded-3xl bg-muted lg:row-span-2" />
+          <div className="grid auto-rows-[200px] grid-cols-1 gap-4 sm:grid-cols-2 md:auto-rows-[260px] md:gap-5 lg:grid-cols-4">
+            {[1, 2, 3, 4, 5, 6].map((item) => {
+              const isTall = item === 1 || item === 4;
 
-  {/* Bottom Middle */}
-  <div className="rounded-3xl bg-muted" />
-  <div className="rounded-3xl bg-muted" />
-</div>
+              return (
+                <div
+                  key={item}
+                  className={cn(
+                    "relative overflow-hidden rounded-[28px] border border-border/60 bg-secondary/20 shadow-lg",
+                    isTall ? "lg:row-span-2" : ""
+                  )}
+                >
+                  <Skeleton className="absolute inset-0 rounded-[28px]" />
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent" />
+
+                  <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                    <Skeleton className="mb-2 h-6 w-28 rounded-md bg-white/20" />
+                    <Skeleton className="h-4 w-40 rounded-md bg-white/15" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </section>
     );
   }

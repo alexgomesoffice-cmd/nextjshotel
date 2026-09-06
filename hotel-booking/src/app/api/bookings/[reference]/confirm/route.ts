@@ -67,7 +67,10 @@ export async function POST(req: NextRequest, { params }: Params) {
         where: { id: booking.id },
         include: {
           room_bookings: {
-            select: { room_variant: { select: { room_type_id: true } } },
+            select: {
+              room_detail_id: true,
+              room_variant: { select: { room_type_id: true } },
+            },
           },
         },
       });
@@ -95,6 +98,10 @@ export async function POST(req: NextRequest, { params }: Params) {
       });
       await tx.room_trackers.updateMany({
         where: { booking_id: currentBooking.id, status: 'RESERVED' },
+        data: { status: 'BOOKED' },
+      });
+      await tx.room_details.updateMany({
+        where: { id: { in: currentBooking.room_bookings.map((roomBooking) => roomBooking.room_detail_id) } },
         data: { status: 'BOOKED' },
       });
       return { expired: false, alreadyChanged: false };

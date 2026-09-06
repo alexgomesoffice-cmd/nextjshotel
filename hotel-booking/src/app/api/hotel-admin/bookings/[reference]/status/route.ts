@@ -89,12 +89,9 @@ export async function PATCH(
               where: { id: roomBooking.room_detail_id },
               data: { status: 'CHECKED_IN' },
             }))
-          : (action === 'check_out' || (action === 'no_show' && booking.status === 'CHECKED_IN'))
+          : (action === 'check_out' || action === 'cancel' || (action === 'no_show' && ['BOOKED', 'CHECKED_IN'].includes(booking.status)))
           // check_out always resets to AVAILABLE.
-          // no_show from CHECKED_IN also resets to AVAILABLE because the
-          // check_in action previously set room_details.status = CHECKED_IN.
-          // no_show from BOOKED does NOT need this — BOOKED never changes
-          // room_details.status from its resting AVAILABLE state.
+          // cancel and no_show reset rooms released from an active booking.
           ? booking.room_bookings.map((roomBooking) => prisma.room_details.update({
               where: { id: roomBooking.room_detail_id },
               data: { status: 'AVAILABLE' },

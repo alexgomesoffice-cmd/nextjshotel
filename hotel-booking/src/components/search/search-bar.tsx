@@ -404,8 +404,8 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                 </div>
                 {dateValidationError && (
                   <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-3">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-500 mt-0.5" />
-                    <div className="text-xs text-amber-700 dark:text-amber-200">{dateValidationError}</div>
+                    <AlertCircle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-600 mt-0.5" />
+                    <div className="text-xs text-amber-700 dark:text-amber-500">{dateValidationError}</div>
                   </div>
                 )}
                 <Calendar

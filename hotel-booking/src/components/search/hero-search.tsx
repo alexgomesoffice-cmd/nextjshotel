@@ -1453,6 +1453,7 @@ const SearchBar = ({
       "rounded-[24px]",
       "border border-foreground/[0.13]",
       "bg-transparent",
+      "backdrop-blur-2xl",
       "p-3",
       "text-foreground dark:text-white",
       "shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)]"

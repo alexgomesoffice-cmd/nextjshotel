@@ -19,6 +19,7 @@ import { Loader2,ArrowRight } from "lucide-react";
 import {
   getBookingWindowStart,
   getBookingWindowEnd,
+  getStayNights,
   validateBookingDateRange,
   MAX_STAY_NIGHTS,
 } from "@/lib/date-policy";
@@ -91,6 +92,8 @@ export default function BookingSidebar({
     from: parseDate(initialCheckIn) ?? new Date(),
     to: parseDate(initialCheckOut) ?? addDays(new Date(), 1),
   });
+  const [temporaryRange, setTemporaryRange] = useState<DateRange | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const [guests, setGuests] = useState(initialGuests);
 
@@ -131,6 +134,14 @@ export default function BookingSidebar({
       ? Math.max(differenceInCalendarDays(date.to, date.from), 1)
       : 1;
 
+  const selectedNights = (() => {
+    if (!date?.from || !date?.to) return null;
+
+    return validateBookingDateRange(date.from, date.to).isValid
+      ? getStayNights(date.from, date.to)
+      : null;
+  })();
+
   const hasSelections = selectedVariants.length > 0;
   const roomsTotal = selectedVariants.reduce((s, v) => s + v.price * nights * v.quantity, 0);
   const grandTotal = roomsTotal;
@@ -140,18 +151,37 @@ export default function BookingSidebar({
       ? Math.min(...selectedVariants.map(v => v.price))
       : displayPrice;
 
-  const handleDateSelect = (newDate: DateRange | undefined) => {
-    setDate(newDate);
-    setDateValidationError(null);
-    
-    if (newDate?.from && newDate?.to && onDatesChange) {
-      // Validate the date range
-      const validation = validateBookingDateRange(newDate.from, newDate.to);
-      if (!validation.isValid) {
-        setDateValidationError(validation.message);
-      }
-      onDatesChange(format(newDate.from, "yyyy-MM-dd"), format(newDate.to, "yyyy-MM-dd"));
+  const handleDateSelect = (selectedDate: Date) => {
+    const firstDate = temporaryRange?.from;
+
+    if (!firstDate) {
+      setTemporaryRange({ from: selectedDate, to: undefined });
+      setDateValidationError(null);
+      return;
     }
+
+    if (selectedDate.getTime() === firstDate.getTime()) {
+      setTemporaryRange({ from: firstDate, to: undefined });
+      setDateValidationError(null);
+      return;
+    }
+
+    const checkIn = firstDate < selectedDate ? firstDate : selectedDate;
+    const checkOut = firstDate < selectedDate ? selectedDate : firstDate;
+    const newDate = { from: checkIn, to: checkOut };
+    const validation = validateBookingDateRange(checkIn, checkOut);
+
+    if (!validation.isValid) {
+      setTemporaryRange({ from: firstDate, to: undefined });
+      setDateValidationError(validation.message);
+      return;
+    }
+
+    setDate(newDate);
+    setTemporaryRange(undefined);
+    setDateValidationError(null);
+    onDatesChange?.(format(checkIn, "yyyy-MM-dd"), format(checkOut, "yyyy-MM-dd"));
+    setIsDatePickerOpen(false);
   };
 
   const handleGuestsChange = (newGuests: number) => {
@@ -267,7 +297,14 @@ export default function BookingSidebar({
       </div>
 
       <div className="px-5 pb-5 space-y-3">
-        <Popover>
+        <Popover
+          open={isDatePickerOpen}
+          onOpenChange={(open) => {
+            setIsDatePickerOpen(open);
+            setTemporaryRange(undefined);
+            if (open) setDateValidationError(null);
+          }}
+        >
           <PopoverTrigger asChild>
             <Button
               variant="outline"
@@ -291,6 +328,11 @@ export default function BookingSidebar({
                     {date?.to ? format(date.to, "MMM dd, yyyy") : "Add date"}
                   </span>
                 </div>
+                {selectedNights !== null && (
+                  <span className="ml-auto shrink-0 whitespace-nowrap text-xs font-medium text-muted-foreground">
+                    {selectedNights} {selectedNights === 1 ? "night" : "nights"}
+                  </span>
+                )}
               </div>
             </Button>
           </PopoverTrigger>
@@ -310,7 +352,8 @@ export default function BookingSidebar({
                   size="sm"
                   className="text-xs h-7 hover:text-primary text-foreground"
                   onClick={() => {
-                    handleDateSelect({ from: undefined, to: undefined });
+                    setDate({ from: undefined, to: undefined });
+                    setTemporaryRange(undefined);
                     setDateValidationError(null);
                   }}
                 >
@@ -330,8 +373,9 @@ export default function BookingSidebar({
               initialFocus
               mode="range"
               defaultMonth={date?.from}
-              selected={date}
-              onSelect={handleDateSelect}
+              selected={temporaryRange ?? date}
+              onSelect={() => undefined}
+              onDayClick={handleDateSelect}
               numberOfMonths={1}
               className="p-3 w-full"
               disabled={(d) => {

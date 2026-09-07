@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import {
   getBookingWindowEnd,
   getBookingWindowStart,
-  getMaxCheckOutDate,
+  getStayNights,
   validateBookingDateRange,
 } from "@/lib/date-policy";
 
@@ -43,6 +43,8 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
 
   const [searchLocation, setSearchLocation] = useState("");
   const [date, setDate] = useState<DateRange | undefined>(undefined);
+  const [temporaryRange, setTemporaryRange] = useState<DateRange | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [dateValidationError, setDateValidationError] = useState<string | null>(null);
   const [guests, setGuests] = useState(1);
   const [rooms, setRooms] = useState(1);
@@ -216,15 +218,45 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
     setActiveOverlay(null);
   };
 
-  const handleDateChange = (newDate: DateRange | undefined) => {
-    setDate(newDate);
-    setDateValidationError(null);
+  const handleDateChange = (selectedDate: Date) => {
+    const firstDate = temporaryRange?.from;
 
-    if (newDate?.from && newDate?.to) {
-      const validation = validateBookingDateRange(newDate.from, newDate.to);
-      if (!validation.isValid) setDateValidationError(validation.message);
+    if (!firstDate) {
+      setTemporaryRange({ from: selectedDate, to: undefined });
+      setDateValidationError(null);
+      return;
     }
+
+    if (selectedDate.getTime() === firstDate.getTime()) {
+      setTemporaryRange({ from: firstDate, to: undefined });
+      setDateValidationError(null);
+      return;
+    }
+
+    const checkIn = firstDate < selectedDate ? firstDate : selectedDate;
+    const checkOut = firstDate < selectedDate ? selectedDate : firstDate;
+    const validation = validateBookingDateRange(checkIn, checkOut);
+
+    if (!validation.isValid) {
+      setTemporaryRange({ from: firstDate, to: undefined });
+      setDateValidationError(validation.message);
+      return;
+    }
+
+    setDate({ from: checkIn, to: checkOut });
+    setTemporaryRange(undefined);
+    setDateValidationError(null);
+    setIsDatePickerOpen(false);
   };
+
+  const selectedNights = (() => {
+    const selectedRange = temporaryRange ?? date;
+    if (!selectedRange?.from || !selectedRange?.to) return null;
+
+    return validateBookingDateRange(selectedRange.from, selectedRange.to).isValid
+      ? getStayNights(selectedRange.from, selectedRange.to)
+      : null;
+  })();
 
   const handleSearch = () => {
     if (!date?.from || !date?.to) {
@@ -351,7 +383,14 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
             <label className="text-xs font-semibold text-primary/70 mb-1.5 block pl-1 transition-colors group-hover:text-primary">
               Stay Dates
             </label>
-            <Popover>
+            <Popover
+              open={isDatePickerOpen}
+              onOpenChange={(open) => {
+                setIsDatePickerOpen(open);
+                setTemporaryRange(undefined);
+                if (open) setDateValidationError(null);
+              }}
+            >
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
@@ -376,6 +415,11 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                       </span>
                     </div>
                   </div>
+                  {selectedNights !== null && (
+                    <span className="ml-auto shrink-0 whitespace-nowrap text-xs font-medium text-muted-foreground">
+                      {selectedNights} {selectedNights === 1 ? "night" : "nights"}
+                    </span>
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent
@@ -395,6 +439,7 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                       className="text-xs h-7 hover:text-primary"
                       onClick={() => {
                         setDate({ from: undefined, to: undefined });
+                        setTemporaryRange(undefined);
                         setDateValidationError(null);
                       }}
                     >
@@ -412,20 +457,14 @@ const SearchBar = ({ showFilters = true }: { showFilters?: boolean }) => {
                   initialFocus
                   mode="range"
                   defaultMonth={date?.from}
-                  selected={date}
-                  onSelect={handleDateChange}
+                  selected={temporaryRange ?? date}
+                  onSelect={() => undefined}
+                  onDayClick={handleDateChange}
                   numberOfMonths={1}
                   disabled={(d) => {
                     const windowStart = getBookingWindowStart();
                     const windowEnd = getBookingWindowEnd();
-                    if (d < windowStart || d >= windowEnd) return true;
-
-                    if (date?.from && !date?.to) {
-                      const maxCheckOut = getMaxCheckOutDate(date.from);
-                      return d <= date.from || d > maxCheckOut;
-                    }
-
-                    return false;
+                    return d < windowStart || d >= windowEnd;
                   }}
                   fromDate={getBookingWindowStart()}
                   toDate={getBookingWindowEnd()}

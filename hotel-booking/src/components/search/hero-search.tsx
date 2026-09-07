@@ -93,9 +93,12 @@ const SearchBar = ({
   const [searchLocation, setSearchLocation] = useState("");
 
   const [date, setDate] = useState<DateRange | undefined>({
-    from: new Date(),
-    to: addDays(new Date(), 4),
+    from: getBookingWindowStart(),
+    to: addDays(getBookingWindowStart(), 1),
   });
+  const [temporaryRange, setTemporaryRange] = useState<DateRange | undefined>(undefined);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [activeDatePicker, setActiveDatePicker] = useState<"desktop" | "mobile" | null>(null);
 
   const [dateValidationError, setDateValidationError] = useState<string | null>(null);
 
@@ -418,18 +421,54 @@ const SearchBar = ({
    * ================================================================
    */
 
-  const handleDateChange = (newDate: DateRange | undefined) => {
-    setDate(newDate);
-    setDateValidationError(null);
+  const handleDateChange = (selectedDate: Date) => {
+    const firstDate = temporaryRange?.from;
 
-    // Validate the new date range
-    if (newDate?.from && newDate?.to) {
-      const validation = validateBookingDateRange(newDate.from, newDate.to);
-      if (!validation.isValid) {
-        setDateValidationError(validation.message);
-      }
+    if (!firstDate) {
+      setTemporaryRange({ from: selectedDate, to: undefined });
+      setDateValidationError(null);
+      return;
     }
+
+    if (selectedDate.getTime() === firstDate.getTime()) {
+      setTemporaryRange({ from: firstDate, to: undefined });
+      setDateValidationError(null);
+      return;
+    }
+
+    const checkIn =
+      firstDate < selectedDate ? firstDate : selectedDate;
+    const checkOut =
+      firstDate < selectedDate ? selectedDate : firstDate;
+    const newDate = { from: checkIn, to: checkOut };
+
+    const validation = validateBookingDateRange(checkIn, checkOut);
+    if (!validation.isValid) {
+      setTemporaryRange({ from: firstDate, to: undefined });
+      setDateValidationError(validation.message);
+      return;
+    }
+
+    setTemporaryRange(undefined);
+    setDateValidationError(null);
+    setDate(newDate);
+    setIsDatePickerOpen(false);
   };
+
+  const selectedNights = (() => {
+    const selectedRange = temporaryRange ?? date;
+    if (!selectedRange?.from || !selectedRange?.to) return null;
+
+    const validation = validateBookingDateRange(
+      selectedRange.from,
+      selectedRange.to,
+    );
+    return validation.isValid
+      ? getStayNights(selectedRange.from, selectedRange.to)
+      : null;
+  })();
+
+  const displayedDate = temporaryRange ?? date;
 
   const isDateRangeValid = () => {
     if (!date?.from || !date?.to) {
@@ -699,11 +738,23 @@ const SearchBar = ({
    * ================================================================
    */
 
-  const dateField = (
-    <Popover>
+  const dateField = (instance: "desktop" | "mobile") => (
+    <Popover
+      open={isDatePickerOpen && activeDatePicker === instance}
+      onOpenChange={(open) => {
+        setIsDatePickerOpen(open);
+        if (!open) setActiveDatePicker(null);
+        setTemporaryRange(undefined);
+        if (open) setDateValidationError(null);
+      }}
+    >
       <PopoverTrigger asChild>
         <button
           type="button"
+          onClick={() => {
+            setActiveDatePicker(instance);
+            setIsDatePickerOpen(true);
+          }}
           className={cn(
             cellClass,
             "flex h-full w-full items-center px-4 pt-5 text-foreground dark:text-white"
@@ -720,8 +771,8 @@ const SearchBar = ({
               </div>
 
               <div className="mt-1 truncate text-sm font-semibold leading-5 tracking-[-0.01em] text-foreground dark:text-white">
-                {date?.from
-                  ? format(date.from, "MMM d, yyyy")
+                {displayedDate?.from
+                  ? format(displayedDate.from, "MMM d, yyyy")
                   : "Select date"}
               </div>
             </div>
@@ -732,12 +783,18 @@ const SearchBar = ({
               </div>
 
               <div className="mt-1 truncate text-sm font-semibold leading-5 tracking-[-0.01em] text-foreground dark:text-white">
-                {date?.to
-                  ? format(date.to, "MMM d, yyyy")
+                {displayedDate?.to
+                  ? format(displayedDate.to, "MMM d, yyyy")
                   : "Select date"}
               </div>
             </div>
           </div>
+
+          {selectedNights !== null && (
+            <span className="ml-3 shrink-0 whitespace-nowrap text-xs font-medium text-foreground/65 dark:text-white/65">
+              {selectedNights} {selectedNights === 1 ? "night" : "nights"}
+            </span>
+          )}
         </button>
       </PopoverTrigger>
 
@@ -768,6 +825,12 @@ const SearchBar = ({
             <div className="mt-0.5 text-xs text-foreground/45">
               Maximum 3 weeks (21 nights)
             </div>
+
+            {selectedNights !== null && (
+              <div className="mt-0.5 text-xs text-foreground/45">
+                {selectedNights} {selectedNights === 1 ? "night" : "nights"}
+              </div>
+            )}
           </div>
 
           {date?.from && date?.to && (
@@ -780,6 +843,7 @@ const SearchBar = ({
                   from: undefined,
                   to: undefined,
                 });
+                setTemporaryRange(undefined);
                 setDateValidationError(null);
               }}
             >
@@ -804,8 +868,9 @@ const SearchBar = ({
             initialFocus
             mode="range"
             defaultMonth={date?.from}
-            selected={date}
-            onSelect={handleDateChange}
+            selected={temporaryRange ?? date}
+            onSelect={() => undefined}
+            onDayClick={handleDateChange}
             numberOfMonths={1}
             disabled={isDateDisabled}
             fromDate={getBookingWindowStart()}
@@ -1229,7 +1294,7 @@ const SearchBar = ({
           <div className="grid min-w-0 grid-cols-2 gap-2.5">
             {/* Date */}
             <div className="min-w-0">
-              {dateField}
+              {dateField("desktop")}
             </div>
 
             {/* Guests */}
@@ -1403,7 +1468,7 @@ const SearchBar = ({
         {/* Dates + Guests */}
         <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
           <div className="h-[72px]">
-            {dateField}
+            {dateField("mobile")}
           </div>
 
           <div className="h-[72px]">

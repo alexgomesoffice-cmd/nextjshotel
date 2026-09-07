@@ -23,6 +23,8 @@ export default function SectionNavigation({
   const navRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const visibleSectionsRef = useRef<Set<string>>(new Set());
+  const programmaticScrollRef = useRef<string | null>(null);
+  const scrollUnlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Initialize IntersectionObserver for active section detection
   useEffect(() => {
@@ -36,6 +38,9 @@ export default function SectionNavigation({
             visibleSectionsRef.current.delete(sectionId);
           }
         });
+
+        // Keep the clicked tab active while smooth scrolling passes other sections.
+        if (programmaticScrollRef.current) return;
 
         // Update active section to the first visible one in order
         if (visibleSectionsRef.current.size > 0) {
@@ -68,6 +73,9 @@ export default function SectionNavigation({
         observerRef.current.disconnect();
         visibleSectionsRef.current.clear();
       }
+      if (scrollUnlockTimeoutRef.current) {
+        clearTimeout(scrollUnlockTimeoutRef.current);
+      }
     };
   }, [sections]);
 
@@ -94,6 +102,14 @@ export default function SectionNavigation({
 
       // Set active immediately for better UX
       setActiveSection(sectionId);
+      programmaticScrollRef.current = sectionId;
+      if (scrollUnlockTimeoutRef.current) {
+        clearTimeout(scrollUnlockTimeoutRef.current);
+      }
+      scrollUnlockTimeoutRef.current = setTimeout(() => {
+        programmaticScrollRef.current = null;
+        scrollUnlockTimeoutRef.current = null;
+      }, 1500);
 
       const lenis = getLenis();
       if (lenis) {
@@ -129,11 +145,11 @@ export default function SectionNavigation({
                 href={`#${section.id}`}
                 onClick={(e) => handleSectionClick(e, section.id)}
                 className={cn(
-                  'px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap',
-                  'border border-transparent hover:border-primary/50 hover:bg-primary/5',
+                  'px-3 py-2 text-sm font-medium transition-colors duration-200 whitespace-nowrap border-b-2 border-transparent outline-none ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0',
+                  'hover:text-foreground',
                   activeSection === section.id
-                    ? 'bg-primary/10 text-primary border-primary/50'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-muted-foreground'
                 )}
                 aria-current={activeSection === section.id ? 'page' : undefined}
               >
@@ -150,11 +166,11 @@ export default function SectionNavigation({
                 href={`#${section.id}`}
                 onClick={(e) => handleSectionClick(e, section.id)}
                 className={cn(
-                  'px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0',
-                  'border border-transparent hover:border-primary/50 hover:bg-primary/5',
+                  'px-3 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap flex-shrink-0 border-b-2 border-transparent outline-none ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0',
+                  'hover:text-foreground',
                   activeSection === section.id
-                    ? 'bg-primary/10 text-primary border-primary/50'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-muted-foreground'
                 )}
                 aria-current={activeSection === section.id ? 'page' : undefined}
               >

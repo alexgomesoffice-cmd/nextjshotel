@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
 import { z } from 'zod'
 
-type Params = { params: { id: string } }
+type Params = { params: Promise<{ id: string }> }
 
 const updateSchema = z.object({
   name: z.string().min(2).optional(),
@@ -14,7 +14,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (error) return error
 
   try {
-    const { id } = params
+    const { id } = await params
     const staffId = parseInt(id)
     if (isNaN(staffId)) {
       return NextResponse.json({ success: false, message: 'Invalid ID' }, { status: 400 })

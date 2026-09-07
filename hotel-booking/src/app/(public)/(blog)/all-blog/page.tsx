@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Heart, MessageCircle, Share2, Clock, BookOpen } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 
 // ============= Dummy blog data (no backend) =============
@@ -213,6 +214,7 @@ const ImageGrid = ({ images, title }: { images: string[]; title: string }) => {
 const BlogCard = ({ post, index }: { post: BlogPost; index: number }) => {
   const [liked, setLiked] = useState(false);
   const [likes, setLikes] = useState(post.likes);
+  const { toast } = useToast();
 
   const handleLike = () => {
     setLiked((prev) => {

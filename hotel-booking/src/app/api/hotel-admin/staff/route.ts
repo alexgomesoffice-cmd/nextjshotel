@@ -24,8 +24,8 @@ export async function GET(req: NextRequest) {
         deleted_at: null,
         ...(search ? {
           OR: [
-            { name:  { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
+            { name:  { contains: search } },
+            { email: { contains: search } },
           ],
         } : {}),
       },

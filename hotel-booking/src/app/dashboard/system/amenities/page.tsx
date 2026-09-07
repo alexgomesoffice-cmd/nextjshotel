@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Plus, Search } from 'lucide-react'
 import { OpsSectionHeader, OpsTable, OpsTh, OpsTd } from '@/components/admin/shared/primitives'
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AmenityFormDialog, AmenityIcon, AmenityRecord } from '@/components/admin/amenities/amenity-form-dialog'
 
-export default function AmenitiesPage() {
+function AmenitiesContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [context, setContext] = useState<'HOTEL' | 'ROOM'>('HOTEL')
@@ -155,5 +155,13 @@ export default function AmenitiesPage() {
         onSaved={load}
       />
     </div>
+  )
+}
+
+export default function AmenitiesPage() {
+  return (
+    <Suspense fallback={null}>
+      <AmenitiesContent />
+    </Suspense>
   )
 }

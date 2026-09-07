@@ -346,7 +346,7 @@ const HotelCard = ({
           )}
           
           {/* Vignette Gradient Layer */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60  to-black/10" />
 
           {/* Top row actions & tags */}
           <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4 z-20">
@@ -404,7 +404,7 @@ const HotelCard = ({
                 {displayStartingPrice !== null ? (
                   <p className="text-xl font-bold leading-none">
                     TK {displayStartingPrice.toLocaleString()}
-                    <span className="ml-0.5 text-[10px] tracking-wide text-white/70">/nt</span>
+                    {/*<span className="ml-0.5 text-[10px] tracking-wide text-white/70">/nt</span>*/}
                   </p>
                 ) : (
                   <p className="text-[11px] text-white/70">N/A</p>

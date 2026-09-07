@@ -46,7 +46,6 @@ export async function GET(req: NextRequest, { params }: Params) {
               id: true,
               room_number: true,
               floor: true,
-              ac: true,
             },
           },
         },

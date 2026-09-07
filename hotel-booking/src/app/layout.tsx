@@ -5,7 +5,6 @@ import { SocketProvider } from '@/hooks/useSocket'
 import type { Metadata } from "next";
 
 
-
 export const metadata: Metadata = {
   title: "GhuriBangla"
 };

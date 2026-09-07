@@ -66,6 +66,8 @@ export function groupRoomVariants(
       const trackerCheckIn = normalizeDate(tracker.check_in)
       const trackerCheckOut = normalizeDate(tracker.check_out)
       return (
+        checkInDate !== null &&
+        checkOutDate !== null &&
         tracker.status && ['RESERVED', 'BOOKED', 'CHECKED_IN'].includes(tracker.status) &&
         trackerCheckIn &&
         trackerCheckOut &&

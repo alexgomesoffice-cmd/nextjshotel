@@ -86,7 +86,7 @@ const Navbar = () => {
   return (
 <nav
   className={cn(
-    "fixed inset-x-0 top-0 z-50 border-0 outline-none transition-all duration-500 ease-out",
+    "fixed inset-x-0 top-0 z-50 border-0 outline-none transition-all duration-500 ease-out bg-background/40",
 
     // Smooth background layer
     "before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:-z-10 before:h-full",

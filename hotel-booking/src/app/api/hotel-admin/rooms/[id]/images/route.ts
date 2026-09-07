@@ -32,10 +32,10 @@ export async function GET(
 
     const room = await prisma.room_details.findUnique({
       where: { id: roomId },
-      include: { room_type: true }
+      include: { room_variant: { include: { room_type: true } } }
     })
 
-    if (!room || room.room_type.hotel_id !== hotelId) {
+    if (!room || room.room_variant.room_type.hotel_id !== hotelId) {
       return NextResponse.json({ success: false, message: 'Room not found' }, { status: 404 })
     }
 
@@ -67,10 +67,10 @@ export async function POST(
 
     const room = await prisma.room_details.findUnique({
       where: { id: roomId },
-      include: { room_type: true }
+      include: { room_variant: { include: { room_type: true } } }
     })
 
-    if (!room || room.room_type.hotel_id !== hotelId) {
+    if (!room || room.room_variant.room_type.hotel_id !== hotelId) {
       return NextResponse.json({ success: false, message: 'Room not found' }, { status: 404 })
     }
 

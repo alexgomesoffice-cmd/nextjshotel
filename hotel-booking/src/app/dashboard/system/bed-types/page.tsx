@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Plus, Search } from 'lucide-react'
 import { OpsSectionHeader, OpsTable, OpsTh, OpsTd } from '@/components/admin/shared/primitives'
@@ -11,7 +11,7 @@ interface BedTypeRow extends BedTypeRecord {
   usage_count?: number
 }
 
-export default function BedTypesPage() {
+function BedTypesContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [q, setQ] = useState('')
@@ -190,5 +190,13 @@ export default function BedTypesPage() {
         onSaved={load}
       />
     </div>
+  )
+}
+
+export default function BedTypesPage() {
+  return (
+    <Suspense fallback={null}>
+      <BedTypesContent />
+    </Suspense>
   )
 }

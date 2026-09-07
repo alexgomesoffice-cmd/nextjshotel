@@ -1,13 +1,13 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { Suspense, useEffect, useState, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Plus, Search, Wrench } from 'lucide-react'
 import { OpsSectionHeader, OpsTable, OpsTh, OpsTd } from '@/components/admin/shared/primitives'
 import { Button } from '@/components/ui/button'
 import { RoomFacilityFormDialog, RoomFacilityRecord } from '@/components/admin/room-facilities/room-facility-form-dialog'
 
-export default function RoomFacilitiesPage() {
+function RoomFacilitiesContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [q, setQ] = useState('')
@@ -107,5 +107,13 @@ export default function RoomFacilitiesPage() {
         onSaved={load}
       />
     </div>
+  )
+}
+
+export default function RoomFacilitiesPage() {
+  return (
+    <Suspense fallback={null}>
+      <RoomFacilitiesContent />
+    </Suspense>
   )
 }

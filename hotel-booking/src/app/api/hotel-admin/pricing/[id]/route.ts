@@ -56,11 +56,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const hotelId = auth.payload.hotel_id
     const hotelAdminId = auth.payload.actor_id
+    if (hotelId == null) return NextResponse.json({ success: false, message: 'No hotel assigned' }, { status: 400 })
     const { id } = await params
     const ruleId = parseInt(id)
     if (isNaN(ruleId)) return NextResponse.json({ success: false, message: 'Invalid ID' }, { status: 400 })
 
-    const existing = await loadOwnedRule(ruleId, hotelId!)
+    const existing = await loadOwnedRule(ruleId, hotelId)
     if (!existing) return NextResponse.json({ success: false, message: 'Pricing rule not found' }, { status: 404 })
 
     const body = await req.json()
@@ -106,11 +107,12 @@ export async function DELETE(req: NextRequest, { params }: Params) {
 
     const hotelId = auth.payload.hotel_id
     const hotelAdminId = auth.payload.actor_id
+    if (hotelId == null) return NextResponse.json({ success: false, message: 'No hotel assigned' }, { status: 400 })
     const { id } = await params
     const ruleId = parseInt(id)
     if (isNaN(ruleId)) return NextResponse.json({ success: false, message: 'Invalid ID' }, { status: 400 })
 
-    const existing = await loadOwnedRule(ruleId, hotelId!)
+    const existing = await loadOwnedRule(ruleId, hotelId)
     if (!existing) return NextResponse.json({ success: false, message: 'Pricing rule not found' }, { status: 404 })
 
     await prisma.pricing_rules.delete({ where: { id: ruleId } })

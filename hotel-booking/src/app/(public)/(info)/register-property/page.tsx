@@ -15,6 +15,7 @@ export default function RegisterPropertyPage() {
     property_type: '',
     city: '',
     address: '',
+    nid: '',
     total_rooms: '',
     // Message
     message: '',
@@ -44,7 +45,7 @@ export default function RegisterPropertyPage() {
             within 2–3 business days.
           </p>
           <button
-            onClick={() => { setSubmitted(false); setForm({ contact_name: '', contact_email: '', contact_phone: '', property_name: '', property_type: '', city: '', address: '', total_rooms: '', message: '' }) }}
+            onClick={() => { setSubmitted(false); setForm({ contact_name: '', contact_email: '', contact_phone: '', property_name: '', property_type: '', city: '', address: '', nid: '', total_rooms: '', message: '' }) }}
             className="mt-2 text-sm text-primary hover:underline"
           >
             Submit another request

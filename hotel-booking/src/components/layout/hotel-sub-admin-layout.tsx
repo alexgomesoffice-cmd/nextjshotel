@@ -113,7 +113,7 @@ export default function HotelSubAdminLayout({
 
           <div className="p-4  shrink-0">
             <button
-              onClick={handleLogout}
+              onClick={() => void handleLogout()}
               className="flex items-center gap-3 px-4 py-3 w-full rounded-lg hover:bg-muted text-destructive"
             >
               <LogOut className="w-5 h-5" />

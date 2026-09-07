@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { verifyToken } from '@/lib/jwt';
 import { isBlacklisted } from '@/lib/token-blacklist';
 
 const GUEST_COOKIE_NAME = 'guest_favourites';
+
+type FavoriteHotel = Prisma.hotelsGetPayload<{
+  include: {
+    city: true;
+    hotel_type: true;
+    images: true;
+    detail: true;
+    room_types: { select: { room_variants: { select: { price: true } } } };
+    hotel_amenities: { include: { amenity: { select: { name: true } } } };
+  };
+}>;
 
 function getGuestFavorites(req: NextRequest): number[] {
   const cookieVal = req.cookies.get(GUEST_COOKIE_NAME)?.value;
@@ -135,7 +147,7 @@ export async function GET(req: NextRequest) {
       } catch (err) {}
     }
 
-    let favoriteHotels = [];
+    let favoriteHotels: FavoriteHotel[] = [];
 
     if (endUserId) {
       // ─── AUTHENTICATED USER FLOW ──────────────────────────────────────────

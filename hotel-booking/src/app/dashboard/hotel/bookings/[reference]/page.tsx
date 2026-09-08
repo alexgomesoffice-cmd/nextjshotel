@@ -231,8 +231,8 @@ export default function HotelAdminBookingDetailPage() {
                     <p className="text-xs text-muted-foreground">Room {rb.room_detail.room_number}{rb.room_detail.floor != null ? ` · Floor ${rb.room_detail.floor}` : ''}{rb.room_detail.ac ? ' · AC' : ''}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">TK {rb.subtotal.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">TK {rb.price_per_night.toLocaleString()} × {rb.nights}n</p>
+                    <p className="font-semibold">BDT  {rb.subtotal.toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">BDT {rb.price_per_night.toLocaleString()} × {rb.nights}n</p>
                   </div>
                 </div>
               ))}
@@ -244,10 +244,10 @@ export default function HotelAdminBookingDetailPage() {
           <Card className="glass-strong">
             <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-base"><Banknote className="h-4 w-4 text-primary" /> Price Summary</CardTitle></CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>TK {(booking.total_price - svcFee).toLocaleString()}</span></div>
+              <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>BDT {(booking.total_price - svcFee).toLocaleString()}</span></div>
               <div className="flex justify-between"><span className="text-muted-foreground">Service fee</span><span>TK{svcFee.toLocaleString()}</span></div>
               <Separator />
-              <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">TK {booking.total_price.toLocaleString()}</span></div>
+              <div className="flex justify-between font-bold text-base"><span>Total</span><span className="text-primary">BDT {booking.total_price.toLocaleString()}</span></div>
             </CardContent>
           </Card>
 

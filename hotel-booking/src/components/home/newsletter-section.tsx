@@ -39,7 +39,7 @@ const NewsletterSection = () => {
               <Mail className="h-8 w-8 text-primary" />
             </div>
             
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 text-foreground">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold tracking-tight mb-4 text-foreground">
               Get Special <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-accent">Offers</span>
             </h2>
             

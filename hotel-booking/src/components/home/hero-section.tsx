@@ -236,13 +236,14 @@ export function HeroSection() {
   className="
     mx-auto
     max-w-[850px]
-    text-3xl
+    text-2xl
     text-white
     font-semibold
     leading-[1.05]
     tracking-tight
-    sm:text-4xl
-    lg:text-[3.35rem]
+    sm:text-3xl
+    lg:text-[3rem]
+    xl:text-[3.35rem]
   "
 >
   {currentSlide.title}

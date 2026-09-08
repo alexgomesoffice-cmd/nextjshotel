@@ -375,7 +375,7 @@ export default function SubAdminBookingDetailPage() {
                 </div>
                 <div className="text-right text-sm">
                   <p className="font-medium">-{rb.subtotal.toLocaleString()}</p>
-                  <p className="text-muted-foreground">TK {rb.price_per_night.toLocaleString()} × {rb.nights}n</p>
+                  <p className="text-muted-foreground">BDT {rb.price_per_night.toLocaleString()} × {rb.nights}n</p>
                 </div>
               </div>
             ))}
@@ -389,7 +389,7 @@ export default function SubAdminBookingDetailPage() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Total</span>
-                <span className="font-semibold">TK {booking.total_price.toLocaleString()}</span>
+                <span className="font-semibold">BDT {booking.total_price.toLocaleString()}</span>
               </div>
               {booking.payment_method && (
                 <div className="flex justify-between">

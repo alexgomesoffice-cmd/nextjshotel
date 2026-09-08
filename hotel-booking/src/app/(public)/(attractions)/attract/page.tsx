@@ -22,10 +22,10 @@ const Attractions = () => {
       <main className="pt-28 pb-20">
         <div className="container mx-auto px-4 max-w-7xl sm:px-6 lg:px-8">
           <div className="text-center mb-12 animate-fade-in-up">
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-4">
               Explore <span className="text-gradient">Attractions</span>
             </h1>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+            <p className="text-muted-foreground text-base sm:text-lg max-w-xl mx-auto">
               Discover iconic landmarks, hidden gems, and unforgettable experiences worldwide.
             </p>
           </div>

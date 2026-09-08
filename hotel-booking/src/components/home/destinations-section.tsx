@@ -109,7 +109,7 @@ const DestinationsSection = () => {
         {/* Header */}
         <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div className="max-w-2xl">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight md:text-5xl">
+            <h2 className="mb-4 text-2xl sm:text-3xl lg:text-5xl font-bold tracking-tight">
               Explore Popular{" "}
               <span className="bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
                 Destinations

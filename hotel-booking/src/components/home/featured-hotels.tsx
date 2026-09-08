@@ -130,7 +130,7 @@ const FeaturedHotels = () => {
               </span>
             </div>
 
-            <h2 className="text-3xl md:text-5xl font-bold">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold">
               Handpicked{" "}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-primary to-accent">
                 Hotels

@@ -322,10 +322,10 @@ const Blog = () => {
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/15 text-primary text-sm font-medium mb-4">
               <BookOpen className="h-4 w-4" /> GhuriBangla Journal
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold mb-4">
+            <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold mb-4">
               Travel <span className="text-gradient">Stories</span> & Guides
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="text-muted-foreground text-base sm:text-lg">
               Inspiration, hidden gems and travel tips from across Bangladesh and beyond.
             </p>
           </div>

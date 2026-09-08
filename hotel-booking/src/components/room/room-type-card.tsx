@@ -204,11 +204,11 @@ function VariantRow({
         <div className="text-left sm:text-right shrink-0">
           {variant.pricing.discount && (
             <p className="text-[11px] text-muted-foreground line-through">
-              TK {Number(variant.pricing.basePrice).toLocaleString()}
+              BDT {Number(variant.pricing.basePrice).toLocaleString()}
             </p>
           )}
           <p className="text-primary font-bold text-lg leading-tight">
-            TK {Number(variant.pricing.effectivePrice).toLocaleString()}
+            BDT {Number(variant.pricing.effectivePrice).toLocaleString()}
           </p>
           <p className="text-[11px] text-muted-foreground">per night</p>
           {variant.pricing.discount && (
@@ -357,11 +357,11 @@ const RoomTypeCard = ({
                 <p className="text-sm text-muted-foreground">From</p>
                 {cheapestVariant?.pricing.discount && (
                   <p className="text-xs text-muted-foreground line-through">
-                    TK {Number(cheapestVariant.pricing.basePrice).toLocaleString()}
+                    BDT {Number(cheapestVariant.pricing.basePrice).toLocaleString()}
                   </p>
                 )}
                 <p className="text-xl font-bold text-primary leading-tight">
-                  TK {Number(cheapestVariant?.pricing.effectivePrice ?? 0).toLocaleString()}
+                  BDT {Number(cheapestVariant?.pricing.effectivePrice ?? 0).toLocaleString()}
                   <span className="text-sm font-normal text-muted-foreground ml-1">/ night</span>
                 </p>
                 {cheapestVariant?.pricing.discount && (

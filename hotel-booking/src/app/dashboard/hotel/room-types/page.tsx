@@ -121,7 +121,7 @@ export default function RoomTypesPage() {
                     </div>
                   )}
                   <div className="absolute top-3 right-3 bg-background/90 backdrop-blur-md px-3 py-1 rounded-full text-sm font-bold shadow-sm">
-                    BDT {rt.base_price} <span className="text-xs text-muted-foreground font-normal">/ night</span>
+                    BDT  {rt.base_price} <span className="text-xs text-muted-foreground font-normal">/ night</span>
                   </div>
                 </div>
                 <CardContent className="p-5 flex-1 flex flex-col">

@@ -11,7 +11,7 @@ import { useBookingStatus } from "@/hooks/use-booking-status";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { formatBDT } from "@/lib/utils";
+import { formatBDT  } from "@/lib/utils";
 import ReservationTimer from "@/components/booking/reservation-timer";
 import { format } from "date-fns";
 
@@ -277,7 +277,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
                   <div key={index}>
                     <div className="flex justify-between font-medium mb-3">
                       <span>{group.room_type.name} <span className="text-muted-foreground font-normal">({group.quantity} room{group.quantity !== 1 ? "s" : ""})</span></span>
-                      <span>{formatBDT(group.subtotal)}</span>
+                      <span>{formatBDT (group.subtotal)}</span>
                     </div>
                     <div className="space-y-2 text-sm pl-4 border-l-2 border-muted">
                       {group.nightly_rates.map((rate: any, i: number) => (
@@ -290,7 +290,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
                               </Badge>
                             )}
                           </span>
-                          <span>{formatBDT(Number(rate.price))} × {group.quantity}</span>
+                          <span>{formatBDT (Number(rate.price))} × {group.quantity}</span>
                         </div>
                       ))}
                     </div>
@@ -299,7 +299,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
               </div>
               <div className="flex justify-between items-center mt-6 pt-4 border-t border-border/50">
                 <span className="font-semibold">Subtotal</span>
-                <span className="font-semibold">{formatBDT(Number(booking.total_price))}</span>
+                <span className="font-semibold">{formatBDT (Number(booking.total_price))}</span>
               </div>
             </Card>
 
@@ -341,7 +341,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
                     <p className="text-xs text-muted-foreground">Taxes & fees included</p>
                   </div>
                   <span className="text-2xl font-bold text-foreground">
-                    {formatBDT(Number(booking.total_price))}
+                    {formatBDT (Number(booking.total_price))}
                   </span>
                 </div>
                 

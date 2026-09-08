@@ -22,7 +22,7 @@ export default function TermsPage() {
         },
         {
           title: '2. Bookings & Payments',
-          body: 'All bookings are subject to availability and hotel approval. Prices are in Bangladeshi Taka (BDT) and include applicable taxes unless stated otherwise.',
+          body: 'All bookings are subject to availability and hotel approval. Prices are in Bangladeshi Taka (BDT ) and include applicable taxes unless stated otherwise.',
         },
         {
           title: '3. User Accounts',

@@ -43,13 +43,13 @@ function DestinationsContent() {
             <MapPin className="h-3.5 w-3.5" />
             Explore Bangladesh
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4">
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold tracking-tight mb-4">
             Explore{" "}
             <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
               Destinations
             </span>
           </h1>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-base sm:text-lg max-w-2xl mx-auto">
             Find hotels across Bangladesh&apos;s most visited cities — from
             bustling Dhaka to serene Cox&apos;s Bazar.
           </p>

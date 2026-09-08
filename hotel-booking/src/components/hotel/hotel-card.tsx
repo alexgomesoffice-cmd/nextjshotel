@@ -211,7 +211,7 @@ function RoomRow({
             <div className="text-right shrink-0">
   {hasDiscount && (
     <p className="text-[10px] text-muted-foreground line-through">
-      TK {Number(rt.base_price).toLocaleString()}
+      BDT {Number(rt.base_price).toLocaleString()}
     </p>
   )}
 
@@ -223,7 +223,7 @@ function RoomRow({
     )}
 
     <p className="text-[15px] font-bold leading-none tracking-tight text-foreground">
-      TK {displayPrice.toLocaleString()}
+      BDT {displayPrice.toLocaleString()}
     </p>
   </div>
 
@@ -372,7 +372,7 @@ const HotelCard = ({
               )}
             </div>
 
-            <h3 className="text-2xl font-bold leading-tight tracking-tight line-clamp-2 ">
+            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight tracking-tight line-clamp-2 ">
               {name}
             </h3>
 
@@ -402,8 +402,8 @@ const HotelCard = ({
               <div className="text-right">
                 <p className="text-[9px] uppercase tracking-[0.2em] text-white/60">From</p>
                 {displayStartingPrice !== null ? (
-                  <p className="text-xl font-bold leading-none">
-                    TK {displayStartingPrice.toLocaleString()}
+                  <p className="text-lg sm:text-lg lg:text-xl font-bold leading-none">
+                    BDT {displayStartingPrice.toLocaleString()}
                     {/*<span className="ml-0.5 text-[10px] tracking-wide text-white/70">/nt</span>*/}
                   </p>
                 ) : (

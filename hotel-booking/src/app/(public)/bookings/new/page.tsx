@@ -216,9 +216,9 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                   {roomSelections.map((selection, index) => (
                     <div key={`${selection.roomType.id}-${selection.variantId}-${index}`} className="flex justify-between">
                       <span>
-                        {selection.roomType.name} · {selection.variant.room_size || `Variant #${selection.variant.id}`} · TK {selection.pricing.subtotal.toLocaleString()} / room × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
+                        {selection.roomType.name} · {selection.variant.room_size || `Variant #${selection.variant.id}`} · BDT  {selection.pricing.subtotal.toLocaleString()} / room × {selection.quantity} room{selection.quantity !== 1 ? "s" : ""}
                       </span>
-                      <span>TK {(selection.pricing.subtotal * selection.quantity).toLocaleString()}</span>
+                      <span>BDT  {(selection.pricing.subtotal * selection.quantity).toLocaleString()}</span>
                     </div>
                   ))}
                   <div className="flex justify-between text-muted-foreground">
@@ -235,7 +235,7 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                           {format(night.date, "EEE, MMM d")}
                           {night.resolved.discount?.name ? ` · ${night.resolved.discount.name}` : ""}
                         </span>
-                        <span className="font-medium">TK {night.resolved.effectivePrice.toLocaleString()}</span>
+                        <span className="font-medium">{night.resolved.effectivePrice.toLocaleString()}</span>
                       </div>
                     )))}
                   </div>
@@ -248,7 +248,7 @@ export default async function BookingNewPage({ searchParams }: BookingPageProps)
                     <h3 className="text-xl font-bold">Total Price</h3>
                     <p className="text-xs text-muted-foreground">Includes taxes and charges</p>
                   </div>
-                  <span className="text-2xl font-bold text-primary">TK {totalPrice.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-primary">BDT  {totalPrice.toLocaleString()}</span>
                 </div>
               </div>
             </div>

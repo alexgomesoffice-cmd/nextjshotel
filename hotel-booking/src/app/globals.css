@@ -390,7 +390,23 @@
 }
 
 .mobile-menu-item {
+  opacity: 1;
+}
+
+[data-state="open"] .mobile-menu-item {
   animation: mobile-menu-item-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+[data-state="closed"] .mobile-navigation-content {
+  opacity: 0;
+  transform: translate3d(6px, 0, 0);
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-state="open"] .mobile-navigation-content {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), opacity 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .hero-copy-enter {
@@ -404,6 +420,11 @@
 
   .mobile-menu-item {
     animation: none;
+  }
+
+  [data-state="closed"] .mobile-navigation-content,
+  [data-state="open"] .mobile-navigation-content {
+    transition: none;
   }
 
   .popover-content {

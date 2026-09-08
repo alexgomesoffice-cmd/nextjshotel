@@ -6,10 +6,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatBDT(amount: number | string): string {
+export function formatBDT (amount: number | string): string {
   return new Intl.NumberFormat('en-BD', {
     style: 'currency',
-    currency: 'BDT',
+    currency: 'BDT ',
     minimumFractionDigits: 0,
   }).format(Number(amount))
 }
@@ -22,7 +22,7 @@ export function formatDiscountLabel(discount: {
 }): string {
   const amountLabel = discount.type === 'PERCENTAGE'
     ? `${discount.value}% OFF`
-    : `TK ${discount.amount.toLocaleString()} OFF`
+    : `BDT ${discount.amount.toLocaleString()} OFF`
 
   return discount.name?.trim()
     ? `${discount.name} ${amountLabel}`

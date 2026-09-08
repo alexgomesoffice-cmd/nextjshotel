@@ -279,15 +279,16 @@ const Navbar = () => {
       />
       <div
         className={cn(
-          'fixed inset-y-2 right-2 top-[80px] z-[60] w-[calc(100vw-1rem)] max-w-[26rem] overflow-hidden rounded-2xl border border-foreground/12 bg-card/95 shadow-2xl shadow-black/25 backdrop-blur-2xl transition-[transform,opacity,visibility] duration-300 ease-out motion-reduce:transition-none sm:right-4 sm:w-[calc(100vw-2rem)] xl:hidden',
+          'fixed inset-y-2 right-2 top-[80px] z-[60] w-[calc(100vw-1rem)] max-w-[26rem] overflow-hidden rounded-2xl border border-foreground/12 bg-card/95 shadow-2xl shadow-black/25 backdrop-blur-2xl transition-[transform,opacity,visibility] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:right-4 sm:w-[calc(100vw-2rem)] xl:hidden',
           isMobileMenuOpen
-            ? 'pointer-events-auto visible translate-x-0 opacity-100'
-            : 'pointer-events-none invisible translate-x-4 opacity-0'
+            ? 'pointer-events-auto visible translate-x-0 scale-100 opacity-100'
+            : 'pointer-events-none invisible translate-x-4 scale-[0.98] opacity-0'
         )}
         id="mobile-navigation"
+        data-state={isMobileMenuOpen ? 'open' : 'closed'}
         aria-hidden={!isMobileMenuOpen}
       >
-        <div key={isMobileMenuOpen ? 'open' : 'closed'} className="relative z-10 flex h-full max-h-[calc(100dvh-80px)] flex-col overflow-y-auto overscroll-contain px-5 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-6">
+        <div className="mobile-navigation-content relative z-10 flex h-full max-h-[calc(100dvh-80px)] flex-col overflow-y-auto overscroll-contain px-5 py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:px-6">
           <div className="mb-5 flex items-center justify-between border-b border-border/70 pb-4">
             <div>
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">Explore</p>

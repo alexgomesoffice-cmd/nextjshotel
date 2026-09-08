@@ -289,7 +289,7 @@ export default function BookingSidebar({
             )}
 
             <span className="font-bold text-lg text-primary">
-              TK {Number(headerPrice).toLocaleString()}
+              BDT {Number(headerPrice).toLocaleString()}
               <span className="text-xs text-muted-foreground font-normal">/night</span>
             </span>
           </div>
@@ -452,16 +452,16 @@ export default function BookingSidebar({
             {selectedVariants.map(v => (
               <div key={v.variantId} className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  TK {Number(v.price).toLocaleString()} × {v.quantity} room{v.quantity > 1 ? "s" : ""}
+                  BDT {Number(v.price).toLocaleString()} × {v.quantity} room{v.quantity > 1 ? "s" : ""}
                 </span>
-                <span className="text-foreground">TK {(v.price * nights * v.quantity).toLocaleString()}</span>
+                <span className="text-foreground">BDT {(v.price * nights * v.quantity).toLocaleString()}</span>
               </div>
             ))}
             <div className="flex items-center justify-between text-sm">
             </div>
             <div className="flex items-center justify-between font-bold text-base pt-2 border-t border-border/30">
               <span className="text-foreground">Total</span>
-              <span className="text-primary">TK {grandTotal.toLocaleString()}</span>
+              <span className="text-primary">BDT {grandTotal.toLocaleString()}</span>
             </div>
           </div>
         )}

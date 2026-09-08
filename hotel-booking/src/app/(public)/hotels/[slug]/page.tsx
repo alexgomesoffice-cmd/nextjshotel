@@ -195,7 +195,7 @@ export default async function HotelDetailPage({
                   ))}
                 </div>
               </div>
-              <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-2">{hotel.name}</h1>
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold tracking-tight mb-2">{hotel.name}</h1>
               <div className="flex items-center text-muted-foreground gap-2">
                 <MapPin className="h-4 w-4" />
                 <span className="font-medium">{hotel.city?.name}</span>

@@ -276,7 +276,7 @@ export default function EditRoomTypePage({ params }: { params: Promise<{ id: str
                   <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Base Price (BDT) *</Label>
+                  <Label>Base Price (BDT ) *</Label>
                   <Input type="number" value={form.base_price} onChange={e => setForm(f => ({ ...f, base_price: e.target.value }))} />
                 </div>
                 <div className="space-y-1.5">

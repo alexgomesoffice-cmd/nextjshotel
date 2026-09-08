@@ -94,7 +94,7 @@ function CityHotelsContent() {
               <MapPin className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
+              <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold tracking-tight">
                 Hotels in{" "}
                 <span className="bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   {cityName}

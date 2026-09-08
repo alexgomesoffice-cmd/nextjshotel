@@ -209,7 +209,7 @@ export default function NewRoomTypePage() {
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Deluxe Sea View" />
             </div>
             <div className="space-y-1.5">
-              <Label>Base Price (BDT) *</Label>
+              <Label>Base Price (BDT ) *</Label>
               <Input type="number" value={form.base_price} onChange={e => setForm(f => ({ ...f, base_price: e.target.value }))} placeholder="e.g. 5000" />
               <p className="text-[10px] text-muted-foreground">Default display price. Actual pricing can be set per physical room.</p>
             </div>

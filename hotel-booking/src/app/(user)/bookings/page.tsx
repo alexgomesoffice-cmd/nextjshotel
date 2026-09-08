@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useToast } from '@/hooks/use-toast'
-import { formatBDT } from '@/lib/utils'
+import { formatBDT  } from '@/lib/utils'
 
 interface RoomBooking {
   id: number
@@ -271,7 +271,7 @@ export default function MyBookingsPage() {
                       <div className="flex items-center justify-between pt-1 border-t border-border/50">
                         <div>
                           <p className="text-xs text-muted-foreground">Ref: <span className="font-mono font-medium text-foreground">{booking.booking_reference}</span></p>
-                          <p className="text-lg font-bold text-primary mt-0.5">{formatBDT(Number(booking.total_price))}</p>
+                          <p className="text-lg font-bold text-primary mt-0.5">{formatBDT (Number(booking.total_price))}</p>
                         </div>
                         <Link href={`/bookings/${booking.booking_reference}`}>
                           <Button variant="outline" size="sm" className="gap-1">

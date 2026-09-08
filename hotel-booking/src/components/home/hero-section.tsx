@@ -148,7 +148,7 @@ export function HeroSection() {
   if (!currentSlide) return null;
 
   return (
-<section className="relative h-[100svh] min-h-[640px] overflow-visible sm:min-h-[720px]">
+<section className="relative h-[100svh] min-h-[100svh] overflow-visible lg:h-[100svh] lg:min-h-[640px] xl:min-h-[720px]">
 
       {/* ================================================================
           HERO IMAGE CAROUSEL
@@ -219,11 +219,11 @@ export function HeroSection() {
       {/* ================================================================
           CONTENT
           ================================================================ */}
-      <div className="relative z-30 flex min-h-[100svh] items-end">
-        <div className="container mx-auto w-full px-4 pb-16 pt-28 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
+      <div className="relative z-30 flex h-full items-center lg:items-end">
+        <div className="container mx-auto flex h-full w-full -translate-y-4 flex-col justify-center px-4 pb-10 pt-24 sm:-translate-y-6 sm:px-6 sm:pb-14 lg:translate-y-0 lg:justify-end lg:px-8 lg:pb-24 lg:pt-28">
           <div className="flex w-full flex-col">
             {/* Supporting hero copy */}
-            <div className="mb-5 flex flex-col items-start sm:mb-6">
+            <div className="mb-3 flex min-h-[118px] flex-col items-start justify-end sm:mb-4 sm:min-h-[132px] lg:mb-5 lg:min-h-0">
               {/* Hero copy — drop-shadow aids readability on photograph */}
               <div key={currentSlide.title} className="max-w-xl hero-copy-enter drop-shadow-[0_2px_20px_rgba(0,0,0,0.28)] dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.50)]">
                 {/* Eyebrow badge — foreground-tinted in light, white-tinted in dark */}
@@ -259,7 +259,7 @@ export function HeroSection() {
             {/* ============================================================
                 SEARCH
                 ============================================================ */}
-            <div className="relative z-30 mt-1 w-full -translate-y-2 xl:mt-0 xl:translate-y-0">
+            <div className="relative z-30 w-full xl:mt-0 xl:translate-y-0">
               <SearchBar />
             </div>
           </div>

@@ -1449,7 +1449,7 @@ const SearchBar = ({
   const mobileBento = (
   <div
     className={cn(
-      "w-full xl:hidden",
+      "relative w-full xl:hidden",
       "hero-search-mobile rounded-[20px]",
       "border border-foreground/[0.13]",
       "bg-transparent",
@@ -1529,7 +1529,7 @@ const SearchBar = ({
 
         {/* Mobile Filter Workspace */}
         {showFilters && isFilterOpen && (
-<div className="overflow-hidden rounded-[16px] border border-foreground/[0.10] bg-background/10 backdrop-blur-md text-foreground dark:text-white">
+<div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[60] overflow-hidden rounded-[16px] border border-foreground/[0.10] bg-background/95 text-foreground shadow-2xl backdrop-blur-xl dark:text-white">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3">
               <div>

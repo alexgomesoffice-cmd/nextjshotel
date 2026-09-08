@@ -1255,7 +1255,7 @@ const SearchBar = ({
   const desktopBento = (
     <div
       className={cn(
-        "hidden lg:flex",
+        "hidden xl:flex",
         "h-[260px]",
         "overflow-visible",
         "rounded-[28px]",
@@ -1449,7 +1449,7 @@ const SearchBar = ({
   const mobileBento = (
   <div
     className={cn(
-      "w-full lg:hidden",
+      "w-full xl:hidden",
       "rounded-[24px]",
       "border border-foreground/[0.13]",
       "bg-transparent",
@@ -1486,7 +1486,7 @@ const SearchBar = ({
               : "grid-cols-1"
           )}
         >
-          <div className="h-[64px]">
+          <div className="h-[64px] [&_button]:h-full">
             {searchButton}
           </div>
 
@@ -1600,11 +1600,11 @@ const SearchBar = ({
         className
       )}
     >
-      <div className="hidden w-full justify-center lg:flex">
+      <div className="hidden w-full justify-center xl:flex">
         {desktopBento}
       </div>
 
-      <div className="w-full lg:hidden">
+      <div className="w-full xl:hidden">
         {mobileBento}
       </div>
     </div>

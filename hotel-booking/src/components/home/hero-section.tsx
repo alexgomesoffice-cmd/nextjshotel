@@ -219,7 +219,7 @@ export function HeroSection() {
       {/* ================================================================
           CONTENT
           ================================================================ */}
-      <div className="relative z-10 flex min-h-[100svh] items-end">
+      <div className="relative z-30 flex min-h-[100svh] items-end">
         <div className="container mx-auto w-full px-4 pb-16 pt-28 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
           <div className="flex w-full flex-col">
             {/* Supporting hero copy */}

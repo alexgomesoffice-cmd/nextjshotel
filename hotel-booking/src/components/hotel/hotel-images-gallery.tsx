@@ -65,22 +65,22 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
   const remainingCount = images.length - 5;
 
   return (
-    <div className="group relative h-64 overflow-hidden rounded-xl sm:h-80 lg:h-125">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 h-full">
+    <div className="group relative h-[13rem] overflow-hidden rounded-xl sm:h-80 lg:h-125">
+      <div className="grid grid-cols-2 gap-2 h-full">
         {/* Left: Main large image */}
         <div className="relative h-full w-full overflow-hidden">
           <Image
             src={displayImages[0].image_url}
             alt="Hotel main view"
             fill
-            sizes="(max-width: 768px) 100vw, 50vw"
+            sizes="(max-width: 768px) 50vw, 50vw"
             className="object-cover transition-transform duration-700 hover:scale-105 cursor-pointer"
             onClick={() => onShowAllPhotos(images.findIndex(orig => orig.id === displayImages[0].id))}
           />
         </div>
 
-        {/* Right: Grid of smaller images (only visible on md+) */}
-        <div className="hidden md:grid grid-cols-2 grid-rows-2 gap-2 h-full">
+        {/* Right: Grid of smaller images */}
+        <div className="grid grid-cols-2 grid-rows-2 gap-2 h-full">
           {displayImages.slice(1, 5).map((img, idx) => {
             const isLast = idx === 3;
             return (
@@ -89,7 +89,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
                   src={img.image_url}
                   alt={`Hotel detail ${idx + 1}`}
                   fill
-                  sizes="(max-width: 768px) 0vw, 25vw"
+                  sizes="(max-width: 768px) 25vw, 25vw"
                   className={`object-cover transition-transform duration-700 hover:scale-105 cursor-pointer ${
                     isLast && remainingCount > 0 ? "opacity-80" : ""
                   }`}
@@ -102,7 +102,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
                     className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-colors"
                     onClick={() => onShowAllPhotos(images.findIndex(orig => orig.id === img.id))}
                   >
-                    <span className="text-white text-xl font-semibold tracking-wider">
+                    <span className="text-sm font-semibold tracking-wide text-white sm:text-xl">
                       +{remainingCount}
                     </span>
                   </div>
@@ -116,7 +116,7 @@ const HotelImagesGallery = ({ images, onShowAllPhotos }: HotelImagesGalleryProps
       {/* Floating 'Show All Photos' Button */}
       <Button
         variant="secondary"
-        className="absolute bottom-6 right-6 shadow-xl bg-background/90 backdrop-blur-md hover:bg-background transition-all hover:scale-105 rounded-full px-6 gap-2 border border-border/50"
+        className="absolute bottom-3 right-3 gap-1.5 rounded-full border border-border/50 bg-background/90 px-3 text-xs shadow-xl backdrop-blur-md transition-all hover:scale-105 hover:bg-background sm:bottom-6 sm:right-6 sm:gap-2 sm:px-6 sm:text-sm"
         onClick={() => onShowAllPhotos()}
       >
         <Grid2X2 className="h-4 w-4 text-primary" />

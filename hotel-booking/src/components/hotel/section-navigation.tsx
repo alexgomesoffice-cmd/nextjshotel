@@ -21,10 +21,38 @@ export default function SectionNavigation({
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [isSticky, setIsSticky] = useState(false);
   const navRef = useRef<HTMLDivElement>(null);
+  const mobileNavRef = useRef<HTMLDivElement>(null);
+  const mobileSectionRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
   const observerRef = useRef<IntersectionObserver | null>(null);
   const visibleSectionsRef = useRef<Set<string>>(new Set());
   const programmaticScrollRef = useRef<string | null>(null);
   const scrollUnlockTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Keep the active mobile tab visible without changing desktop navigation.
+  useEffect(() => {
+    if (!activeSection || !mobileNavRef.current) return;
+
+    const container = mobileNavRef.current;
+    const activeTab = mobileSectionRefs.current[activeSection];
+    if (!activeTab) return;
+
+    const tabs = sections
+      .map((section) => mobileSectionRefs.current[section.id])
+      .filter((tab): tab is HTMLAnchorElement => Boolean(tab));
+    const activeIndex = tabs.indexOf(activeTab);
+    const isFirst = activeIndex === 0;
+    const isLast = activeIndex === tabs.length - 1;
+    const targetLeft = isFirst
+      ? 0
+      : isLast
+        ? container.scrollWidth - container.clientWidth
+        : activeTab.offsetLeft - (container.clientWidth - activeTab.offsetWidth) / 2;
+
+    container.scrollTo({
+      left: Math.max(0, targetLeft),
+      behavior: 'smooth',
+    });
+  }, [activeSection, sections]);
 
   // Initialize IntersectionObserver for active section detection
   useEffect(() => {
@@ -136,7 +164,7 @@ export default function SectionNavigation({
       )}
     >
       <div className="container mx-auto px-4 md:px-8 max-w-7xl">
-        <div className="flex items-center h-14 overflow-x-auto scrollbar-hide">
+        <div className="flex h-14 items-center overflow-hidden">
           {/* Desktop: flex layout */}
           <div className="hidden md:flex items-center gap-2">
             {sections.map((section) => (
@@ -159,12 +187,15 @@ export default function SectionNavigation({
           </div>
 
           {/* Mobile: horizontally scrollable */}
-          <div className="md:hidden flex items-center gap-2 overflow-x-auto pb-2 pt-2 px-0 scrollbar-hide">
+          <div ref={mobileNavRef} className="md:hidden flex min-w-0 flex-1 items-center gap-2 overflow-x-auto pb-2 pt-2 px-0 scrollbar-hide">
             {sections.map((section) => (
               <a
                 key={section.id}
                 href={`#${section.id}`}
                 onClick={(e) => handleSectionClick(e, section.id)}
+                ref={(element) => {
+                  mobileSectionRefs.current[section.id] = element;
+                }}
                 className={cn(
                   'px-3 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap flex-shrink-0 border-b-2 border-transparent outline-none ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0',
                   'hover:text-foreground',

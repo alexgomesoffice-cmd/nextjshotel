@@ -231,7 +231,7 @@ export default function HotelAdminBookingDetailPage() {
                     <p className="text-xs text-muted-foreground">Room {rb.room_detail.room_number}{rb.room_detail.floor != null ? ` · Floor ${rb.room_detail.floor}` : ''}{rb.room_detail.ac ? ' · AC' : ''}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">BDT  {rb.subtotal.toLocaleString()}</p>
+                    <p className="font-semibold">BDT {rb.subtotal.toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">BDT {rb.price_per_night.toLocaleString()} × {rb.nights}n</p>
                   </div>
                 </div>

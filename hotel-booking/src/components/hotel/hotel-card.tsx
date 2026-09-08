@@ -167,14 +167,14 @@ function RoomRow({
   const rowContent = (
     <div
       className={cn(
-        "group/row flex gap-3 p-3 transition-colors bg-card relative z-10 ",
+        "group/row flex gap-2 p-2 transition-colors bg-card relative z-10 sm:gap-3 sm:p-3 lg:gap-3 lg:p-3",
         disabled
           ? "opacity-40 grayscale bg-muted/10 cursor-not-allowed"
           : "hover:bg-muted/30"
       )}
     >
       {/* Room Image Container */}
-      <div className="relative h-[88px] w-[140px] shrink-0 overflow-hidden rounded-lg bg-secondary/40">
+      <div className="relative h-[72px] w-[88px] shrink-0 overflow-hidden rounded-lg bg-secondary/40 sm:h-20 sm:w-[108px] lg:h-[88px] lg:w-[140px]">
         {rt.cover_image ? (
           <Image
             src={rt.cover_image}
@@ -204,25 +204,25 @@ function RoomRow({
       {/* Room Meta Information */}
       <div className="flex min-w-0 flex-1 flex-col justify-between">
         <div className="min-w-0">
-          <div className="flex items-start justify-between gap-2">
-            <h4 className="truncate text-[13.5px] font-semibold leading-tight text-foreground group-hover/row:text-primary transition-colors">
+          <div className="flex min-w-0 items-start justify-between gap-1.5 sm:gap-2">
+            <h4 className="min-w-0 flex-1 line-clamp-2 text-[11px] sm:text-[13px] lg:text-[13.5px] font-semibold leading-tight text-foreground group-hover/row:text-primary transition-colors">
               {rt.name}
             </h4>
-            <div className="text-right shrink-0">
+            <div className="w-[84px] shrink-0 text-right sm:w-[116px] lg:w-auto">
   {hasDiscount && (
-    <p className="text-[10px] text-muted-foreground line-through">
+    <p className="text-[9px] text-muted-foreground line-through sm:text-[10px] lg:text-[10px]">
       BDT {Number(rt.base_price).toLocaleString()}
     </p>
   )}
 
-  <div className="flex items-center justify-end gap-2">
+  <div className="flex flex-col items-end justify-end gap-0 lg:flex-row lg:items-center lg:gap-2">
     {hasDiscount && rt.discount && (
-      <span className="max-w-[150px] text-right text-[9px] font-semibold leading-tight text-primary">
+      <span className="max-w-[96px] text-right text-[8px] font-semibold leading-tight text-primary sm:max-w-[116px] sm:text-[9px] lg:max-w-[150px] lg:text-[9px]">
         {formatDiscountLabel(rt.discount)}
       </span>
     )}
 
-    <p className="text-[15px] font-bold leading-none tracking-tight text-foreground">
+    <p className="text-xs font-bold leading-none tracking-tight text-foreground sm:text-sm lg:text-[15px]">
       BDT {displayPrice.toLocaleString()}
     </p>
   </div>
@@ -234,7 +234,7 @@ function RoomRow({
 
           </div>
 
-          <div className="mt-1 flex items-center gap-2.5 text-[11px] text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] sm:gap-2.5 sm:text-[11px] lg:gap-2.5 lg:text-[11px] text-muted-foreground">
             <span className="flex items-center gap-1">
               <BedDouble className="size-3" />
               {rt.bed_types[0] ? rt.bed_types[0].name : "Standard Bed"}
@@ -250,14 +250,14 @@ function RoomRow({
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <div className="flex min-w-0 flex-wrap gap-1">
             {isAvail && (
-              <span className="rounded-md bg-green-500/10 text-green-600 px-1.5 py-0.5 text-[9.5px] font-medium uppercase tracking-wide dark:bg-green-500/20 dark:text-green-400">
+              <span className="rounded-md bg-green-500/10 text-green-600 px-1.5 py-0.5 text-[9px] sm:text-[9.5px] lg:text-[9.5px] font-medium uppercase tracking-wide dark:bg-green-500/20 dark:text-green-400">
                 Available
               </span>
             )}
           </div>
 
           {!disabled && (
-            <span className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground transition hover:bg-primary/90 shadow-sm">
+            <span className="shrink-0 rounded-md bg-primary px-2.5 py-1.5 text-[10px] sm:px-3 sm:text-[11px] lg:px-3 lg:text-[11px] font-medium text-primary-foreground transition hover:bg-primary/90 shadow-sm">
               Book
             </span>
           )}
@@ -372,11 +372,11 @@ const HotelCard = ({
               )}
             </div>
 
-            <h3 className="text-lg sm:text-xl lg:text-2xl font-bold leading-tight tracking-tight line-clamp-2 ">
+            <h3 className="text-base sm:text-lg lg:text-2xl font-bold leading-tight tracking-tight line-clamp-2 ">
               {name}
             </h3>
 
-            <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-white/85">
+            <div className="mt-1 flex items-center gap-1 text-[11px] sm:mt-1.5 sm:gap-1.5 sm:text-[12px] lg:mt-1.5 lg:gap-1.5 lg:text-[12px] text-white/85">
               <MapPin className="size-3.5 text-white/70" />
               <span>{city}</span>
               <span className="text-white/40">·</span>
@@ -386,12 +386,12 @@ const HotelCard = ({
             </div>
 
             {/* Embedded Footer Pricing Block */}
-            <div className="mt-4 flex items-end justify-between border-t border-white/15 pt-3">
-              <div className="text-left flex items-center gap-3">
+            <div className="mt-4 flex min-w-0 items-end justify-between gap-2 border-t border-white/15 pt-3 lg:gap-3">
+              <div className="min-w-0 flex-1 text-left">
                 {amenities && amenities.length > 0 ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex min-w-0 flex-wrap items-center gap-1.5 lg:gap-2">
                     {amenities.slice(0,3).map((a, i) => (
-                      <span key={i} className="text-[10px] px-2 py-0.5 bg-white/10 rounded text-white/90">{a}</span>
+                      <span key={i} className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] whitespace-normal break-words text-white/90 sm:px-2 sm:text-[10px]">{a}</span>
                     ))}
                   </div>
                 ) : (
@@ -399,10 +399,10 @@ const HotelCard = ({
                 )}
               </div>
               
-              <div className="text-right">
+              <div className="w-[78px] shrink-0 text-right sm:w-[96px] lg:w-auto">
                 <p className="text-[9px] uppercase tracking-[0.2em] text-white/60">From</p>
                 {displayStartingPrice !== null ? (
-                  <p className="text-lg sm:text-lg lg:text-xl font-bold leading-none">
+                  <p className="whitespace-nowrap text-xs font-bold leading-none sm:text-lg lg:text-xl">
                     BDT {displayStartingPrice.toLocaleString()}
                     {/*<span className="ml-0.5 text-[10px] tracking-wide text-white/70">/nt</span>*/}
                   </p>

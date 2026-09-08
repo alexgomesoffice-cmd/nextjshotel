@@ -259,7 +259,7 @@ export function HeroSection() {
             {/* ============================================================
                 SEARCH
                 ============================================================ */}
-            <div className="w-full">
+            <div className="relative z-30 mt-1 w-full -translate-y-2 xl:mt-0 xl:translate-y-0">
               <SearchBar />
             </div>
           </div>

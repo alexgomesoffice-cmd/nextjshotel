@@ -1450,29 +1450,29 @@ const SearchBar = ({
   <div
     className={cn(
       "w-full xl:hidden",
-      "rounded-[24px]",
+      "hero-search-mobile rounded-[20px]",
       "border border-foreground/[0.13]",
       "bg-transparent",
       "backdrop-blur-2xl",
-      "p-3",
+      "p-2",
       "text-foreground dark:text-white",
       "shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)]"
     )}
   >
 
-      <div className="grid grid-cols-1 gap-2.5 animate-hero-search-enter">
+      <div className="grid grid-cols-1 gap-2 animate-hero-search-enter">
         {/* Location */}
-        <div className="h-[72px]">
+        <div className="h-[60px]">
           {locationField}
         </div>
 
         {/* Dates + Guests */}
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-          <div className="h-[72px]">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className="h-[60px]">
             {dateField("mobile")}
           </div>
 
-          <div className="h-[72px]">
+          <div className="h-[60px]">
             {guestField}
           </div>
         </div>
@@ -1480,13 +1480,13 @@ const SearchBar = ({
         {/* Search + Filters */}
         <div
           className={cn(
-            "grid gap-2.5",
+            "grid gap-2",
             showFilters
               ? "grid-cols-1 sm:grid-cols-[1fr_170px]"
               : "grid-cols-1"
           )}
         >
-          <div className="h-[64px] [&_button]:h-full">
+          <div className="h-[52px] [&_button]:h-full">
             {searchButton}
           </div>
 
@@ -1497,8 +1497,8 @@ const SearchBar = ({
                 setIsFilterOpen((current) => !current)
               }
               className={cn(
-                "flex h-[64px] items-center justify-center gap-2",
-                "rounded-[18px] border px-4",
+                "flex h-[52px] items-center justify-center gap-2",
+                "rounded-[14px] border px-3",
                 "text-sm font-semibold",
                 "transition-all",
 

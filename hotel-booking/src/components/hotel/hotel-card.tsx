@@ -3,12 +3,14 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
   MapPin, Star, Building2,
   Users, BedDouble, ArrowUpRight,
   CheckCircle2, AlertTriangle, Info,
 } from 'lucide-react';
 import { cn, formatDiscountLabel } from '@/lib/utils';
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import FavoriteButton from './favorite-button';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -44,6 +46,12 @@ export interface AccommodationContext {
   suggestedMessage:         string;
 }
 
+export interface HotelListImage {
+  id: number;
+  image_url: string;
+  is_cover?: boolean;
+}
+
 export interface HotelCardProps {
   id:                number;
   slug:              string;
@@ -53,6 +61,7 @@ export interface HotelCardProps {
   star_rating?:      number;
   guest_rating?:     number;
   cover_image:       string | null;
+  images?:           HotelListImage[] | null;
   address?:          string;
   starting_price?:   number;
   starting_discount?: RoomTypeStrip['discount'];
@@ -574,6 +583,7 @@ export const HotelListCard = ({
   address,
   starting_price,
   starting_discount,
+  images,
   room_types,
   has_dates,
   checkIn,
@@ -609,6 +619,29 @@ export const HotelListCard = ({
     return 0;
   }) : [];
 
+  const listImages = images && images.length > 0
+    ? images
+    : cover_image
+      ? [{ id: 0, image_url: cover_image, is_cover: true }]
+      : [];
+
+  const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null);
+  const [selectedSlide, setSelectedSlide] = useState(0);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+
+    const updateSelected = () => setSelectedSlide(carouselApi.selectedScrollSnap());
+    updateSelected();
+    carouselApi.on('select', updateSelected);
+    carouselApi.on('reInit', updateSelected);
+
+    return () => {
+      carouselApi.off('select', updateSelected);
+      carouselApi.off('reInit', updateSelected);
+    };
+  }, [carouselApi]);
+
   const handleCardClick = (event: React.MouseEvent<HTMLElement>) => {
     const target = event.target as HTMLElement;
     if (target.closest('a, button, input, textarea, select, [role="button"]')) {
@@ -624,28 +657,62 @@ export const HotelListCard = ({
       className="group grid min-w-0 cursor-pointer grid-cols-[128px_minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:grid-cols-[minmax(170px,42%)_minmax(0,1fr)]"
       onClick={handleCardClick}
     >
-      <Link href={hotelUrl} className="relative min-h-0 overflow-hidden bg-muted sm:min-h-56">
-        {cover_image ? (
-          <Image
-            src={cover_image}
-            alt={name}
-            fill
-            sizes="(max-width: 640px) 100vw, 30vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-          />
+      <div className="relative min-h-0 overflow-hidden bg-muted sm:min-h-56">
+        {listImages.length > 0 ? (
+          <Carousel
+            opts={{ loop: false, containScroll: 'trimSnaps', dragFree: false, align: 'start' }}
+            setApi={setCarouselApi}
+            className="h-full [&>[data-slot=carousel-content]]:h-full [&>[data-slot=carousel-content]]:overflow-y-hidden"
+          >
+            <CarouselContent className="h-full">
+              {listImages.map((image) => (
+                <CarouselItem key={image.id} className="relative h-full basis-full pl-0">
+                  <div className="relative h-full min-h-[120px] w-full sm:min-h-[224px]">
+                    <Image
+                      src={image.image_url}
+                      alt={name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 30vw"
+                      className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                    />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {listImages.length > 1 && (
+              <div className="absolute inset-x-0 bottom-2 z-20 flex justify-center gap-1.5">
+                {listImages.map((image, index) => (
+                  <button
+                    key={image.id}
+                    type="button"
+                    aria-label={`View hotel image ${index + 1}`}
+                    className={cn(
+                      'h-1.5 w-1.5 rounded-full transition-all',
+                      selectedSlide === index ? 'bg-white shadow-sm' : 'bg-white/50'
+                    )}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      carouselApi?.scrollTo(index);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </Carousel>
         ) : (
-          <div className="flex h-full items-center justify-center bg-secondary/50">
+          <div className="flex h-full min-h-[120px] items-center justify-center bg-secondary/50 sm:min-h-[224px]">
             <Building2 className="h-12 w-12 text-muted-foreground/20" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/10" />
         <div className="absolute right-2 top-2 sm:right-3 sm:top-3">
           <FavoriteButton hotelId={id} initialIsFavorited={isFavorited} />
         </div>
-        <span className="absolute bottom-2 right-2 rounded-full bg-background/90 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-foreground backdrop-blur sm:left-3 sm:top-3 sm:bottom-auto sm:right-auto sm:px-2.5 sm:py-1 sm:text-[10px]">
+        <span className="absolute bottom-7 right-2 rounded-full bg-background/90 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-foreground backdrop-blur sm:left-3 sm:top-3 sm:bottom-auto sm:right-auto sm:px-2.5 sm:py-1 sm:text-[10px]">
           {hotel_type}
         </span>
-      </Link>
+      </div>
 
       <div className="flex min-w-0 flex-col gap-1.5 p-1.5 sm:gap-3 sm:p-5">
         <div className="min-w-0">

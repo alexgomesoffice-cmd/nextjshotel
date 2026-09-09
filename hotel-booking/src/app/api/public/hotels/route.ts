@@ -353,7 +353,7 @@ export async function GET(req: NextRequest) {
         include: {
           city:       true,
           hotel_type: true,
-          images:     { where: { is_cover: true }, take: 1 },
+          images:     { orderBy: { sort_order: 'asc' }, select: { id: true, image_url: true, is_cover: true } },
           detail:     true,
           room_types: roomTypesInclude as Record<string, unknown>,
           hotel_amenities: {
@@ -439,6 +439,15 @@ export async function GET(req: NextRequest) {
         star_rating:    hotel.detail?.star_rating  ? Number(hotel.detail.star_rating)  : null,
         guest_rating:   hotel.detail?.guest_rating ? Number(hotel.detail.guest_rating) : null,
         cover_image:    hotel.images[0]?.image_url || null,
+        images:         Array.isArray(hotel.images)
+          ? hotel.images
+              .filter((image) => typeof image?.image_url === 'string' && image.image_url.trim().length > 0)
+              .map((image) => ({
+                id: image.id,
+                image_url: image.image_url,
+                is_cover: Boolean(image.is_cover),
+              }))
+          : [],
         starting_price: startingPrice,
         starting_discount: startingPricing?.discount ?? null,
         address:        hotel.address,

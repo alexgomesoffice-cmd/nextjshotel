@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   MapPin, Star, Building2,
   Users, BedDouble, ArrowUpRight,
@@ -95,6 +96,16 @@ function getDisplayPrice(basePrice?: number | null, effectivePrice?: number | nu
   return 0;
 }
 
+function renderStarIcons(starRating?: number) {
+  const sanitizedRating = typeof starRating === 'number' && Number.isFinite(starRating)
+    ? Math.max(0, Math.min(5, Math.round(starRating)))
+    : 0;
+
+  return Array.from({ length: sanitizedRating }, (_, index) => (
+    <Star key={`star-${index}`} className="size-3 fill-amber-400 text-amber-400" />
+  ));
+}
+
 // ─── Accommodation Badge ──────────────────────────────────────────────────────
 
 function AccommodationBadge({ ctx }: { ctx: AccommodationContext }) {
@@ -142,7 +153,56 @@ function AccommodationBadge({ ctx }: { ctx: AccommodationContext }) {
 
 // ─── Premium Styled Room Row Component ──────────────────────────────────────
 
-function RoomRow({
+function CompactRoomRow({
+  rt,
+  slug,
+  checkIn,
+  checkOut,
+  guests,
+  rooms,
+}: {
+  rt:         RoomTypeStrip;
+  slug:       string;
+  checkIn?:   string;
+  checkOut?:  string;
+  guests?:    number;
+  rooms?:      number;
+}) {
+  const isAvail = !rt.dates_filtered || rt.available_count > 0;
+  const displayPrice = getDisplayPrice(rt.base_price, rt.effective_price);
+  const hasDiscount = Boolean(rt.discount && rt.discount.amount > 0);
+  const href = isAvail ? buildRoomUrl(slug, rt.id, checkIn, checkOut, guests, rooms) : undefined;
+
+  const rowContent = (
+    <div
+      className={cn(
+        "flex items-center justify-between gap-1 rounded-md border border-border/60 bg-muted/20 px-1.5 py-1 transition-colors leading-none",
+        isAvail ? "hover:bg-muted/30" : "opacity-50"
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[10px] font-normal leading-tight text-foreground">{rt.name}</p>
+        {hasDiscount && rt.discount && (
+          <p className="mt-0.5 text-[7px] font-medium leading-tight text-primary">{formatDiscountLabel(rt.discount)}</p>
+        )}
+      </div>
+
+      <div className="shrink-0 text-right">
+        {hasDiscount && rt.base_price && (
+          <p className="text-[7px] text-muted-foreground line-through">BDT {Number(rt.base_price).toLocaleString()}</p>
+        )}
+        <p className="text-[8px] uppercase tracking-[0.12em] text-muted-foreground">From</p>
+        <p className="text-[9px] font-normal leading-tight text-foreground">BDT {displayPrice.toLocaleString()}</p>
+      </div>
+    </div>
+  );
+
+  if (!isAvail) return rowContent;
+
+  return <Link href={href!} className="block no-underline">{rowContent}</Link>;
+}
+
+export function RoomRow({
   rt,
   slug,
   checkIn,
@@ -498,6 +558,196 @@ const HotelCard = ({
           <AccommodationBadge ctx={accommodation} />
         </div>
       )}
+    </article>
+  );
+};
+
+export const HotelListCard = ({
+  id,
+  slug,
+  name,
+  city,
+  hotel_type,
+  star_rating = 0,
+  guest_rating = 0,
+  cover_image,
+  address,
+  starting_price,
+  starting_discount,
+  room_types,
+  has_dates,
+  checkIn,
+  checkOut,
+  guests,
+  rooms,
+  minPrice,
+  maxPrice,
+  accommodation,
+  amenities,
+  isFavorited = false,
+}: HotelCardProps) => {
+  const router = useRouter();
+  const hotelQuery = buildHotelQuery(checkIn, checkOut, guests, rooms);
+  const hotelUrl = hotelQuery.toString()
+    ? `/hotels/${slug}?${hotelQuery.toString()}`
+    : `/hotels/${slug}`;
+  const displayPrice = typeof starting_price === 'number' && Number.isFinite(starting_price)
+    ? starting_price
+    : null;
+  const availableCount = room_types?.filter((room) => !room.dates_filtered || room.available_count > 0).length ?? 0;
+  const visibleRooms = room_types ? [...room_types].sort((a, b) => {
+    const aAvail = !a.dates_filtered || a.available_count > 0;
+    const bAvail = !b.dates_filtered || b.available_count > 0;
+    if (aAvail !== bAvail) return aAvail ? -1 : 1;
+    if (minPrice || maxPrice) {
+      const minP = minPrice ?? 0;
+      const maxP = maxPrice ?? Infinity;
+      const aMatches = getDisplayPrice(a.base_price, a.effective_price) >= minP && getDisplayPrice(a.base_price, a.effective_price) <= maxP;
+      const bMatches = getDisplayPrice(b.base_price, b.effective_price) >= minP && getDisplayPrice(b.base_price, b.effective_price) <= maxP;
+      if (aMatches !== bMatches) return aMatches ? -1 : 1;
+    }
+    return 0;
+  }) : [];
+
+  const handleCardClick = (event: React.MouseEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('a, button, input, textarea, select, [role="button"]')) {
+      return;
+    }
+    router.push(hotelUrl);
+  };
+  const phonePreviewRooms = visibleRooms.slice(0, 2);
+  const remainingRoomCount = Math.max(0, visibleRooms.length - phonePreviewRooms.length);
+
+  return (
+    <article
+      className="group grid min-w-0 cursor-pointer grid-cols-[128px_minmax(0,1fr)] overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:grid-cols-[minmax(170px,42%)_minmax(0,1fr)]"
+      onClick={handleCardClick}
+    >
+      <Link href={hotelUrl} className="relative min-h-0 overflow-hidden bg-muted sm:min-h-56">
+        {cover_image ? (
+          <Image
+            src={cover_image}
+            alt={name}
+            fill
+            sizes="(max-width: 640px) 100vw, 30vw"
+            className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center bg-secondary/50">
+            <Building2 className="h-12 w-12 text-muted-foreground/20" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-transparent to-black/10" />
+        <div className="absolute right-2 top-2 sm:right-3 sm:top-3">
+          <FavoriteButton hotelId={id} initialIsFavorited={isFavorited} />
+        </div>
+        <span className="absolute bottom-2 right-2 rounded-full bg-background/90 px-2 py-0.5 text-[8px] font-semibold uppercase tracking-[0.12em] text-foreground backdrop-blur sm:left-3 sm:top-3 sm:bottom-auto sm:right-auto sm:px-2.5 sm:py-1 sm:text-[10px]">
+          {hotel_type}
+        </span>
+      </Link>
+
+      <div className="flex min-w-0 flex-col gap-1.5 p-1.5 sm:gap-3 sm:p-5">
+        <div className="min-w-0">
+          <div className="mb-0.5 flex flex-wrap items-center gap-1 text-[9px] sm:gap-2 sm:text-xs">
+            {guest_rating > 0 && <span className="font-semibold text-amber-500">{Number(guest_rating).toFixed(1)} ★</span>}
+            {star_rating > 0 && (
+              <span className="flex items-center gap-0.5 text-muted-foreground">
+                {renderStarIcons(star_rating)}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              <h3 className="line-clamp-2 text-[13px] font-bold leading-tight tracking-tight text-foreground sm:text-xl">{name}</h3>
+              <p className="mt-0.5 flex min-w-0 flex-wrap items-center gap-1 text-[9.5px] leading-tight text-muted-foreground sm:text-sm">
+                <MapPin className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
+                <span className="min-w-0">{city}</span>
+                {address && <><span>·</span><span className="min-w-0">{address}</span></>}
+              </p>
+            </div>
+
+            <div className="shrink-0 pt-0.5 text-right">
+              <p className="text-[8px] uppercase tracking-[0.18em] text-muted-foreground">From</p>
+              <p className="whitespace-nowrap text-[11px] font-bold leading-tight text-foreground sm:text-lg">
+                {displayPrice !== null ? `BDT ${displayPrice.toLocaleString()}` : 'Price unavailable'}
+              </p>
+              {starting_discount && starting_discount.amount > 0 && (
+                <p className="mt-0.5 text-[8px] font-semibold leading-tight text-primary sm:text-xs">
+                  {formatDiscountLabel(starting_discount)}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {amenities && amenities.length > 0 && (
+          <div className="hidden sm:flex sm:flex-wrap sm:gap-1">
+            {amenities.slice(0, 3).map((amenity) => (
+              <span key={amenity} className="max-w-full rounded-md bg-secondary/70 px-1 py-0.5 text-[8.5px] leading-tight text-muted-foreground sm:px-2 sm:py-1 sm:text-[10px]">
+                {amenity}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {accommodation && <AccommodationBadge ctx={accommodation} />}
+
+        <div className="border-t border-border/60 pt-1 sm:pt-3">
+          <div className="hidden sm:block">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:text-[10px]">Available rooms</p>
+            <p className="text-[9.5px] text-muted-foreground sm:text-xs">
+              {has_dates ? `${availableCount}/${room_types?.length ?? 0} room types open` : `${room_types?.length ?? 0} room types available`}
+            </p>
+          </div>
+
+          <div className="mt-1 block sm:hidden">
+            {phonePreviewRooms.length > 0 && (
+              <div className="space-y-1">
+                {phonePreviewRooms.map((room) => (
+                  <CompactRoomRow
+                    key={room.id}
+                    rt={room}
+                    slug={slug}
+                    checkIn={checkIn}
+                    checkOut={checkOut}
+                    guests={guests}
+                    rooms={rooms}
+                  />
+                ))}
+                {remainingRoomCount > 0 && (
+                  <p className="text-[9px] text-muted-foreground">{remainingRoomCount} more available</p>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="hidden sm:block">
+            {visibleRooms.length > 0 && (
+              <div
+                className="mt-2 h-[92px] divide-y divide-border/60 overflow-y-auto bg-card custom-scrollbar [&::-webkit-scrollbar-thumb]:opacity-0 hover:[&::-webkit-scrollbar-thumb]:opacity-100 sm:h-[108px] lg:h-[116px]"
+                data-lenis-prevent={visibleRooms.length >= 3 ? "" : undefined}
+                data-lenis-prevent-wheel={visibleRooms.length >= 3 ? "" : undefined}
+                data-lenis-prevent-touch={visibleRooms.length >= 3 ? "" : undefined}
+              >
+                {visibleRooms.map((room) => (
+                  <RoomRow
+                    key={room.id}
+                    rt={room}
+                    slug={slug}
+                    checkIn={checkIn}
+                    checkOut={checkOut}
+                    guests={guests}
+                    rooms={rooms}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
     </article>
   );
 };

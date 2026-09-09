@@ -2,9 +2,9 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { Loader2, SlidersHorizontal, ArrowUpDown, Building2, Users, AlertCircle } from "lucide-react";
+import { Loader2, SlidersHorizontal, ArrowUpDown, Building2, Users, AlertCircle, Grid2X2, List } from "lucide-react";
 import HotelFilterSidebar from "@/components/hotel/hotel-filter-sidebar";
-import HotelCard, { HotelCardProps, AccommodationContext } from "@/components/hotel/hotel-card";
+import HotelCard, { HotelCardProps, AccommodationContext, HotelListCard } from "@/components/hotel/hotel-card";
 import SearchBar from "@/components/search/search-bar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,6 +84,7 @@ function SearchContent() {
   const [sort, setSort] = useState("newest");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [dateValidationError, setDateValidationError] = useState<string | null>(null);
 
   const currentPage = parseInt(searchParams.get("page") || "1");
@@ -174,6 +175,21 @@ function SearchContent() {
   const guestsVal = searchParams.get("guests");
   const roomsVal  = searchParams.get("rooms");
 
+  const renderHotel = (hotel: HotelCardData) => (
+    viewMode === "list"
+      ? <HotelListCard
+          {...hotel}
+          accommodation={hotel.accommodation ?? null}
+          checkIn={checkIn || undefined}
+          checkOut={checkOut || undefined}
+          guests={guestsVal ? parseInt(guestsVal, 10) : undefined}
+          rooms={roomsVal ? parseInt(roomsVal, 10) : undefined}
+          minPrice={searchParams.get("min_price") ? parseInt(searchParams.get("min_price")!, 10) : undefined}
+          maxPrice={searchParams.get("max_price") ? parseInt(searchParams.get("max_price")!, 10) : undefined}
+        />
+      : <HotelCardItem hotel={hotel} searchParams={searchParams} />
+  );
+
   return (
     <div className="min-h-screen bg-background">
 
@@ -259,8 +275,8 @@ function SearchContent() {
                   )}
                 </div>
 
-                {/* Sort dropdown */}
-                <div className="flex items-center gap-2 shrink-0">
+                {/* Sort and view controls */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <Button
                     variant="outline"
                     size="icon"
@@ -283,6 +299,26 @@ function SearchContent() {
                       <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                   </select>
+                  <div className="flex items-center rounded-lg border border-border/60 bg-card p-0.5" aria-label="Result view">
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("grid")}
+                      aria-label="Grid view"
+                      aria-pressed={viewMode === "grid"}
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${viewMode === "grid" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+                    >
+                      <Grid2X2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMode("list")}
+                      aria-label="List view"
+                      aria-pressed={viewMode === "list"}
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${viewMode === "list" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`}
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -297,12 +333,12 @@ function SearchContent() {
                 <>
                   {/* ── Tiered layout when guests param is present ── */}
                   {hasGuestsParam ? (
-                    <div className="grid grid-cols-1 gap-6 items-start xl:grid-cols-2">
+                    <div key={viewMode} className={`${viewMode === "list" ? "space-y-6" : "grid grid-cols-1 gap-6 items-start xl:grid-cols-2"} animate-fade-in`}>
 
                       {/* PRIMARY tier */}
                       {primaryHotels.map((hotel) => (
                         <div key={hotel.id}>
-                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                          {renderHotel(hotel)}
                         </div>
                       ))}
 
@@ -315,7 +351,7 @@ function SearchContent() {
                       )}
                       {suggestedHotels.map((hotel) => (
                         <div key={hotel.id}>
-                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                          {renderHotel(hotel)}
                         </div>
                       ))}
 
@@ -328,23 +364,23 @@ function SearchContent() {
                       )}
                       {alternativeHotels.map((hotel) => (
                         <div key={hotel.id}>
-                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                          {renderHotel(hotel)}
                         </div>
                       ))}
 
                       {/* Fallback: hotels without accommodation context */}
                       {noContextHotels.map((hotel) => (
                         <div key={hotel.id}>
-                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                          {renderHotel(hotel)}
                         </div>
                       ))}
                     </div>
                   ) : (
                     /* ── Flat layout (no guests param) — existing behavior ── */
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start">
+                    <div key={viewMode} className={`${viewMode === "list" ? "space-y-6" : "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-6 items-start"} animate-fade-in`}>
                       {hotels.map((hotel) => (
                         <div key={hotel.id}>
-                          <HotelCardItem hotel={hotel} searchParams={searchParams} />
+                          {renderHotel(hotel)}
                         </div>
                       ))}
                     </div>

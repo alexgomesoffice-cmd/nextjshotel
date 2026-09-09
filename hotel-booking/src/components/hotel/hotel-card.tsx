@@ -208,21 +208,21 @@ function RoomRow({
             <h4 className="min-w-0 flex-1 line-clamp-2 text-[11px] sm:text-[13px] lg:text-[13.5px] font-semibold leading-tight text-foreground group-hover/row:text-primary transition-colors">
               {rt.name}
             </h4>
-            <div className="w-[84px] shrink-0 text-right sm:w-[116px] lg:w-auto">
+            <div className="w-[128px] shrink-0 text-right sm:w-[148px] lg:w-auto">
   {hasDiscount && (
     <p className="text-[9px] text-muted-foreground line-through sm:text-[10px] lg:text-[10px]">
       BDT {Number(rt.base_price).toLocaleString()}
     </p>
   )}
 
-  <div className="flex flex-col items-end justify-end gap-0 lg:flex-row lg:items-center lg:gap-2">
+  <div className="flex items-center justify-end gap-1 lg:gap-2">
     {hasDiscount && rt.discount && (
-      <span className="max-w-[96px] text-right text-[8px] font-semibold leading-tight text-primary sm:max-w-[116px] sm:text-[9px] lg:max-w-[150px] lg:text-[9px]">
+      <span className="max-w-[72px] text-left text-[8px] font-semibold leading-tight text-primary sm:max-w-[88px] sm:text-[9px] lg:max-w-[150px] lg:text-right lg:text-[9px]">
         {formatDiscountLabel(rt.discount)}
       </span>
     )}
 
-    <p className="text-xs font-bold leading-none tracking-tight text-foreground sm:text-sm lg:text-[15px]">
+    <p className="whitespace-nowrap text-xs font-bold leading-none tracking-tight text-foreground sm:text-sm lg:text-[15px]">
       BDT {displayPrice.toLocaleString()}
     </p>
   </div>

@@ -1,4 +1,3 @@
-'use client'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,52 +23,52 @@ export default function NotFound() {
         <div className="absolute bottom-[20%] left-[25%] h-2 w-2 animate-pulse rounded-full bg-primary/30 [animation-delay:2s]" />
       </div>
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-6 py-16">
-        <div className="grid w-full items-center gap-12 lg:grid-cols-2 lg:gap-20">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-6xl items-center px-4 py-4 sm:px-6 sm:py-8 lg:px-6 lg:py-16">
+        <div className="grid w-full items-center gap-4 sm:gap-8 lg:grid-cols-2 lg:gap-20">
 
           {/* LEFT — Animated illustration */}
-          <div className="relative flex h-[420px] items-center justify-center">
+          <div className="relative flex h-[220px] items-center justify-center sm:h-[320px] lg:h-[420px]">
             
             {/* Soft glow */}
-            <div className="absolute h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
+            <div className="absolute h-48 w-48 rounded-full bg-primary/10 blur-3xl sm:h-64 sm:w-64 lg:h-72 lg:w-72" />
 
             {/* Dashed orbit */}
-            <div className="absolute h-72 w-72 rounded-full border border-dashed border-primary/20 animate-[spin_18s_linear_infinite]" />
+            <div className="absolute h-48 w-48 rounded-full border border-dashed border-primary/20 animate-[spin_18s_linear_infinite] sm:h-64 sm:w-64 lg:h-72 lg:w-72" />
 
             {/* Main floating card */}
-            <div className="relative z-10 flex h-64 w-52 -rotate-6 flex-col items-center justify-center rounded-3xl border bg-card shadow-2xl transition-transform duration-500 hover:rotate-0 animate-[float_4s_ease-in-out_infinite]">
+            <div className="relative z-10 flex h-40 w-32 -rotate-6 flex-col items-center justify-center rounded-3xl border bg-card shadow-2xl transition-transform duration-500 hover:rotate-0 animate-[float_4s_ease-in-out_infinite] sm:h-56 sm:w-44 lg:h-64 lg:w-52">
               
               {/* Key icon */}
-              <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
+              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 sm:mb-5 sm:h-20 sm:w-20">
                 <KeyRound
-                  className="h-10 w-10 text-primary animate-[float_3s_ease-in-out_infinite]"
+                  className="h-7 w-7 text-primary animate-[float_3s_ease-in-out_infinite] sm:h-10 sm:w-10"
                 />
               </div>
 
               <div className="text-center">
-                <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
+                <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground sm:text-xs sm:tracking-[0.25em]">
                   Hotel Key
                 </p>
 
-                <p className="mt-2 text-6xl font-black tracking-tighter text-primary">
+                <p className="mt-1 text-4xl font-black tracking-tighter text-primary sm:mt-2 sm:text-6xl">
                   404
                 </p>
               </div>
             </div>
 
             {/* Floating compass */}
-            <div className="absolute left-[8%] top-[20%] flex h-14 w-14 animate-[float_4s_ease-in-out_infinite] items-center justify-center rounded-2xl bg-card shadow-lg">
-              <Compass className="h-6 w-6 text-primary" />
+            <div className="absolute left-[8%] top-[20%] flex h-10 w-10 animate-[float_4s_ease-in-out_infinite] items-center justify-center rounded-2xl bg-card shadow-lg sm:h-14 sm:w-14">
+              <Compass className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
             </div>
 
             {/* Floating Building */}
             <div className="absolute right-[10%] top-[18%] animate-[float_3s_ease-in-out_infinite_1s]">
-              <Building className="h-7 w-7 text-primary/60" />
+              <Building className="h-5 w-5 text-primary/60 sm:h-7 sm:w-7" />
             </div>
 
             {/* Floating search */}
-            <div className="absolute bottom-[18%] right-[8%] flex h-14 w-14 animate-[float_4s_ease-in-out_infinite_0.5s] items-center justify-center rounded-2xl bg-card shadow-lg">
-              <Search className="h-6 w-6 text-primary" />
+            <div className="absolute bottom-[18%] right-[8%] flex h-10 w-10 animate-[float_4s_ease-in-out_infinite_0.5s] items-center justify-center rounded-2xl bg-card shadow-lg sm:h-14 sm:w-14">
+              <Search className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
             </div>
 
             {/* Small decorative dots */}
@@ -80,28 +79,28 @@ export default function NotFound() {
           {/* RIGHT — Content */}
           <div className="text-center lg:text-left">
 
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full bg-card px-4 py-2 text-sm font-medium shadow-sm">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-card px-3 py-1.5 text-xs font-medium shadow-sm sm:mb-5 sm:px-4 sm:py-2 sm:text-sm">
               <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
               <span className="text-muted-foreground">
                 You've wandered off the map
               </span>
             </div>
 
-            <h1 className="text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
               This Page
               <br />
               <span className="text-primary">doesn't exist.</span>
             </h1>
 
-            <p className="mt-6 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-5 text-muted-foreground sm:mt-6 sm:text-lg sm:leading-7 lg:mx-0">
               Looks like you've checked into a page that isn't available.
               The good news? There are plenty of amazing stays waiting
               for you to discover.
             </p>
 
             {/* Buttons */}
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row lg:justify-start">
-              <Button asChild size="lg" className="group h-12 px-6">
+            <div className="mt-4 flex flex-row gap-2 sm:mt-8 sm:gap-3 lg:justify-start">
+              <Button asChild size="lg" className="group h-10 min-w-0 flex-1 px-2 text-xs sm:h-12 sm:flex-none sm:px-6 sm:text-sm">
                 <Link href="/hotels">
                   <Search className="mr-2 h-4 w-4" />
                   Find Your Stay
@@ -109,7 +108,7 @@ export default function NotFound() {
                 </Link>
               </Button>
 
-              <Button asChild variant="outline" size="lg" className="h-12 px-6">
+              <Button asChild variant="outline" size="lg" className="h-10 min-w-0 flex-1 px-2 text-xs sm:h-12 sm:flex-none sm:px-6 sm:text-sm">
                 <Link href="/">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Home
@@ -118,7 +117,7 @@ export default function NotFound() {
             </div>
 
             {/* Helpful links */}
-            <div className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm lg:justify-start">
+            <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs sm:mt-10 sm:gap-x-6 sm:gap-y-2 sm:text-sm lg:justify-start">
               <Link
                 href="/hotels"
                 className="text-muted-foreground transition-colors hover:text-primary"
@@ -147,29 +146,6 @@ export default function NotFound() {
           </div>
         </div>
       </div>
-
-      {/* Custom animations */}
-      <style jsx global>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-12px);
-          }
-        }
-
-        @keyframes shine {
-          0% {
-            transform: translateX(-120px) rotate(12deg);
-          }
-          50%,
-          100% {
-            transform: translateX(350px) rotate(12deg);
-          }
-        }
-      `}</style>
     </main>
   )
 }

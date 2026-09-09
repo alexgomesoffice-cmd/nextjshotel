@@ -582,3 +582,22 @@ html {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+@keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-12px);
+          }
+        }
+
+        @keyframes shine {
+          0% {
+            transform: translateX(-120px) rotate(12deg);
+          }
+          50%,
+          100% {
+            transform: translateX(350px) rotate(12deg);
+          }
+        }

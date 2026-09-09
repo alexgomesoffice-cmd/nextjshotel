@@ -37,7 +37,7 @@ export default function NotFound() {
             <div className="absolute h-72 w-72 rounded-full border border-dashed border-primary/20 animate-[spin_18s_linear_infinite]" />
 
             {/* Main floating card */}
-            <div className="relative z-10 flex h-64 w-52 -rotate-6 flex-col items-center justify-center rounded-3xl border bg-card shadow-2xl transition-transform duration-500 hover:rotate-0">
+            <div className="relative z-10 flex h-64 w-52 -rotate-6 flex-col items-center justify-center rounded-3xl border bg-card shadow-2xl transition-transform duration-500 hover:rotate-0 animate-[float_4s_ease-in-out_infinite]">
               
               {/* Key icon */}
               <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
@@ -55,11 +55,6 @@ export default function NotFound() {
                   404
                 </p>
               </div>
-
-              {/* Shine */}
-              <div className="absolute inset-0 overflow-hidden rounded-3xl">
-                <div className="absolute -left-32 top-0 h-full w-20 rotate-12 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shine_4s_ease-in-out_infinite]" />
-              </div>
             </div>
 
             {/* Floating compass */}
@@ -67,7 +62,7 @@ export default function NotFound() {
               <Compass className="h-6 w-6 text-primary" />
             </div>
 
-            {/* Floating sparkle */}
+            {/* Floating Building */}
             <div className="absolute right-[10%] top-[18%] animate-[float_3s_ease-in-out_infinite_1s]">
               <Building className="h-7 w-7 text-primary/60" />
             </div>

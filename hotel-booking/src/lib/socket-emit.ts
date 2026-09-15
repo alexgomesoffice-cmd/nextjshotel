@@ -14,6 +14,25 @@
 const SOCKET_SERVER_URL = process.env.SOCKET_SERVER_URL ?? "http://localhost:4001";
 const SOCKET_SECRET = process.env.SOCKET_SECRET ?? "dev_socket_secret";
 
+function isConnectionRefused(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+
+  const candidate = error as {
+    code?: unknown
+    cause?: unknown
+    errors?: unknown
+  }
+
+  if (candidate.code === 'ECONNREFUSED') return true
+  if (isConnectionRefused(candidate.cause)) return true
+
+  if (Array.isArray(candidate.errors)) {
+    return candidate.errors.some(isConnectionRefused)
+  }
+
+  return false
+}
+
 export async function emitToRoom(
   room: string,
   event: string,
@@ -30,6 +49,7 @@ export async function emitToRoom(
     });
   } catch (err) {
     // Non-fatal — real-time is an enhancement, not the source of truth.
+    if (isConnectionRefused(err)) return
     console.warn("[socket-emit] Failed to emit:", event, "→", room, err);
   }
 }

@@ -106,7 +106,7 @@ function VariantRow({
 
   return (
     <div className={cn(
-      "grid grid-cols-1 sm:grid-cols-[8.5rem_minmax(0,1fr)_8.5rem] gap-0 border-t border-border/20 transition-colors",
+      "grid grid-cols-[minmax(0,5.25rem)_minmax(0,1fr)] sm:grid-cols-[8.5rem_minmax(0,1fr)_8.5rem] gap-0 border-t border-border/20 transition-colors",
       isSelected ? "bg-primary/5" : "bg-transparent",
       isUnavailable && "opacity-60 bg-muted/30"
     )}>
@@ -114,7 +114,7 @@ function VariantRow({
       <div
         onClick={onViewRoomDetails}
         tabIndex={-1}
-        className="relative aspect-4/3 sm:aspect-auto sm:min-h-32.5 sm:h-full group overflow-hidden bg-muted cursor-pointer"
+        className="relative h-full min-h-[5.25rem] sm:min-h-32.5 sm:h-full group overflow-hidden bg-muted cursor-pointer"
       >
         {images.length > 0 ? (
           <>
@@ -154,29 +154,29 @@ function VariantRow({
       </div>
 
       {/* ── Content (middle) ── */}
-      <div className="min-w-0 px-4 py-3 sm:px-5 sm:py-4">
+      <div className="min-w-0 px-3 py-2.5 sm:px-5 sm:py-4">
         {/* Title + available badge */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-semibold text-base text-foreground leading-tight">{title}</span>
+          <span className="font-semibold text-sm sm:text-base text-foreground leading-tight">{title}</span>
             {available > 0 ? (
-              <span className="text-[11px] text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
+              <span className="text-[10px] sm:text-[11px] text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
                 {available} available
               </span>
             ) : (
-              <span className="text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-2 py-0.5 border border-border/30 shrink-0">
+              <span className="text-[10px] sm:text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-2 py-0.5 border border-border/30 shrink-0">
                 Unavailable for selected dates
               </span>
             )}
         </div>
 
         {/* Capacity */}
-        <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-1.5 mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-muted-foreground">
           <Users className="h-3.5 w-3.5 shrink-0" />
           {formatCapacityMessage(maxOccupancy)}
         </div>
 
         {/* Facilities */}
-        <div className="flex items-center gap-x-3 gap-y-1 flex-wrap mt-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-x-2.5 gap-y-1 flex-wrap mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-muted-foreground">
           {variant.facilities.slice(0, 3).map((f) => (
             <span key={f.name} className="inline-flex items-center gap-1">
               <Check className="h-3 w-3 text-primary/80" /> {f.name}
@@ -186,13 +186,13 @@ function VariantRow({
 
         {/* Recommendation */}
         {guests > 1 && canAccommodate && recommendedQuantity > 0 && (
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-green-600 dark:text-green-400 font-medium">
+          <div className="flex items-center gap-1.5 mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-green-600 dark:text-green-400 font-medium">
             <Check className="h-3.5 w-3.5 shrink-0" />
             <span className="truncate">{formatRecommendationMessage(recommendedQuantity, guests)}</span>
           </div>
         )}
         {guests > 1 && !canAccommodate && (
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 dark:text-amber-400 font-medium">
+          <div className="flex items-center gap-1.5 mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-amber-600 dark:text-amber-400 font-medium">
             <AlertCircle className="h-3.5 w-3.5 shrink-0" />
             <span>Cannot accommodate {guests} guests</span>
           </div>
@@ -200,7 +200,7 @@ function VariantRow({
       </div>
 
       {/* ── Price and quantity ── */}
-      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 px-4 pb-3 sm:px-5 sm:py-4 border-t sm:border-t-0 border-border/20">
+      <div className="col-span-2 sm:col-span-1 flex items-center justify-between gap-3 px-3 pb-3 pt-0 sm:flex-col sm:items-end sm:justify-center sm:px-5 sm:py-4 sm:border-t-0 border-t border-border/20 sm:border-l sm:border-border/20">
         <div className="text-left sm:text-right shrink-0">
           {variant.pricing.discount && (
             <p className="text-[11px] text-muted-foreground line-through">
@@ -462,10 +462,10 @@ const RoomTypeCard = ({
       >
         <div className="overflow-hidden min-h-0">
           {/* Section header */}
-          <div className="border-t border-border/30 px-5 py-3 flex items-center gap-2 bg-muted/10">
-            <span className="text-sm font-semibold text-foreground">Choose your room</span>
+          <div className="border-t border-border/30 px-4 py-3 sm:px-5 flex items-center justify-between gap-2 bg-muted/10">
+            <span className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-foreground">Choose your room</span>
             {available_rooms_count > 0 && (
-              <span className="text-sm text-primary font-semibold">{available_rooms_count} available</span>
+              <span className="text-xs sm:text-sm text-primary font-semibold">{available_rooms_count} available</span>
             )}
           </div>
 

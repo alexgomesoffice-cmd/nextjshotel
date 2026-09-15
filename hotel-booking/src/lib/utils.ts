@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export function formatBDT (amount: number | string): string {
   return new Intl.NumberFormat('en-BD', {
     style: 'currency',
-    currency: 'BDT ',
+    currency: 'BDT',
     minimumFractionDigits: 0,
   }).format(Number(amount))
 }

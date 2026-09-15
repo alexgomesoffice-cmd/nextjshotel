@@ -108,6 +108,7 @@ const SearchBar = ({
   type ActiveOverlay = "location" | "guest" | null;
   const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFilterPanel, setActiveFilterPanel] = useState<"desktop" | "mobile" | null>(null);
 
   // Derived values (read-only, never set directly)
   const isGuestOpen = activeOverlay === "guest";
@@ -238,6 +239,7 @@ const SearchBar = ({
         !clickedPopover
       ) {
         setIsFilterOpen(false);
+        setActiveFilterPanel(null);
         setActiveOverlay(null);
         setSuggestions({
           hotels: [],
@@ -249,6 +251,7 @@ const SearchBar = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsFilterOpen(false);
+        setActiveFilterPanel(null);
         setActiveOverlay(null);
         setSuggestions({
           hotels: [],
@@ -581,15 +584,50 @@ const SearchBar = ({
 
   /*
    * ================================================================
-   * SHARED STYLES
+   * SHARED STYLES (glass-row design)
    * ================================================================
    */
 
-  const cellClass =
-    "relative min-w-0 overflow-visible rounded-[18px] border border-foreground/[0.10] bg-background/10 backdrop-blur-md dark:text-white transition-all duration-200 hover:border-foreground/[0.16] hover:bg-background/40";
+  const rowClass =
+    "group flex h-14 items-center gap-3 rounded-full px-4 transition-colors hover:bg-white/10";
 
-  const labelClass =
-    "pointer-events-none absolute left-4 top-2.5 z-10 text-[10px] font-medium tracking-[-0.01em] text-foreground/55 dark:text-white/55";
+  const rowLabelClass =
+    "block text-[10px] font-medium uppercase tracking-wider text-white/60";
+
+  const dividerClass = "mx-4 h-px bg-white/15";
+
+  const vDividerClass = "h-6 w-px bg-white/15";
+
+  const popoverCardClass =
+    "rounded-2xl border border-white/15 bg-background/95 text-foreground shadow-2xl backdrop-blur-2xl";
+
+  type FilterVariant = "light" | "dark";
+
+  const chipClass = (selected: boolean, variant: FilterVariant) =>
+    cn(
+      "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
+      variant === "dark"
+        ? selected
+          ? "border-primary/50 bg-primary/20 text-white"
+          : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+        : selected
+          ? "border-primary bg-primary/15 text-primary"
+          : "border-border bg-transparent text-foreground hover:bg-accent"
+    );
+
+  const sectionLabelClass = (variant: FilterVariant) =>
+    cn(
+      "text-[11px] font-semibold uppercase tracking-[0.12em]",
+      variant === "dark" ? "text-white/50" : "text-muted-foreground"
+    );
+
+  const moreChipClass = (variant: FilterVariant) =>
+    cn(
+      "rounded-full border border-dashed px-3 py-1.5 text-[12px] font-medium transition-colors",
+      variant === "dark"
+        ? "border-white/20 text-white/50 hover:border-white/35 hover:text-white"
+        : "border-border text-muted-foreground hover:border-foreground/25 hover:text-foreground"
+    );
 
   /*
    * ================================================================
@@ -598,44 +636,43 @@ const SearchBar = ({
    */
 
   const locationField = (
-    <div
-      className={cn(
-        cellClass,
-        "relative z-20 h-full overflow-visible !rounded-[20px]"
-      )}
-    >
-      <label className={labelClass}>Location</label>
+    <div className="relative z-20 min-w-0 flex-1">
+      <div className={rowClass}>
+        <MapPin className="size-[18px] shrink-0 text-white/70" />
 
-      <MapPin className="pointer-events-none absolute left-4 top-[58%] h-[18px] w-[18px] -translate-y-1/2 text-foreground/65 dark:text-white/65" />
+        <div className="min-w-0 flex-1">
+          <label className={rowLabelClass}>Location</label>
 
-      <Input
-        value={searchLocation}
-        onChange={(event) =>
-          void handleLocationChange(event.target.value)
-        }
-        onFocus={() => {
-          if (searchLocation.trim().length > 0) {
-            setActiveOverlay("location");
-          }
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            setSuggestions({
-              hotels: [],
-              cities: [],
-            });
-            setActiveOverlay(null);
-            handleSearch();
-          }
-        }}
-        placeholder="Where are you going?"
-        className="h-full rounded-[18px] border-0 bg-transparent pl-11 pr-11 pt-6 pb-2 text-base font-medium !text-foreground shadow-none placeholder:!text-foreground/50 dark:!text-white dark:placeholder:!text-white/50 focus-visible:ring-0"
-        aria-label="Location"
-      />
+          <Input
+            value={searchLocation}
+            onChange={(event) =>
+              void handleLocationChange(event.target.value)
+            }
+            onFocus={() => {
+              if (searchLocation.trim().length > 0) {
+                setActiveOverlay("location");
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                setSuggestions({
+                  hotels: [],
+                  cities: [],
+                });
+                setActiveOverlay(null);
+                handleSearch();
+              }
+            }}
+            placeholder="Where are you going?"
+            className="h-auto w-full border-0 bg-transparent p-0 text-sm font-medium !text-white shadow-none placeholder:!text-white/50 focus-visible:ring-0"
+            aria-label="Location"
+          />
+        </div>
 
-      {isLoadingSuggestions && (
-        <Loader2 className="absolute right-4 top-[58%] h-4 w-4 -translate-y-1/2 animate-spin text-foreground/60 dark:text-white/60" />
-      )}
+        {isLoadingSuggestions && (
+          <Loader2 className="size-4 shrink-0 animate-spin text-white/60" />
+        )}
+      </div>
 
       {(() => {
         const showLocationSuggestions =
@@ -645,7 +682,8 @@ const SearchBar = ({
         return (
           <div
             className={cn(
-              "absolute left-0 right-0 top-[calc(100%+10px)] z-[500] overflow-hidden rounded-2xl border border-foreground/10 bg-background/95 text-foreground shadow-2xl backdrop-blur-2xl custom-scrollbar transition-[opacity,transform] duration-200 ease-out",
+              "absolute left-0 right-0 top-[calc(100%+10px)] z-[500] overflow-hidden custom-scrollbar transition-[opacity,transform] duration-200 ease-out",
+              popoverCardClass,
               showLocationSuggestions
                 ? "pointer-events-auto translate-y-0 opacity-100"
                 : "pointer-events-none -translate-y-1 opacity-0"
@@ -655,16 +693,16 @@ const SearchBar = ({
             data-lenis-prevent-touch
             aria-hidden={!showLocationSuggestions}
           >
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-80 overflow-y-auto p-2">
               {suggestions.hotels.length > 0 && (
                 <div
                   className={cn(
                     "p-2",
                     suggestions.cities.length > 0 &&
-                      "border-b border-foreground/10"
+                      "border-b border-border/50"
                   )}
                 >
-                  <div className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-foreground/40">
+                  <div className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     Hotels
                   </div>
 
@@ -675,7 +713,7 @@ const SearchBar = ({
                       onClick={() =>
                         handleSuggestionSelect(hotel)
                       }
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-accent"
                     >
                       <Hotel className="h-4 w-4 shrink-0 text-primary" />
 
@@ -685,13 +723,13 @@ const SearchBar = ({
                         </div>
 
                         {hotel.address && (
-                          <div className="truncate text-xs text-foreground/45">
+                          <div className="truncate text-xs text-muted-foreground">
                             {hotel.address}
                           </div>
                         )}
 
                         {hotel.city && (
-                          <div className="truncate text-[11px] text-foreground/35">
+                          <div className="truncate text-[11px] text-muted-foreground/80">
                             {hotel.city}
                           </div>
                         )}
@@ -703,7 +741,7 @@ const SearchBar = ({
 
               {suggestions.cities.length > 0 && (
                 <div className="p-2">
-                  <div className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-foreground/40">
+                  <div className="mb-2 px-2 text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     Locations
                   </div>
 
@@ -714,7 +752,7 @@ const SearchBar = ({
                       onClick={() =>
                         handleSuggestionSelect(city)
                       }
-                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.06]"
+                      className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-accent"
                     >
                       <MapPin className="h-4 w-4 shrink-0 text-primary" />
 
@@ -755,43 +793,26 @@ const SearchBar = ({
             setActiveDatePicker(instance);
             setIsDatePickerOpen(true);
           }}
-          className={cn(
-            cellClass,
-            "flex h-full w-full items-center px-4 pt-5 text-foreground dark:text-white"
-          )}
+          className={cn(rowClass, "min-w-0 flex-1 text-left")}
         >
-          <span className={labelClass}>Stay Dates</span>
+          <CalendarIcon className="size-[18px] shrink-0 text-white/70" />
 
-          <CalendarIcon className="mr-3 h-[18px] w-[18px] shrink-0 text-foreground/65 dark:text-white/65" />
+          <div className="min-w-0 flex-1">
+            <span className={rowLabelClass}>Stay dates</span>
 
-          <div className="grid min-w-0 flex-1 grid-cols-2 gap-2.5">
-            <div className="min-w-0">
-              <div className="text-[10px] font-medium text-foreground/50 dark:text-white/50">
-                Check in
-              </div>
-
-              <div className="mt-1 truncate text-sm font-semibold leading-5 tracking-[-0.01em] text-foreground dark:text-white">
-                {displayedDate?.from
-                  ? format(displayedDate.from, "MMM d, yyyy")
-                  : "Select date"}
-              </div>
-            </div>
-
-            <div className="min-w-0 border-l border-foreground/10 pl-2.5">
-              <div className="text-[10px] font-medium text-foreground/50 dark:text-white/50">
-                Check out
-              </div>
-
-              <div className="mt-1 truncate text-sm font-semibold leading-5 tracking-[-0.01em] text-foreground dark:text-white">
-                {displayedDate?.to
-                  ? format(displayedDate.to, "MMM d, yyyy")
-                  : "Select date"}
-              </div>
-            </div>
+            <span className="block truncate text-sm font-medium text-white">
+              {displayedDate?.from
+                ? format(displayedDate.from, "MMM d")
+                : "Check in"}
+              {" – "}
+              {displayedDate?.to
+                ? format(displayedDate.to, "MMM d")
+                : "Check out"}
+            </span>
           </div>
 
           {selectedNights !== null && (
-            <span className="ml-3 shrink-0 whitespace-nowrap text-xs font-medium text-foreground/65 dark:text-white/65">
+            <span className="hidden shrink-0 whitespace-nowrap text-xs font-medium text-white/60 sm:inline">
               {selectedNights} {selectedNights === 1 ? "night" : "nights"}
             </span>
           )}
@@ -802,32 +823,23 @@ const SearchBar = ({
         align="start"
         sideOffset={10}
         className={cn(
-          "z-[500]",
-          "w-[360px]",
-          "max-w-[calc(100vw-2rem)]",
-          "overflow-hidden",
-          "rounded-2xl",
-          "border border-foreground/10",
-          "bg-background/95",
-          "p-0",
-          "text-foreground",
-          "shadow-2xl",
-          "backdrop-blur-2xl"
+          "z-[500] w-[360px] max-w-[calc(100vw-2rem)] overflow-hidden p-0",
+          popoverCardClass
         )}
       >
         {/* Calendar Header */}
-        <div className="flex items-center justify-between border-b border-foreground/10 bg-foreground/[0.03] px-4 py-3">
+        <div className="flex items-center justify-between border-b border-border/50 bg-foreground/[0.03] px-4 py-3">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
               Select Dates
             </div>
 
-            <div className="mt-0.5 text-xs text-foreground/45">
+            <div className="mt-0.5 text-xs text-muted-foreground">
               Maximum 3 weeks (21 nights)
             </div>
 
             {selectedNights !== null && (
-              <div className="mt-0.5 text-xs text-foreground/45">
+              <div className="mt-0.5 text-xs text-muted-foreground">
                 {selectedNights} {selectedNights === 1 ? "night" : "nights"}
               </div>
             )}
@@ -837,7 +849,7 @@ const SearchBar = ({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 text-xs text-foreground/55 hover:bg-foreground/5 hover:text-foreground"
+              className="h-8 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
               onClick={() => {
                 setDate({
                   from: undefined,
@@ -889,7 +901,7 @@ const SearchBar = ({
    */
 
   const guestField = (
-    <div className="relative h-full">
+    <div className="relative min-w-0 flex-1">
       <button
         type="button"
         onClick={() => {
@@ -907,28 +919,23 @@ const SearchBar = ({
 
           setActiveOverlay("guest");
         }}
-        className={cn(
-          cellClass,
-          "flex h-full w-full items-center justify-between px-4 pt-5 !text-foreground dark:!text-white"
-        )}
+        className={cn(rowClass, "w-full text-left")}
       >
-        <span className={labelClass}>
-          Guests & Rooms
-        </span>
+        <Users className="size-[18px] shrink-0 text-white/70" />
 
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Users className="h-[18px] w-[18px] shrink-0 text-foreground/65 dark:text-white/65" />
+        <div className="min-w-0 flex-1">
+          <span className={rowLabelClass}>Guests</span>
 
-          <span className="whitespace-nowrap text-sm font-semibold leading-5 text-foreground dark:text-white">
+          <span className="block truncate text-sm font-medium text-white">
             {guests} Guest
-            {guests > 1 ? "s" : ""} · {rooms} Room
+            {guests > 1 ? "s" : ""}, {rooms} Room
             {rooms > 1 ? "s" : ""}
           </span>
         </div>
 
         <ChevronDown
           className={cn(
-            "ml-2 h-4 w-4 shrink-0 text-foreground/50 dark:text-white/50 transition-transform duration-200",
+            "size-4 shrink-0 text-white/60 transition-transform duration-200",
             isGuestOpen && "rotate-180"
           )}
         />
@@ -936,7 +943,8 @@ const SearchBar = ({
 
       <div
         className={cn(
-          "absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-[300px] rounded-2xl border border-foreground/10 bg-background/95 p-4 text-foreground shadow-2xl backdrop-blur-2xl transition-[opacity,transform] duration-200 ease-out",
+          "absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-64 p-3 transition-[opacity,transform] duration-200 ease-out",
+          popoverCardClass,
           isGuestOpen
             ? "pointer-events-auto translate-y-0 opacity-100"
             : "pointer-events-none -translate-y-1 opacity-0"
@@ -946,12 +954,14 @@ const SearchBar = ({
         {[
           {
             label: "Guests",
+            sublabel: "People staying",
             value: guests,
             setter: setGuests,
             max: 30,
           },
           {
             label: "Rooms",
+            sublabel: "Rooms required",
             value: rooms,
             setter: setRooms,
             max: 10,
@@ -962,37 +972,37 @@ const SearchBar = ({
             className="flex items-center justify-between py-2.5"
           >
             <div>
-              <span className="text-sm font-medium">
+              <p className="text-sm font-medium text-foreground">
                 {item.label}
-              </span>
-
-              <div className="mt-0.5 text-[10px] text-foreground/40">
-                {item.label === "Guests"
-                  ? "People staying"
-                  : "Rooms required"}
-              </div>
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                {item.sublabel}
+              </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
+                aria-label={`Decrease ${item.label.toLowerCase()}`}
+                disabled={item.value <= 1}
                 onClick={() =>
                   item.setter(
                     Math.max(1, item.value - 1)
                   )
                 }
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
-                aria-label={`Decrease ${item.label}`}
+                className="flex size-8 items-center justify-center rounded-full border border-border bg-transparent text-foreground transition-colors hover:bg-accent disabled:opacity-40"
               >
-                <Minus className="h-4 w-4" />
+                <Minus className="size-3.5" />
               </button>
 
-              <span className="min-w-5 text-center text-sm font-semibold tabular-nums">
+              <span className="min-w-5 text-center text-sm font-semibold tabular-nums text-foreground">
                 {item.value}
               </span>
 
               <button
                 type="button"
+                aria-label={`Increase ${item.label.toLowerCase()}`}
+                disabled={item.value >= item.max}
                 onClick={() =>
                   item.setter(
                     Math.min(
@@ -1001,10 +1011,9 @@ const SearchBar = ({
                     )
                   )
                 }
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 bg-foreground/5 transition-colors hover:bg-foreground/10"
-                aria-label={`Increase ${item.label}`}
+                className="flex size-8 items-center justify-center rounded-full border border-border bg-transparent text-foreground transition-colors hover:bg-accent disabled:opacity-40"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="size-3.5" />
               </button>
             </div>
           </div>
@@ -1024,19 +1033,18 @@ const SearchBar = ({
       onClick={handleSearch}
       disabled={!isDateRangeValid()}
       className={cn(
-        "h-[46px] w-full rounded-[12px]",
+        "h-11 w-full rounded-full",
         "bg-primary text-primary-foreground",
-        "shadow-[0_8px_22px_-14px_rgba(59,130,246,0.85)]",
+        "shadow-lg shadow-primary/25",
         "transition-all duration-300",
-        "hover:bg-primary/90",
-        "hover:shadow-[0_12px_26px_-14px_rgba(59,130,246,0.95)]",
+        "hover:scale-[1.02] hover:bg-primary/90 hover:shadow-primary/35",
         "focus-visible:ring-2 focus-visible:ring-primary",
-        "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-primary"
+        "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
       )}
     >
-      <Search className="mr-1.5 h-3.5 w-3.5" />
+      <Search className="mr-1.5 size-4" />
 
-      <span className="text-[13px] font-semibold tracking-[-0.01em]">
+      <span className="text-sm font-semibold">
         Search
       </span>
     </Button>
@@ -1048,13 +1056,13 @@ const SearchBar = ({
    * ================================================================
    */
 
-  const filterContent = (
-  <div className="space-y-5 text-white">
+  const renderFilterContent = (variant: FilterVariant) => (
+  <div className="space-y-5">
     {/* Property Type */}
     {hotelTypeOptions.length > 0 && (
       <section>
         <div className="mb-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+          <p className={sectionLabelClass(variant)}>
             Property Type
           </p>
         </div>
@@ -1075,12 +1083,7 @@ const SearchBar = ({
                     setSelectedHotelTypes
                   )
                 }
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
-                  selected
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-white/10 bg-white/5 text-white/70 hover:border-white/20 hover:bg-white/10 hover:text-white"
-                )}
+                className={chipClass(selected, variant)}
               >
                 {option.name}
               </button>
@@ -1093,7 +1096,7 @@ const SearchBar = ({
     {/* Star Rating */}
     <section>
       <div className="mb-2.5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+        <p className={sectionLabelClass(variant)}>
           Star Rating
         </p>
       </div>
@@ -1115,17 +1118,25 @@ const SearchBar = ({
               }
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
-                selected
-                  ? "border-amber-400/60 bg-amber-500/15 text-amber-300"
-                  : "border-white/10 bg-white/5 text-white/65 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                variant === "dark"
+                  ? selected
+                    ? "border-amber-400/50 bg-amber-500/20 text-amber-300"
+                    : "border-white/15 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
+                  : selected
+                    ? "border-amber-400/60 bg-amber-500/15 text-amber-600 dark:text-amber-300"
+                    : "border-border bg-transparent text-foreground hover:bg-accent"
               )}
             >
               <Star
                 className={cn(
                   "h-3 w-3",
                   selected
-                    ? "fill-amber-300 text-amber-300"
-                    : "text-white/40"
+                    ? variant === "dark"
+                      ? "fill-amber-300 text-amber-300"
+                      : "fill-amber-400 text-amber-400 dark:fill-amber-300 dark:text-amber-300"
+                    : variant === "dark"
+                      ? "text-white/40"
+                      : "text-muted-foreground"
                 )}
               />
 
@@ -1140,7 +1151,7 @@ const SearchBar = ({
     {amenityGroups.hotel.length > 0 && (
       <section>
         <div className="mb-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+          <p className={sectionLabelClass(variant)}>
             Hotel Amenities
           </p>
         </div>
@@ -1161,12 +1172,7 @@ const SearchBar = ({
                     setSelectedAmenities
                   )
                 }
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
-                  selected
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-white/10 bg-white/5 text-white/65 hover:border-white/20 hover:bg-white/10 hover:text-white"
-                )}
+                className={chipClass(selected, variant)}
               >
                 {amenity.name}
               </button>
@@ -1179,7 +1185,7 @@ const SearchBar = ({
               onClick={() =>
                 setShowAllHotelAmenities((current) => !current)
               }
-              className="rounded-full border border-dashed border-white/15 px-3 py-1.5 text-[12px] font-medium text-white/45 transition-colors hover:border-white/25 hover:text-white"
+              className={moreChipClass(variant)}
             >
               {showAllHotelAmenities
                 ? "Show less"
@@ -1194,7 +1200,7 @@ const SearchBar = ({
     {amenityGroups.room.length > 0 && (
       <section>
         <div className="mb-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/50">
+          <p className={sectionLabelClass(variant)}>
             Room Amenities
           </p>
         </div>
@@ -1215,12 +1221,7 @@ const SearchBar = ({
                     setSelectedAmenities
                   )
                 }
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-[12px] font-medium transition-all",
-                  selected
-                    ? "border-primary/30 bg-primary/10 text-primary"
-                    : "border-white/10 bg-white/5 text-white/65 hover:border-white/20 hover:bg-white/10 hover:text-white"
-                )}
+                className={chipClass(selected, variant)}
               >
                 {amenity.name}
               </button>
@@ -1233,7 +1234,7 @@ const SearchBar = ({
               onClick={() =>
                 setShowAllRoomAmenities((current) => !current)
               }
-              className="rounded-full border border-dashed border-white/15 px-3 py-1.5 text-[12px] font-medium text-white/45 transition-colors hover:border-white/25 hover:text-white"
+              className={moreChipClass(variant)}
             >
               {showAllRoomAmenities
                 ? "Show less"
@@ -1248,143 +1249,190 @@ const SearchBar = ({
 
   /*
    * ================================================================
-   * DESKTOP BENTO
+   * FILTERS TRIGGER BUTTON (shared look, different behavior per breakpoint)
    * ================================================================
    */
 
-  const desktopBento = (
-    <div
+  const filtersTriggerButton = (active: boolean, onClick: () => void) => (
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        "hidden xl:flex",
-        "h-[260px]",
-        "overflow-visible",
-        "rounded-[28px]",
-        "border border-foreground/[0.13]",
-        "backdrop-blur-sm",
-        "!text-foreground dark:!text-white",
-        "shadow-[0_28px_80px_-35px_rgba(0,0,0,0.65)]",
-        "backdrop-blur-2xl",
-        "transition-[width,box-shadow]",
-        "duration-500",
-        "ease-[cubic-bezier(0.22,1,0.36,1)]",
-
-        isFilterOpen
-          ? "w-[1160px] max-w-[calc(100vw-48px)]"
-          : "w-[760px] max-w-[calc(100vw-48px)]"
+        "relative flex h-11 shrink-0 items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors",
+        active || activeCount > 0
+          ? "border-primary/60 bg-primary/15 text-white"
+          : "border-white/20 bg-white/5 text-white hover:bg-white/10"
       )}
+      aria-expanded={active}
+      aria-controls="hero-search-filters-panel"
     >
-      {/* ============================================================
-          LEFT — SEARCH
-          ============================================================ */}
+      <SlidersHorizontal className="size-4" />
+      <span className="hidden sm:inline">Filters</span>
 
-      <div
+      {activeCount > 0 && (
+        <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+          {activeCount}
+        </span>
+      )}
+    </button>
+  );
+
+  /*
+   * ================================================================
+   * FILTERS — MOBILE POPOVER
+   * ================================================================
+   */
+
+  const filtersPopover = (
+    <Popover
+      open={isFilterOpen && activeFilterPanel === "mobile"}
+      onOpenChange={(open) => {
+        setIsFilterOpen(open);
+        setActiveFilterPanel(open ? "mobile" : null);
+      }}
+    >
+      <PopoverTrigger asChild>
+        {filtersTriggerButton(
+          isFilterOpen && activeFilterPanel === "mobile",
+          () => setActiveFilterPanel("mobile")
+        )}
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="end"
+        sideOffset={10}
         className={cn(
-          "h-full shrink-0 p-3",
-          "w-[760px]",
-          isFilterOpen ? "max-w-[760px]" : "max-w-[760px]"
+          "z-[500] w-[320px] max-w-[calc(100vw-2rem)] overflow-hidden p-0",
+          popoverCardClass
         )}
       >
-        <div className="grid h-full grid-cols-1 gap-2.5 animate-hero-search-enter">
-          {/* Location */}
-          <div className="min-w-0">
-            {locationField}
-          </div>
-
-          {/* Date + Guests */}
-          <div className="grid min-w-0 grid-cols-2 gap-2.5">
-            {/* Date */}
-            <div className="min-w-0">
-              {dateField("desktop")}
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-border/50 px-4 py-3">
+          <div>
+            <div className="text-sm font-semibold text-foreground">
+              Filters
             </div>
 
-            {/* Guests */}
-            <div className="min-w-0">
-              {guestField}
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+              {activeCount > 0
+                ? `${activeCount} active`
+                : "Refine your stay"}
             </div>
           </div>
 
-          {/* Search + Filters */}
-          <div className="flex min-w-0 items-stretch gap-2.5">
-            {/* Search */}
-            <div className="min-w-0 flex-1">
-              {searchButton}
-            </div>
+          <button
+            type="button"
+            onClick={() => {
+              setIsFilterOpen(false);
+              setActiveFilterPanel(null);
+            }}
+            className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-accent"
+            aria-label="Close filters"
+          >
+            <X className="size-3.5" />
+          </button>
+        </div>
 
-            {/* Filters */}
-            {showFilters && (
-              <button
-                type="button"
-                onClick={() =>
-                  setIsFilterOpen((current) => !current)
-                }
-                className={cn(
-                  "inline-flex h-[46px] w-[120px] shrink-0",
-                  "items-center justify-center gap-1.5",
-                  "rounded-[12px] border px-3",
-                  "text-[13px] font-medium",
-                  "transition-all duration-200",
+        {/* Content */}
+        <div
+          className="max-h-[55vh] overflow-y-auto px-4 py-4 custom-scrollbar"
+          data-lenis-prevent
+          data-lenis-prevent-wheel
+          data-lenis-prevent-touch
+        >
+          {renderFilterContent("light")}
+        </div>
 
-                  isFilterOpen || activeCount > 0
-                    ? "border-primary/40 bg-primary/8 text-primary shadow-[0_6px_18px_-14px_rgba(59,130,246,0.7)]"
-                    : "border-foreground/[0.10] bg-background/30 text-foreground dark:text-white backdrop-blur-md hover:border-foreground/[0.16] hover:bg-background/40 hover:text-foreground dark:hover:text-white"
-                )}
-                aria-expanded={isFilterOpen}
-                aria-controls="hero-search-filters"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-3 border-t border-border/50 px-4 py-3">
+          <button
+            type="button"
+            onClick={resetFilters}
+            className="text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Reset all
+          </button>
 
-                <span>
-                  {isFilterOpen ? "Hide" : "Filters"}
-                </span>
+          <Button
+            type="button"
+            onClick={() => {
+              setIsFilterOpen(false);
+              setActiveFilterPanel(null);
+              handleSearch();
+            }}
+            className="h-8 rounded-full bg-primary px-4 text-[12px] font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            Apply Filters
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
 
-                {activeCount > 0 && (
-                  <span
-                    className={cn(
-                      "flex h-4 min-w-4 items-center justify-center",
-                      "rounded-full bg-primary px-1",
-                      "text-[9px] font-bold text-primary-foreground",
+  /*
+   * ================================================================
+   * DESKTOP GLASS BAR — filters expand as a side panel
+   * ================================================================
+   */
 
-                      isFilterOpen &&
-                        "bg-background text-primary"
-                    )}
-                  >
-                    {activeCount}
-                  </span>
-                )}
-              </button>
-            )}
-          </div>
+  const isDesktopFilterOpen = isFilterOpen && activeFilterPanel === "desktop";
+
+  const desktopBar = (
+    <div
+      className={cn(
+        "hidden overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-2xl shadow-black/20 backdrop-blur-2xl transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] xl:flex",
+        isDesktopFilterOpen
+          ? "w-[1000px] max-w-[calc(100vw-48px)]"
+          : "w-[620px] max-w-[calc(100vw-48px)]"
+      )}
+    >
+      {/* Left — search */}
+      <div className="flex w-[620px] shrink-0 flex-col gap-1 p-2">
+        {/* Row 1: Location */}
+        {locationField}
+
+        <div className={dividerClass} />
+
+        {/* Row 2: Dates + Guests */}
+        <div className="flex items-center">
+          {dateField("desktop")}
+          <div className={vDividerClass} />
+          {guestField}
+        </div>
+
+        <div className={dividerClass} />
+
+        {/* Row 3: Filters + Search */}
+        <div className="flex items-center gap-2 px-1 py-1">
+          {showFilters &&
+            filtersTriggerButton(isDesktopFilterOpen, () => {
+              setIsFilterOpen((current) =>
+                activeFilterPanel === "desktop" ? !current : true
+              );
+              setActiveFilterPanel("desktop");
+            })}
+          <div className="flex-1">{searchButton}</div>
         </div>
       </div>
 
-      {/* ============================================================
-          RIGHT — FILTERS
-          ============================================================ */}
-
+      {/* Right — filters side panel */}
       {showFilters && (
         <div
-          id="hero-search-filters"
+          id="hero-search-filters-panel"
           className={cn(
-            "h-full shrink-0 overflow-hidden",
-            "border-l border-foreground/10",
-            "bg-foreground/[0.02]",
-            "transition-[width,opacity]",
-            "duration-500",
-            "ease-[cubic-bezier(0.22,1,0.36,1)]",
-            isFilterOpen
-              ? "w-[400px] opacity-100"
-              : "w-0 opacity-0"
+            "h-full shrink-0 overflow-hidden border-l border-white/15 text-white transition-[width,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            isDesktopFilterOpen ? "w-[380px] opacity-100" : "w-0 opacity-0"
           )}
         >
-          <div className="flex h-full w-[400px] min-w-0 flex-col">
+          <div className="flex h-full w-[380px] min-w-0 flex-col">
             {/* Header */}
-            <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-foreground/[0.08] px-5">
+            <div className="flex h-[56px] shrink-0 items-center justify-between border-b border-white/15 px-5">
               <div>
-                <div className="text-[13px] font-semibold tracking-[-0.01em] text-White">
+                <div className="text-[13px] font-semibold tracking-[-0.01em] text-white">
                   Filters
                 </div>
 
-                <div className="mt-0.5 text-[11px] text-white/45">
+                <div className="mt-0.5 text-[11px] text-white/50">
                   {activeCount > 0
                     ? `${activeCount} active`
                     : "Refine your stay"}
@@ -1393,32 +1441,33 @@ const SearchBar = ({
 
               <button
                 type="button"
-                onClick={() =>
-                  setIsFilterOpen(false)
-                }
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 text-white transition-colors hover:bg-foreground/8 hover:text-foreground"
+                onClick={() => {
+                  setIsFilterOpen(false);
+                  setActiveFilterPanel(null);
+                }}
+                className="flex size-7 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:bg-white/10"
                 aria-label="Close filters"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="size-3.5" />
               </button>
             </div>
 
-            {/* Filter Content */}
+            {/* Content */}
             <div
               className="min-h-0 flex-1 overflow-y-auto px-5 py-4 custom-scrollbar"
               data-lenis-prevent
               data-lenis-prevent-wheel
               data-lenis-prevent-touch
             >
-              {filterContent}
+              {renderFilterContent("dark")}
             </div>
 
             {/* Footer */}
-            <div className="flex h-[54px] shrink-0 items-center justify-between gap-3 border-t border-foreground/[0.08] px-5">
+            <div className="flex h-[54px] shrink-0 items-center justify-between gap-3 border-t border-white/15 px-5">
               <button
                 type="button"
                 onClick={resetFilters}
-                className="text-[12px] font-medium text-white/45 transition-colors hover:text-foreground"
+                className="text-[12px] font-medium text-white/50 transition-colors hover:text-white"
               >
                 Reset all
               </button>
@@ -1427,9 +1476,10 @@ const SearchBar = ({
                 type="button"
                 onClick={() => {
                   setIsFilterOpen(false);
+                  setActiveFilterPanel(null);
                   handleSearch();
                 }}
-                className="h-8 rounded-[10px] bg-primary px-4 text-[12px] font-semibold text-primary-foreground shadow-[0_4px_14px_-8px_rgba(59,130,246,0.8)] hover:bg-primary/90"
+                className="h-8 rounded-full bg-primary px-4 text-[12px] font-semibold text-primary-foreground hover:bg-primary/90"
               >
                 Apply Filters
               </Button>
@@ -1442,146 +1492,24 @@ const SearchBar = ({
 
   /*
    * ================================================================
-   * TABLET / MOBILE
+   * MOBILE / TABLET GLASS CARD
    * ================================================================
    */
 
-  const mobileBento = (
-  <div
-    className={cn(
-      "relative w-full xl:hidden",
-      "hero-search-mobile rounded-[20px]",
-      "border border-foreground/[0.13]",
-      "bg-transparent",
-      "backdrop-blur-2xl",
-      "p-2",
-      "text-foreground dark:text-white",
-      "shadow-[0_24px_60px_-30px_rgba(0,0,0,0.65)]"
-    )}
-  >
+  const mobileBar = (
+    <div className="hero-search-mobile flex w-full flex-col gap-2 rounded-2xl border border-white/20 bg-white/10 p-2 shadow-2xl shadow-black/20 backdrop-blur-2xl xl:hidden">
+      <div className="animate-hero-search-enter flex flex-col gap-2">
+        {locationField}
 
-      <div className="grid grid-cols-1 gap-2 animate-hero-search-enter">
-        {/* Location */}
-        <div className="h-[60px]">
-          {locationField}
+        <div className="grid grid-cols-2 gap-2">
+          {dateField("mobile")}
+          {guestField}
         </div>
 
-        {/* Dates + Guests */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <div className="h-[60px]">
-            {dateField("mobile")}
-          </div>
-
-          <div className="h-[60px]">
-            {guestField}
-          </div>
+        <div className="flex items-center gap-2">
+          {showFilters && filtersPopover}
+          <div className="flex-1">{searchButton}</div>
         </div>
-
-        {/* Search + Filters */}
-        <div
-          className={cn(
-            "grid gap-2",
-            showFilters
-              ? "grid-cols-1 sm:grid-cols-[1fr_170px]"
-              : "grid-cols-1"
-          )}
-        >
-          <div className="h-[52px] [&_button]:h-full">
-            {searchButton}
-          </div>
-
-          {showFilters && (
-            <button
-              type="button"
-              onClick={() =>
-                setIsFilterOpen((current) => !current)
-              }
-              className={cn(
-                "flex h-[52px] items-center justify-center gap-2",
-                "rounded-[14px] border px-3",
-                "text-sm font-semibold",
-                "transition-all",
-
-                isFilterOpen || activeCount > 0
-                  ? "border-primary/50 bg-primary text-primary-foreground"
-                  : "border-foreground/10 bg-foreground/[0.055] text-foreground/70 hover:border-foreground/20 hover:bg-foreground/[0.09] hover:text-foreground"
-              )}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-
-              <span>Filters</span>
-
-              {activeCount > 0 && (
-                <span
-                  className={cn(
-                    "flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[9px] font-bold",
-                    isFilterOpen
-                      ? "bg-background text-primary"
-                      : "bg-primary text-primary-foreground"
-                  )}
-                >
-                  {activeCount}
-                </span>
-              )}
-            </button>
-          )}
-        </div>
-
-        {/* Mobile Filter Workspace */}
-        {showFilters && isFilterOpen && (
-<div className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-[60] overflow-hidden rounded-[16px] border border-foreground/[0.10] bg-background/95 text-foreground shadow-2xl backdrop-blur-xl dark:text-white">
-            {/* Header */}
-            <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3">
-              <div>
-                <div className="text-sm font-semibold">
-                  Filters
-                </div>
-
-                <div className="mt-0.5 text-[10px] text-foreground/40">
-                  {activeCount > 0
-                    ? `${activeCount} active`
-                    : "Refine your stay"}
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setIsFilterOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 text-foreground/45 hover:bg-foreground/10 hover:text-foreground"
-                aria-label="Close filters"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="max-h-[55vh] overflow-y-auto px-4 py-4 custom-scrollbar">
-              {filterContent}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-foreground/10 px-4 py-3">
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="text-xs font-medium text-foreground/45 hover:text-foreground"
-              >
-                Reset all
-              </button>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  setIsFilterOpen(false);
-                  handleSearch();
-                }}
-                className="h-9 rounded-full bg-primary px-4 text-xs font-semibold"
-              >
-                Apply Filters
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -1601,11 +1529,11 @@ const SearchBar = ({
       )}
     >
       <div className="hidden w-full justify-center xl:flex">
-        {desktopBento}
+        {desktopBar}
       </div>
 
       <div className="w-full xl:hidden">
-        {mobileBento}
+        {mobileBar}
       </div>
     </div>
   );

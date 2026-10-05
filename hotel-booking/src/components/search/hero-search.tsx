@@ -665,7 +665,7 @@ const SearchBar = ({
               }
             }}
             placeholder="Where are you going?"
-            className="h-auto w-full border-0 bg-transparent p-0 text-sm font-medium !text-white shadow-none placeholder:!text-white/50 focus-visible:ring-0"
+            className="h-9 w-full border-0 bg-transparent p-0 text-sm font-medium !text-white shadow-none placeholder:!text-white/50 focus-visible:ring-0"
             aria-label="Location"
           />
         </div>

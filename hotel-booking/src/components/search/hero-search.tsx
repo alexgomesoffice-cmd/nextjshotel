@@ -107,6 +107,7 @@ const SearchBar = ({
 
   type ActiveOverlay = "location" | "guest" | null;
   const [activeOverlay, setActiveOverlay] = useState<ActiveOverlay>(null);
+  const [activeGuestPanel, setActiveGuestPanel] = useState<"desktop" | "mobile" | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [activeFilterPanel, setActiveFilterPanel] = useState<"desktop" | "mobile" | null>(null);
 
@@ -636,7 +637,7 @@ const SearchBar = ({
    */
 
   const locationField = (
-    <div className="relative z-20 min-w-0 flex-1">
+    <div className="relative z-20 min-w-0 w-full">
       <div className={rowClass}>
         <MapPin className="size-[18px] shrink-0 text-white/70" />
 
@@ -900,68 +901,69 @@ const SearchBar = ({
    * ================================================================
    */
 
-  const guestField = (
+  const guestField = (instance: "desktop" | "mobile") => (
     <div className="relative min-w-0 flex-1">
-      <button
-        type="button"
-        onClick={() => {
-          if (activeOverlay === "guest") {
-            setActiveOverlay(null);
-            return;
-          }
-
-          // Abort active location request and clear suggestions
-          if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-          }
+      <Popover
+      open={isGuestOpen && activeGuestPanel === instance}
+      onOpenChange={(open) => {
+        if (open) {
+          abortControllerRef.current?.abort();
           setSuggestions({ hotels: [], cities: [] });
           requestIdRef.current += 1;
-
+          setActiveGuestPanel(instance);
           setActiveOverlay("guest");
-        }}
-        className={cn(rowClass, "w-full text-left")}
-      >
-        <Users className="size-[18px] shrink-0 text-white/70" />
+        } else if (activeGuestPanel === instance) {
+          setActiveGuestPanel(null);
+          setActiveOverlay(null);
+        }
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(rowClass, "w-full text-left")}
+          aria-expanded={isGuestOpen && activeGuestPanel === instance}
+        >
+          <Users className="size-[18px] shrink-0 text-white/70" />
 
-        <div className="min-w-0 flex-1">
-          <span className={rowLabelClass}>Guests</span>
+          <div className="min-w-0 flex-1">
+            <span className={rowLabelClass}>Guests</span>
 
-          <span className="block truncate text-sm font-medium text-white">
-            {guests} Guest
-            {guests > 1 ? "s" : ""}, {rooms} Room
-            {rooms > 1 ? "s" : ""}
-          </span>
-        </div>
+            <span className="block truncate text-sm font-medium text-white">
+              {guests} Guest
+              {guests > 1 ? "s" : ""}, {rooms} Room
+              {rooms > 1 ? "s" : ""}
+            </span>
+          </div>
 
-        <ChevronDown
-          className={cn(
-            "size-4 shrink-0 text-white/60 transition-transform duration-200",
-            isGuestOpen && "rotate-180"
-          )}
-        />
-      </button>
+          <ChevronDown
+            className={cn(
+              "size-4 shrink-0 text-white/60 transition-transform duration-200",
+              isGuestOpen && activeGuestPanel === instance && "rotate-180"
+            )}
+          />
+        </button>
+      </PopoverTrigger>
 
-      <div
+      <PopoverContent
+        align={instance === "mobile" ? "end" : "start"}
+        side="bottom"
+        sideOffset={10}
+        collisionPadding={12}
         className={cn(
-          "absolute left-0 right-0 top-[calc(100%+10px)] z-[500] w-64 p-3 transition-[opacity,transform] duration-200 ease-out",
-          popoverCardClass,
-          isGuestOpen
-            ? "pointer-events-auto translate-y-0 opacity-100"
-            : "pointer-events-none -translate-y-1 opacity-0"
+          "z-[500] w-64 max-w-[calc(100vw-1.5rem)] p-3",
+          popoverCardClass
         )}
-        aria-hidden={!isGuestOpen}
       >
         {[
           {
             label: "Guests",
-            sublabel: "People staying",
             value: guests,
             setter: setGuests,
             max: 30,
           },
           {
             label: "Rooms",
-            sublabel: "Rooms required",
             value: rooms,
             setter: setRooms,
             max: 10,
@@ -985,11 +987,7 @@ const SearchBar = ({
                 type="button"
                 aria-label={`Decrease ${item.label.toLowerCase()}`}
                 disabled={item.value <= 1}
-                onClick={() =>
-                  item.setter(
-                    Math.max(1, item.value - 1)
-                  )
-                }
+                onClick={() => item.setter(Math.max(1, item.value - 1))}
                 className="flex size-8 items-center justify-center rounded-full border border-border bg-transparent text-foreground transition-colors hover:bg-accent disabled:opacity-40"
               >
                 <Minus className="size-3.5" />
@@ -1003,14 +1001,7 @@ const SearchBar = ({
                 type="button"
                 aria-label={`Increase ${item.label.toLowerCase()}`}
                 disabled={item.value >= item.max}
-                onClick={() =>
-                  item.setter(
-                    Math.min(
-                      item.max,
-                      item.value + 1
-                    )
-                  )
-                }
+                onClick={() => item.setter(Math.min(item.max, item.value + 1))}
                 className="flex size-8 items-center justify-center rounded-full border border-border bg-transparent text-foreground transition-colors hover:bg-accent disabled:opacity-40"
               >
                 <Plus className="size-3.5" />
@@ -1018,7 +1009,8 @@ const SearchBar = ({
             </div>
           </div>
         ))}
-      </div>
+      </PopoverContent>
+      </Popover>
     </div>
   );
 
@@ -1320,17 +1312,27 @@ const SearchBar = ({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setIsFilterOpen(false);
-              setActiveFilterPanel(null);
-            }}
-            className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-accent"
-            aria-label="Close filters"
-          >
-            <X className="size-3.5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Reset all
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setIsFilterOpen(false);
+                setActiveFilterPanel(null);
+              }}
+              className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition-colors hover:bg-accent"
+              aria-label="Close filters"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -1343,28 +1345,6 @@ const SearchBar = ({
           {renderFilterContent("light")}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 border-t border-border/50 px-4 py-3">
-          <button
-            type="button"
-            onClick={resetFilters}
-            className="text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Reset all
-          </button>
-
-          <Button
-            type="button"
-            onClick={() => {
-              setIsFilterOpen(false);
-              setActiveFilterPanel(null);
-              handleSearch();
-            }}
-            className="h-8 rounded-full bg-primary px-4 text-[12px] font-semibold text-primary-foreground hover:bg-primary/90"
-          >
-            Apply Filters
-          </Button>
-        </div>
       </PopoverContent>
     </Popover>
   );
@@ -1380,7 +1360,7 @@ const SearchBar = ({
   const desktopBar = (
     <div
       className={cn(
-        "hidden overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-2xl shadow-black/20 backdrop-blur-2xl transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] xl:flex",
+        "hidden h-[190px] overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-2xl shadow-black/20 backdrop-blur-2xl transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] xl:flex",
         isDesktopFilterOpen
           ? "w-[1000px] max-w-[calc(100vw-48px)]"
           : "w-[620px] max-w-[calc(100vw-48px)]"
@@ -1397,7 +1377,7 @@ const SearchBar = ({
         <div className="flex items-center">
           {dateField("desktop")}
           <div className={vDividerClass} />
-          {guestField}
+          {guestField("desktop")}
         </div>
 
         <div className={dividerClass} />
@@ -1439,17 +1419,27 @@ const SearchBar = ({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setIsFilterOpen(false);
-                  setActiveFilterPanel(null);
-                }}
-                className="flex size-7 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:bg-white/10"
-                aria-label="Close filters"
-              >
-                <X className="size-3.5" />
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="text-[12px] font-medium text-white/50 transition-colors hover:text-white"
+                >
+                  Reset all
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsFilterOpen(false);
+                    setActiveFilterPanel(null);
+                  }}
+                  className="flex size-7 items-center justify-center rounded-full border border-white/20 text-white transition-colors hover:bg-white/10"
+                  aria-label="Close filters"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
@@ -1462,28 +1452,6 @@ const SearchBar = ({
               {renderFilterContent("dark")}
             </div>
 
-            {/* Footer */}
-            <div className="flex h-[54px] shrink-0 items-center justify-between gap-3 border-t border-white/15 px-5">
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="text-[12px] font-medium text-white/50 transition-colors hover:text-white"
-              >
-                Reset all
-              </button>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  setIsFilterOpen(false);
-                  setActiveFilterPanel(null);
-                  handleSearch();
-                }}
-                className="h-8 rounded-full bg-primary px-4 text-[12px] font-semibold text-primary-foreground hover:bg-primary/90"
-              >
-                Apply Filters
-              </Button>
-            </div>
           </div>
         </div>
       )}
@@ -1503,7 +1471,7 @@ const SearchBar = ({
 
         <div className="grid grid-cols-2 gap-2">
           {dateField("mobile")}
-          {guestField}
+          {guestField("mobile")}
         </div>
 
         <div className="flex items-center gap-2">

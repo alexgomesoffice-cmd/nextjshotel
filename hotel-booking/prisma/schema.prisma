@@ -36,11 +36,11 @@ enum ApprovalStatus {
 enum BookingStatus {
   RESERVED // 10-min hold; awaiting payment
   BOOKED // payment confirmed
-  EXPIRED // 10-min window passed without payment
-  CANCELLED // cancelled by user or hotel staff
-  CHECKED_IN // set manually by hotel staff on guest arrival
-  CHECKED_OUT // set manually by hotel staff on departure
-  NO_SHOW // set manually by hotel staff
+  EXPIRED // 5-min window passed without Confirmation
+  CANCELLED // cancelled by user or hotel admin
+  CHECKED_IN // set manually by hotel admin on guest arrival
+  CHECKED_OUT // set manually by hotel admin on departure
+  NO_SHOW // set manually by hotel admin
 }
 
 enum TrackerStatus {

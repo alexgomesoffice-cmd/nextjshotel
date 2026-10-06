@@ -48,6 +48,11 @@ export interface RoomDetailModalProps {
   } | null;
 }
 
+function formatRoomSize(roomSize: string) {
+  const size = roomSize.trim().replace(/\s*(?:sq\s*ft|sqft)\b/i, "");
+  return `${size} sq ft`;
+}
+
 const RoomDetailModal = ({
   isOpen,
   onClose,
@@ -100,9 +105,8 @@ const RoomDetailModal = ({
       className="
         fixed inset-0 z-[110]
         flex items-center justify-center
-        bg-black/65 backdrop-blur-md
-        p-3 sm:p-5 lg:p-8
-        animate-in fade-in duration-300
+        bg-black/70 backdrop-blur-md
+        p-0 sm:p-4 lg:p-6
       "
       onClick={onClose}
     >
@@ -114,58 +118,24 @@ const RoomDetailModal = ({
           relative
           flex
           w-full
-          max-w-6xl
-          xl:max-w-7xl
-          max-h-[96vh]
+          h-full
+          flex-col
           overflow-hidden
-          rounded-[28px]
-          border border-border/60
           bg-background
-          shadow-[0_30px_100px_rgba(0,0,0,0.30)]
-          animate-in
-          zoom-in-95
-          duration-300
+          shadow-2xl
+          sm:h-auto
+          sm:max-h-[92vh]
+          sm:max-w-6xl
+          sm:rounded-[28px]
+          lg:flex-row
         "
         onClick={(e) => e.stopPropagation()}
       >
-        {/* =========================================================
-            CLOSE BUTTON
-        ========================================================== */}
-        <button
-          onClick={onClose}
-          aria-label="Close room details"
-          className="
-            absolute
-            right-4
-            top-4
-            z-50
-            flex
-            h-11
-            w-11
-            items-center
-            justify-center
-            rounded-full
-            border
-            border-white/20
-            bg-black/45
-            text-white
-            backdrop-blur-md
-            transition-all
-            hover:scale-105
-            hover:bg-black/65
-            focus-visible:outline-none
-            focus-visible:ring-2
-            focus-visible:ring-white
-          "
-        >
-          <X className="h-5 w-5" />
-        </button>
-
-        <div className="grid w-full min-h-0 grid-cols-1 lg:grid-cols-[1.05fr_0.95fr]">
+        <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
           {/* =========================================================
               LEFT — IMAGE GALLERY
           ========================================================== */}
-          <div className="relative flex min-h-[420px] flex-col bg-muted/20 lg:min-h-[700px]">
+          <div className="relative flex h-[30vh] min-h-[180px] max-h-[240px] w-full shrink-0 flex-col bg-black sm:h-[32vh] sm:min-h-[220px] sm:max-h-[280px] lg:h-auto lg:min-h-0 lg:max-h-none lg:w-1/2">
             {images.length > 0 ? (
               <>
                 {/* Main Image */}
@@ -175,11 +145,7 @@ const RoomDetailModal = ({
                     alt={`Room ${room.room_number}`}
                     fill
                     priority
-                    className="
-                      object-cover
-                      transition-transform
-                      duration-500
-                    "
+                    className="object-cover"
                   />
 
                   {/* Image gradient */}
@@ -190,14 +156,14 @@ const RoomDetailModal = ({
                     <div
                       className="
                         absolute
-                        right-5
-                        top-5
+                        right-4
+                        top-4
                         rounded-full
                         border border-white/20
                         bg-black/45
-                        px-3
-                        py-1.5
-                        text-xs
+                        px-2.5
+                        py-1
+                        text-[11px]
                         font-medium
                         text-white
                         backdrop-blur-md
@@ -215,11 +181,11 @@ const RoomDetailModal = ({
                       aria-label="Previous image"
                       className="
                         absolute
-                        left-5
+                        left-3
                         top-1/2
                         flex
-                        h-11
-                        w-11
+                        h-10
+                        w-10
                         -translate-y-1/2
                         items-center
                         justify-center
@@ -249,11 +215,11 @@ const RoomDetailModal = ({
                       aria-label="Next image"
                       className="
                         absolute
-                        right-5
+                        right-3
                         top-1/2
                         flex
-                        h-11
-                        w-11
+                        h-10
+                        w-10
                         -translate-y-1/2
                         items-center
                         justify-center
@@ -276,14 +242,14 @@ const RoomDetailModal = ({
                   )}
 
                   {/* Image title */}
-                  <div className="absolute bottom-6 left-6 right-6">
+                  <div className="absolute bottom-4 left-5 right-5 sm:bottom-5 sm:left-6 sm:right-6">
                     {room.room_type_name && (
-                      <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/75">
+                      <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/75 sm:text-xs">
                         {room.room_type_name}
                       </p>
                     )}
 
-                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                    <h2 className="text-xl font-semibold leading-tight tracking-tight text-white drop-shadow-lg sm:text-2xl">
                       Room {room.room_number}
                     </h2>
                   </div>
@@ -291,9 +257,9 @@ const RoomDetailModal = ({
 
                 {/* Thumbnail strip */}
                 {hasMultipleImages && (
-                  <div className="shrink-0 border-t border-border/40 bg-background p-4">
+                  <div className="shrink-0 border-t border-white/10 bg-black px-4 py-3">
                     <div
-                      className="flex gap-3 overflow-x-auto pb-1"
+                      className="flex gap-2.5 overflow-x-auto pb-1"
                       style={{
                         scrollbarWidth: "none",
                         msOverflowStyle: "none",
@@ -308,8 +274,8 @@ const RoomDetailModal = ({
                           aria-current={activeImage === idx}
                           className={`
                             relative
-                            h-16
-                            w-24
+                            h-14
+                            w-20
                             shrink-0
                             overflow-hidden
                             rounded-xl
@@ -340,10 +306,10 @@ const RoomDetailModal = ({
                 )}
               </>
             ) : (
-              <div className="flex min-h-[420px] flex-1 items-center justify-center bg-muted/40">
-                <div className="text-center">
-                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-background text-muted-foreground shadow-sm">
-                    <Maximize2 className="h-6 w-6" />
+              <div className="flex min-h-0 flex-1 items-center justify-center bg-muted/40">
+                <div className="px-5 text-center">
+                  <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-background text-muted-foreground shadow-sm">
+                    <Maximize2 className="h-5 w-5" />
                   </div>
 
                   <p className="text-sm font-semibold">
@@ -353,6 +319,9 @@ const RoomDetailModal = ({
                   <p className="mt-1 text-xs text-muted-foreground">
                     There are no photos available for this room.
                   </p>
+                  <p className="mt-3 text-sm font-medium text-foreground">
+                    Room {room.room_number}
+                  </p>
                 </div>
               </div>
             )}
@@ -361,30 +330,25 @@ const RoomDetailModal = ({
           {/* =========================================================
               RIGHT — DETAILS
           ========================================================== */}
-          <div className="flex min-h-0 flex-col bg-background">
+          <div className="flex min-h-0 flex-1 flex-col bg-background lg:w-1/2">
             {/* Header */}
-            <div className="shrink-0 border-b border-border/50 px-6 py-6 sm:px-8">
-              <div className="pr-12">
-                {room.room_type_name && (
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
-                    {room.room_type_name}
-                  </p>
-                )}
-
-                <h2
-                  id="room-detail-title"
-                  className="text-3xl font-bold tracking-tight"
-                >
-                  Room {room.room_number}
-                </h2>
-
-                {room.floor != null && (
-                  <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <Layers className="h-4 w-4 text-primary" />
-                    Floor {room.floor}
-                  </div>
-                )}
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border/60 px-5 py-4 sm:px-7">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Room details
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Everything you need to know
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close room details"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-muted/40 transition-colors hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
 
             {/* Scrollable content */}
@@ -400,62 +364,34 @@ const RoomDetailModal = ({
               data-lenis-prevent-wheel
               data-lenis-prevent-touch
             >
-              <div className="space-y-7 p-6 sm:p-8">
+              <div className="space-y-5 p-5 sm:space-y-6 sm:p-7">
                 {/* =====================================================
                     ROOM OVERVIEW
                 ====================================================== */}
                 <section>
-                  <div className="mb-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                      Overview
-                    </p>
-
-                    <h3 className="mt-1 text-lg font-semibold">
-                      Room information
-                    </h3>
+                  <div className="mb-3 flex items-center gap-2">
+                    <div className="h-5 w-1 rounded-full bg-primary" />
+                    <h3 className="text-base font-semibold">Room information</h3>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {/* Size */}
                     {room.room_size && (
                       <div
-                        className="
-                          group
-                          rounded-2xl
-                          border
-                          border-border/60
-                          bg-secondary/30
-                          p-4
-                          transition-colors
-                          hover:border-primary/30
-                          hover:bg-primary/5
-                        "
+                        className="group rounded-xl border border-border/60 bg-muted/30 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
                       >
                         <div
-                          className="
-                            mb-3
-                            flex
-                            h-10
-                            w-10
-                            items-center
-                            justify-center
-                            rounded-xl
-                            bg-primary/10
-                            text-primary
-                          "
+                          className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary"
                         >
-                          <Maximize2 className="h-5 w-5" />
+                          <Maximize2 className="h-4 w-4" />
                         </div>
 
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                           Room size
                         </p>
 
-                        <p className="mt-1 font-semibold">
-                          {room.room_size}
-                          <span className="ml-1 text-xs font-normal text-muted-foreground">
-                            sq ft
-                          </span>
+                        <p className="mt-1 text-sm font-semibold">
+                          {formatRoomSize(room.room_size)}
                         </p>
                       </div>
                     )}
@@ -463,39 +399,19 @@ const RoomDetailModal = ({
                     {/* Floor */}
                     {room.floor != null && (
                       <div
-                        className="
-                          group
-                          rounded-2xl
-                          border
-                          border-border/60
-                          bg-secondary/30
-                          p-4
-                          transition-colors
-                          hover:border-primary/30
-                          hover:bg-primary/5
-                        "
+                        className="group rounded-xl border border-border/60 bg-muted/30 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
                       >
                         <div
-                          className="
-                            mb-3
-                            flex
-                            h-10
-                            w-10
-                            items-center
-                            justify-center
-                            rounded-xl
-                            bg-primary/10
-                            text-primary
-                          "
+                          className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary"
                         >
-                          <Layers className="h-5 w-5" />
+                          <Layers className="h-4 w-4" />
                         </div>
 
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                           Location
                         </p>
 
-                        <p className="mt-1 font-semibold">
+                        <p className="mt-1 text-sm font-semibold">
                           Floor {room.floor}
                         </p>
                       </div>

@@ -247,7 +247,7 @@ export function RoomRow({
       )}
     >
       {/* Room Image Container */}
-      <div className="relative h-[72px] w-[88px] shrink-0 overflow-hidden rounded-lg bg-secondary/40 sm:h-20 sm:w-[108px] lg:h-[88px] lg:w-[140px]">
+      <div className="relative h-[72px] w-[88px] shrink-0 overflow-hidden  bg-secondary/40 sm:h-20 sm:w-[108px] lg:h-[88px] lg:w-[140px]">
         {rt.cover_image ? (
           <Image
             src={rt.cover_image}
@@ -309,7 +309,7 @@ export function RoomRow({
 
           <div className=" flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
             <span className="inline-flex min-w-0 items-start gap-1.5">
-              <BedDouble className="mt-0.5 shrink-0" />
+              
               <span className="flex min-w-0 flex-col gap-0.5">
                 <span className="text-[10px] leading-tight text-muted-foreground">Bed type</span>
                 <span className="text-[11px] font-medium leading-tight text-foreground">
@@ -319,18 +319,18 @@ export function RoomRow({
               </span>
             </span>
             <span className="inline-flex min-w-0 items-start gap-1.5">
-              <Users className="mt-0.5 shrink-0" />
+              
               <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="text-[10px] leading-tight text-muted-foreground">Guest capacity</span>
+                <span className="text-[10px] leading-tight text-muted-foreground">Guest</span>
                 <span className="text-[11px] font-medium leading-tight text-foreground">
-                  Sleeps up to {rt.max_occupancy} guest{rt.max_occupancy !== 1 ? 's' : ''}
+                upto {rt.max_occupancy} guest{rt.max_occupancy !== 1 ? 's' : ''}
                 </span>
                 
               </span>
             </span>
             {rt.room_size && (
               <span className="inline-flex min-w-0 items-start gap-1.5">
-                <Ruler className="mt-0.5 shrink-0" />
+                
                 <span className="flex min-w-0 flex-col gap-0.5">
                   <span className="text-[10px] leading-tight text-muted-foreground">Room size</span>
                   <span className="text-[11px] font-medium leading-tight text-foreground">

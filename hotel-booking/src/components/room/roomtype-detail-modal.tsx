@@ -383,20 +383,20 @@ useEffect(() => {
                 </h3>
               </div>
 
-              <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-1.5">
                 {roomType.room_type_amenities?.map((prop, idx) => {
                   const Icon = getAmenityIcon(prop.amenity.icon);
 
                   return (
                     <div
                       key={idx}
-                      className="flex items-center gap-3 rounded-xl px-2.5 py-2.5 transition-colors hover:bg-muted/50"
+                      className="flex min-w-0 items-center gap-2 rounded-xl px-1.5 py-2.5 transition-colors hover:bg-muted/50 sm:gap-3 sm:px-2.5"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                         <Icon className="h-4 w-4" />
                       </div>
 
-                      <span className="text-sm">
+                      <span className="min-w-0 break-words text-sm">
                         {prop.amenity.name}
                       </span>
                     </div>

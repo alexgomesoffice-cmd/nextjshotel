@@ -1391,16 +1391,26 @@ const SearchBar = ({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() =>
-                  setIsFilterOpen(false)
-                }
-                className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 text-white transition-colors hover:bg-foreground/8 hover:text-foreground"
-                aria-label="Close filters"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="text-[12px] font-medium text-white/45 transition-colors hover:text-foreground"
+                >
+                  Reset all
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setIsFilterOpen(false)
+                  }
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-foreground/10 text-white transition-colors hover:bg-foreground/8 hover:text-foreground"
+                  aria-label="Close filters"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Filter Content */}
@@ -1411,28 +1421,6 @@ const SearchBar = ({
               data-lenis-prevent-touch
             >
               {filterContent}
-            </div>
-
-            {/* Footer */}
-            <div className="flex h-[54px] shrink-0 items-center justify-between gap-3 border-t border-foreground/[0.08] px-5">
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="text-[12px] font-medium text-white/45 transition-colors hover:text-foreground"
-              >
-                Reset all
-              </button>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  setIsFilterOpen(false);
-                  handleSearch();
-                }}
-                className="h-8 rounded-[10px] bg-primary px-4 text-[12px] font-semibold text-primary-foreground shadow-[0_4px_14px_-8px_rgba(59,130,246,0.8)] hover:bg-primary/90"
-              >
-                Apply Filters
-              </Button>
             </div>
           </div>
         </div>
@@ -1544,41 +1532,29 @@ const SearchBar = ({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setIsFilterOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 text-foreground/45 hover:bg-foreground/10 hover:text-foreground"
-                aria-label="Close filters"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="text-xs font-medium text-foreground/45 hover:text-foreground"
+                >
+                  Reset all
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsFilterOpen(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-foreground/10 text-foreground/45 hover:bg-foreground/10 hover:text-foreground"
+                  aria-label="Close filters"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Content */}
             <div className="max-h-[55vh] overflow-y-auto px-4 py-4 custom-scrollbar">
               {filterContent}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-foreground/10 px-4 py-3">
-              <button
-                type="button"
-                onClick={resetFilters}
-                className="text-xs font-medium text-foreground/45 hover:text-foreground"
-              >
-                Reset all
-              </button>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  setIsFilterOpen(false);
-                  handleSearch();
-                }}
-                className="h-9 rounded-full bg-primary px-4 text-xs font-semibold"
-              >
-                Apply Filters
-              </Button>
             </div>
           </div>
         )}

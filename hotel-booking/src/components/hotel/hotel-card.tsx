@@ -785,9 +785,7 @@ export const HotelListCard = ({
         <div className="border-t border-border/60 pt-1 sm:pt-3">
           <div className="hidden sm:block">
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-muted-foreground sm:text-[10px]">Available rooms</p>
-            <p className="text-[9.5px] text-muted-foreground sm:text-xs">
-              {has_dates ? `${availableCount}/${room_types?.length ?? 0} room types open` : `${room_types?.length ?? 0} room types available`}
-            </p>
+           
           </div>
 
           <div className="mt-1 block sm:hidden">

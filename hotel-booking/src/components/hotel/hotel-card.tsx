@@ -267,9 +267,9 @@ export function RoomRow({
           <div className="absolute inset-0 flex items-center justify-center bg-background/75">
             <span className="text-[9px] font-black tracking-widest text-destructive">FULL</span>
           </div>
-        ) : rt.available_count > 0 && rt.dates_filtered ? (
-          <div className="absolute bottom-1.5 left-1.5 rounded bg-green-500 px-1.5 py-0.5 text-[9px] font-bold text-white linen-none">
-            {rt.available_count} left
+        ) : rt.available_count > 0 && rt.available_count <= 5 && rt.dates_filtered ? (
+          <div className="absolute bottom-1.5 left-1.5 max-w-[calc(100%-0.75rem)] whitespace-nowrap rounded bg-green-500 px-1 py-0.5 text-[8px] font-bold leading-tight text-white linen-none sm:px-1.5 sm:text-[9px]">
+           only {rt.available_count} room{rt.available_count !== 1 ? 's' : ''} left
           </div>
         ) : null}
       </div>
@@ -515,12 +515,7 @@ const HotelCard = ({
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
                 Available rooms
               </p>
-              <p className="text-[11px] text-muted-foreground/80">
-                {has_dates
-                  ? `${availableCount}/${room_types!.length} room type open`
-                  : `${room_types!.length} room type${room_types!.length !== 1 ? 's' : ''} available`
-                }
-              </p>
+              
               {/* Accommodation badge — only when capacity params were supplied */}
               {accommodation && (
                 <AccommodationBadge ctx={accommodation} />

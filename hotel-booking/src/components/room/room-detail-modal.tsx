@@ -424,35 +424,16 @@ const RoomDetailModal = ({
                 ====================================================== */}
                 {room.facilities.length > 0 && (
                   <section>
-                    <div className="mb-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        Included
-                      </p>
-
-                      <h3 className="mt-1 text-lg font-semibold">
-                        Room facilities
-                      </h3>
+                    <div className="mb-3 flex items-center gap-2">
+                      <div className="h-5 w-1 rounded-full bg-primary" />
+                      <h3 className="text-base font-semibold">Room facilities</h3>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {room.facilities.map((facility) => (
                         <div
                           key={facility.name}
-                          className="
-                            flex
-                            min-h-12
-                            items-center
-                            gap-3
-                            rounded-xl
-                            border
-                            border-border/50
-                            bg-secondary/20
-                            px-3.5
-                            py-3
-                            transition-all
-                            hover:border-primary/30
-                            hover:bg-primary/5
-                          "
+                          className="flex min-w-0 items-center gap-2 rounded-xl px-1.5 py-2.5 transition-colors hover:bg-muted/50 sm:gap-3 sm:px-2.5"
                         >
                           <div
                             className="
@@ -470,7 +451,7 @@ const RoomDetailModal = ({
                             <Check className="h-4 w-4" />
                           </div>
 
-                          <span className="text-sm font-medium leading-tight">
+                          <span className="min-w-0 break-words text-sm font-medium leading-tight">
                             {facility.name}
                           </span>
                         </div>
@@ -483,24 +464,18 @@ const RoomDetailModal = ({
                     ROOM NOTE
                 ====================================================== */}
                 <div
-                  className="
-                    rounded-2xl
-                    border
-                    border-primary/20
-                    bg-primary/[0.045]
-                    p-4
-                  "
+                  className="rounded-xl border border-border/60 bg-muted/30 p-3"
                 >
                   <div className="flex gap-3">
                     <div
                       className="
                         flex
-                        h-9
-                        w-9
+                        h-8
+                        w-8
                         shrink-0
                         items-center
                         justify-center
-                        rounded-xl
+                        rounded-lg
                         bg-primary/10
                         text-primary
                       "
@@ -509,7 +484,7 @@ const RoomDetailModal = ({
                     </div>
 
                     <div>
-                      <p className="text-sm font-semibold">
+                      <p className="text-sm font-semibold leading-tight">
                         Comfortable stay
                       </p>
 
@@ -530,16 +505,16 @@ const RoomDetailModal = ({
               className="
                 shrink-0
                 border-t
-                border-border/60
-                bg-secondary/[0.08]
-                px-6
-                py-3
-                sm:px-8
+                border-border
+                bg-background
+                px-5
+                py-4
+                sm:px-7
               "
             >
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     Price per night
                   </p>
 
@@ -554,7 +529,7 @@ const RoomDetailModal = ({
                     )}
 
                     <div className="flex items-baseline gap-1.5">
-                      <span className="text-3xl font-bold tracking-tight">
+                      <span className="text-2xl font-bold tracking-tight">
                         TK{" "}
                         {Number(
                           room.pricing.effectivePrice
@@ -592,15 +567,7 @@ const RoomDetailModal = ({
                 <Button
                   onClick={onClose}
                   size="lg"
-                  className="
-                    min-h-11
-                    rounded-xl
-                    px-7
-                    shadow-sm
-                    transition-all
-                    hover:-translate-y-0.5
-                    hover:shadow-md
-                  "
+                  className="min-h-11 rounded-xl px-6 font-semibold"
                 >
                   Done
                 </Button>

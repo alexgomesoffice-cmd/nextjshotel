@@ -217,9 +217,9 @@ export async function GET(req: NextRequest) {
     if (location) {
       const locStr = location.split(',')[0].trim();
       where.OR = [
-        { name:    { contains: locStr } },
-        { address: { contains: locStr } },
-        { city:    { name: { contains: locStr } } },
+        { name:    { contains: locStr, mode: 'insensitive' } },
+        { address: { contains: locStr, mode: 'insensitive' } },
+        { city:    { name: { contains: locStr, mode: 'insensitive' } } },
       ];
     }
 

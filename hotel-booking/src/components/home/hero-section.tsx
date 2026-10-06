@@ -220,12 +220,12 @@ export function HeroSection() {
           CONTENT
           ================================================================ */}
       <div className="relative z-30 flex h-full items-center lg:items-end">
-        <div className="container mx-auto flex h-full w-full -translate-y-4 flex-col justify-center px-4 pb-10 pt-24 sm:-translate-y-6 sm:px-6 sm:pb-14 lg:translate-y-0 lg:justify-end lg:px-8 lg:pb-24 lg:pt-28">
+        <div className="container mx-auto flex h-full w-full -translate-y-4 flex-col justify-center px-4 pb-10 pt-24 sm:-translate-y-6 sm:px-6 sm:pb-14 lg:-translate-y-[100px] lg:justify-end lg:px-8 lg:pb-24 lg:pt-28">
           <div className="flex w-full flex-col">
             {/* Supporting hero copy */}
             <div className="mb-3 flex min-h-[118px] flex-col items-start justify-end sm:mb-4 sm:min-h-[132px] lg:mb-5 lg:min-h-0">
               {/* Hero copy — drop-shadow aids readability on photograph */}
-              <div key={currentSlide.title} className="max-w-xl hero-copy-enter drop-shadow-[0_2px_20px_rgba(0,0,0,0.28)] dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.50)]">
+              <div key={currentSlide.title} className="max-w-xl hero-copy-enter translate-y-0 drop-shadow-[0_2px_20px_rgba(0,0,0,0.28)] 2xl:translate-y-0 dark:drop-shadow-[0_2px_20px_rgba(0,0,0,0.50)]">
                 {/* Eyebrow badge — foreground-tinted in light, white-tinted in dark */}
                 <div className="mb-3 inline-flex items-center rounded-full border border-foreground/20 bg-foreground/8 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-foreground/75 backdrop-blur-md dark:border-white/20 dark:bg-white/10 dark:text-white/85">
                   {currentSlide.eyebrow}
@@ -236,6 +236,8 @@ export function HeroSection() {
   className="
     mx-auto
     max-w-[850px]
+    lg:max-w-none
+    lg:whitespace-nowrap
     text-2xl
     text-white
     font-semibold

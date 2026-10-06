@@ -764,11 +764,19 @@ export const HotelListCard = ({
 
         {amenities && amenities.length > 0 && (
           <div className="hidden sm:flex sm:flex-wrap sm:gap-1">
-            {amenities.slice(0, 3).map((amenity) => (
+            {amenities.slice(0, 5).map((amenity) => (
               <span key={amenity} className="max-w-full rounded-md bg-secondary/70 px-1 py-0.5 text-[8.5px] leading-tight text-muted-foreground sm:px-2 sm:py-1 sm:text-[10px]">
                 {amenity}
               </span>
             ))}
+            {amenities.length > 5 && (
+              <span
+                aria-label="More amenities"
+                className="rounded-md bg-secondary/70 px-1 py-0.5 text-[8.5px] leading-tight text-muted-foreground sm:px-2 sm:py-1 sm:text-[10px]"
+              >
+                +more
+              </span>
+            )}
           </div>
         )}
 

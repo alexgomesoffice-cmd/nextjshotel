@@ -84,7 +84,7 @@ function SearchContent() {
   const [sort, setSort] = useState("newest");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [dateValidationError, setDateValidationError] = useState<string | null>(null);
 
   const currentPage = parseInt(searchParams.get("page") || "1");
@@ -194,7 +194,7 @@ function SearchContent() {
     <div className="min-h-screen bg-background">
 
       {/* ── Search bar section ── */}
-      <div className="w-full bg-secondary/10 border-b border-border/50 shadow-sm py-8 px-4 pt-28 animate-fade-in">
+      <div className="relative z-20 w-full overflow-visible bg-secondary/10 border-b border-border/50 shadow-sm py-8 px-4 pt-28 animate-fade-in">
         <div className="container mx-auto max-w-7xl flex flex-col items-center">
           <h1 className="text-2xl sm:text-3xl lg:text-5xl font-bold tracking-tight mb-3">Search <span className="text-primary">Hotels</span></h1>
           <p className="text-muted-foreground mb-8">Find your perfect stay</p>

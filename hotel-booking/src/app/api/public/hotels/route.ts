@@ -452,7 +452,7 @@ export async function GET(req: NextRequest) {
         starting_discount: startingPricing?.discount ?? null,
         address:        hotel.address,
         amenities:      (hotel.hotel_amenities || [])
-          .slice(0, 3)
+          .slice(0, 6)
           .map((ha) => String(((ha as Record<string, unknown>).amenity as Record<string, unknown>).name)),
         isFavorited:    favoriteHotelIds.has(hotel.id),
       };

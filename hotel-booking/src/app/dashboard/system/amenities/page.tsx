@@ -84,7 +84,7 @@ function AmenitiesContent() {
             <TabsTrigger
               value="HOTEL"
             >
-              Hotel
+              Hotel Type
             </TabsTrigger>
             <TabsTrigger
               value="ROOM"

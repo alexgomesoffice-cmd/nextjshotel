@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 // ═══════════════════════════════════════════════════════
@@ -374,7 +374,7 @@ model hotel_details {
 model hotel_images {
   id         Int      @id @default(autoincrement())
   hotel_id   Int
-  image_url  String   @db.MediumText
+  image_url  String   
   is_cover   Boolean  @default(false)
   sort_order Int      @default(0)
   created_at DateTime @default(now())
@@ -836,7 +836,7 @@ model room_details {
 
 model room_images {
   id              Int      @id @default(autoincrement())
-  image_url       String   @db.LongText
+  image_url       String   
   is_cover        Boolean  @default(false)
   sort_order      Int      @default(0)
   room_type_id    Int?

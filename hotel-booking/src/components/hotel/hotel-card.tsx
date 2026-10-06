@@ -307,7 +307,7 @@ export function RoomRow({
 
           </div>
 
-          <div className=" flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+          <div className=" flex flex-wrap items-center gap-x-8 gap-y-1 text-muted-foreground">
             <span className="inline-flex min-w-0 items-start gap-1.5">
               
               <span className="flex min-w-0 flex-col gap-0.5">

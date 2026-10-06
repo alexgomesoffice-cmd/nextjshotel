@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   MapPin, Star, Building2,
-  Users, BedDouble, ArrowUpRight,
+  Users, BedDouble, Ruler, ArrowUpRight,
   CheckCircle2, AlertTriangle, Info,
 } from 'lucide-react';
 import { cn, formatDiscountLabel } from '@/lib/utils';
@@ -103,6 +103,10 @@ function getDisplayPrice(basePrice?: number | null, effectivePrice?: number | nu
   if (typeof effectivePrice === 'number' && Number.isFinite(effectivePrice)) return effectivePrice;
   if (typeof basePrice === 'number' && Number.isFinite(basePrice)) return basePrice;
   return 0;
+}
+
+function formatRoomSize(roomSize: string) {
+  return roomSize.replace(/\s*sq\s*ft\b/i, ' sq ft');
 }
 
 function renderStarIcons(starRating?: number) {
@@ -303,16 +307,39 @@ export function RoomRow({
 
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9px] sm:gap-2.5 sm:text-[11px] lg:gap-2.5 lg:text-[11px] text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <BedDouble className="size-3" />
-              {rt.bed_types[0] ? rt.bed_types[0].name : "Standard Bed"}
+          <div className=" flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground">
+            <span className="inline-flex min-w-0 items-start gap-1.5">
+              <BedDouble className="mt-0.5 shrink-0" />
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="text-[10px] leading-tight text-muted-foreground">Bed type</span>
+                <span className="text-[11px] font-medium leading-tight text-foreground">
+                  {rt.bed_types[0] ? rt.bed_types[0].name : "Standard Bd"}
+                </span>
+                
+              </span>
             </span>
-            <span className="flex items-center gap-1">
-              <Users className="size-3" />
-              {rt.max_occupancy} Guests
+            <span className="inline-flex min-w-0 items-start gap-1.5">
+              <Users className="mt-0.5 shrink-0" />
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="text-[10px] leading-tight text-muted-foreground">Guest capacity</span>
+                <span className="text-[11px] font-medium leading-tight text-foreground">
+                  Sleeps up to {rt.max_occupancy} guest{rt.max_occupancy !== 1 ? 's' : ''}
+                </span>
+                
+              </span>
             </span>
-            {rt.room_size && <span>{rt.room_size}</span>}
+            {rt.room_size && (
+              <span className="inline-flex min-w-0 items-start gap-1.5">
+                <Ruler className="mt-0.5 shrink-0" />
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="text-[10px] leading-tight text-muted-foreground">Room size</span>
+                  <span className="text-[11px] font-medium leading-tight text-foreground">
+                    {formatRoomSize(rt.room_size)}
+                  </span>
+                  
+                </span>
+              </span>
+            )}
           </div>
         </div>
 
@@ -427,45 +454,36 @@ const HotelCard = ({
 
           {/* Bottom Info Overlay */}
           <div className="absolute inset-x-0 bottom-0 p-5 text-white z-20">
-            <div className="mb-2 flex items-center gap-1.5 text-[11px]">
-              {guest_rating > 0 && (
-                <span className="flex items-center gap-1 rounded-md bg-white/95 px-1.5 py-0.5 text-foreground">
-                  <Star className="size-3 fill-amber-500 text-amber-500" />
-                  <span className="font-semibold">{Number(guest_rating).toFixed(1)}</span>
-                </span>
-              )}
-              {star_rating > 0 && (
-                <span className="font-medium flex items-center text-amber-300">
-                  {star_rating} ★ Rating
-                </span>
-              )}
-            </div>
-
-            <h3 className="text-base sm:text-lg lg:text-2xl font-bold leading-tight tracking-tight line-clamp-2 ">
-              {name}
-            </h3>
-
-            <div className="mt-1 flex items-center gap-1 text-[11px] sm:mt-1.5 sm:gap-1.5 sm:text-[12px] lg:mt-1.5 lg:gap-1.5 lg:text-[12px] text-white/85">
-              <MapPin className="size-3.5 text-white/70" />
-              <span>{city}</span>
-              <span className="text-white/40">·</span>
-              <span className="truncate max-w-[200px] text-white/80">
-                {address}
-              </span>
-            </div>
-
-            {/* Embedded Footer Pricing Block */}
-            <div className="mt-4 flex min-w-0 items-end justify-between gap-2 border-t border-white/15 pt-3 lg:gap-3">
+            <div className="flex min-w-0 items-end justify-between gap-3">
               <div className="min-w-0 flex-1 text-left">
-                {amenities && amenities.length > 0 ? (
-                  <div className="flex min-w-0 flex-wrap items-center gap-1.5 lg:gap-2">
-                    {amenities.slice(0,3).map((a, i) => (
-                      <span key={i} className="rounded bg-white/10 px-1.5 py-0.5 text-[9px] whitespace-normal break-words text-white/90 sm:px-2 sm:text-[10px]">{a}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/60">No amenities info</p>
-                )}
+                <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[11px]">
+                  {guest_rating > 0 && (
+                    <span className="flex items-center gap-1 rounded-md bg-white/95 px-1.5 py-0.5 text-foreground">
+                      <Star className="size-3 fill-amber-500 text-amber-500" />
+                      <span className="font-semibold">{Number(guest_rating).toFixed(1)}</span>
+                    </span>
+                  )}
+                  {star_rating > 0 && (
+                    <span className="font-medium flex items-center text-amber-300">
+                      {star_rating} ★ Rating
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="line-clamp-2 text-base font-bold leading-tight sm:text-lg lg:text-2xl">
+                  {name}
+                </h3>
+
+                <div className="mt-1 flex min-w-0 items-center gap-1 text-[11px] text-white/85 sm:mt-1.5 sm:gap-1.5 sm:text-[12px]">
+                  <MapPin className="size-3.5 shrink-0 text-white/70" />
+                  <span className="shrink-0">{city}</span>
+                  {address && (
+                    <>
+                      <span className="shrink-0 text-white/40">·</span>
+                      <span className="truncate text-white/80">{address}</span>
+                    </>
+                  )}
+                </div>
               </div>
               
               <div className="w-[78px] shrink-0 text-right sm:w-[96px] lg:w-auto">

@@ -158,9 +158,9 @@ function VariantRow({
         {/* Title + available badge */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm sm:text-base text-foreground leading-tight">{title}</span>
-          {available > 0 && available < 5 && (
+          {available > 0 && available <= 5 && (
             <span className="text-[10px] sm:text-[11px] text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
-              Only 5 rooms left
+              Only {available} {available === 1 ? "room" : "rooms"} left
             </span>
           )}
           {available <= 0 && (

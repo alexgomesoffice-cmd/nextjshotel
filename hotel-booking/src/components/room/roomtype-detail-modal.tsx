@@ -62,7 +62,6 @@ export interface RoomTypeDetailModalProps {
     description: string | null;
     type_images: RoomTypeImage[];
     room_type_amenities: RoomTypeAmenity[];
-    available_rooms_count: number;
     room_variants: RoomTypeVariant[];
   } | null;
 }
@@ -318,28 +317,6 @@ useEffect(() => {
                 </div>
               )}
 
-              <div className="col-span-2 flex items-center justify-between rounded-2xl border border-border bg-muted/30 px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                    <CheckCircle2 className="h-4 w-4" />
-                  </div>
-
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Availability
-                    </p>
-                    <p className="mt-0.5 text-sm font-semibold">
-                      {roomType.available_rooms_count}{" "}
-                      {roomType.available_rooms_count === 1
-                        ? "Room"
-                        : "Rooms"}{" "}
-                      Available
-                    </p>
-                  </div>
-                </div>
-
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.12)]" />
-              </div>
             </div>
 
             {/* Bed Configuration */}

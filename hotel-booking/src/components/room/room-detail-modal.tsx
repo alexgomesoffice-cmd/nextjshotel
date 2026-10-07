@@ -40,6 +40,7 @@ export interface RoomDetailModalProps {
     room_number?: string;
     floor?: number | null;
     pricing: ResolvedPricing;
+    available_count: number;
     room_size: string | null;
     facilities: { name: string }[];
     variant_images: RoomImage[];
@@ -373,6 +374,13 @@ const RoomDetailModal = ({
                     <div className="h-5 w-1 rounded-full bg-primary" />
                     <h3 className="text-base font-semibold">Room information</h3>
                   </div>
+
+                  {room.available_count > 0 && room.available_count <= 5 && (
+                    <p className="mb-3 text-sm font-medium text-amber-600 dark:text-amber-400">
+                      Only {room.available_count}{" "}
+                      {room.available_count === 1 ? "room" : "rooms"} left
+                    </p>
+                  )}
 
                   <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {/* Size */}

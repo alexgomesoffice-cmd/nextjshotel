@@ -56,7 +56,6 @@ export default function RoomsSectionClient({
         description: modalRoom.description,
         type_images: modalRoom.type_images,
         room_type_amenities: modalRoom.room_type_amenities,
-        available_rooms_count: modalRoom.available_rooms_count,
         room_variants: modalRoom.room_variants,
       }
     : null;

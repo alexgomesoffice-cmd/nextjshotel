@@ -377,21 +377,16 @@ const RoomDetailModal = ({
                   <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {/* Size */}
                     {room.room_size && (
-                      <div
-                        className="group rounded-xl border border-border/60 bg-muted/30 p-3 transition-colors hover:border-primary/30 hover:bg-primary/5"
-                      >
-                        <div
-                          className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary"
-                        >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
                           <Maximize2 className="h-4 w-4" />
                         </div>
 
-                        <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                          Room size
-                        </p>
-
-                        <p className="mt-1 text-sm font-semibold">
-                          {formatRoomSize(room.room_size)}
+                        <p className="text-sm">
+                          <span className="font-medium text-muted-foreground">Room size:</span>{" "}
+                          <span className="font-semibold">
+                            {formatRoomSize(room.room_size)}
+                          </span>
                         </p>
                       </div>
                     )}

@@ -158,15 +158,16 @@ function VariantRow({
         {/* Title + available badge */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className="font-semibold text-sm sm:text-base text-foreground leading-tight">{title}</span>
-            {available > 0 ? (
-              <span className="text-[10px] sm:text-[11px] text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
-                {available} available
-              </span>
-            ) : (
-              <span className="text-[10px] sm:text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-2 py-0.5 border border-border/30 shrink-0">
-                Unavailable for selected dates
-              </span>
-            )}
+          {available > 0 && available < 5 && (
+            <span className="text-[10px] sm:text-[11px] text-muted-foreground bg-secondary/80 rounded-md px-2 py-0.5 border border-border/40 shrink-0">
+              Only 5 rooms left
+            </span>
+          )}
+          {available <= 0 && (
+            <span className="text-[10px] sm:text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-2 py-0.5 border border-border/30 shrink-0">
+              Unavailable for selected dates
+            </span>
+          )}
         </div>
 
         {/* Capacity */}
@@ -177,11 +178,22 @@ function VariantRow({
 
         {/* Facilities */}
         <div className="flex items-center gap-x-2.5 gap-y-1 flex-wrap mt-1.5 sm:mt-2 text-[11px] sm:text-xs text-muted-foreground">
-          {variant.facilities.slice(0, 3).map((f) => (
+          {variant.facilities.slice(0, 4).map((f) => (
             <span key={f.name} className="inline-flex items-center gap-1">
               <Check className="h-3 w-3 text-primary/80" /> {f.name}
             </span>
           ))}
+          {variant.facilities.length > 4 && (
+            <button
+              type="button"
+              onClick={onViewRoomDetails}
+              disabled={!onViewRoomDetails}
+              aria-label="View room details and all facilities"
+              className="cursor-pointer text-primary hover:text-primary/80 disabled:cursor-default disabled:text-muted-foreground"
+            >
+              +{variant.facilities.length - 4} more
+            </button>
+          )}
         </div>
 
         {/* Recommendation */}
@@ -342,7 +354,7 @@ const RoomTypeCard = ({
                   <h3 className="font-bold text-xl text-foreground leading-tight">{name}</h3>
                   {!isSelectionDisabled && totalSelected > 0 && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/10 border border-primary/20 rounded-md px-2 py-1">
-                      Active room type
+                      Selected
                     </span>
                   )}
                 </div>
@@ -464,8 +476,10 @@ const RoomTypeCard = ({
           {/* Section header */}
           <div className="border-t border-border/30 px-4 py-3 sm:px-5 flex items-center justify-between gap-2 bg-muted/10">
             <span className="text-xs sm:text-sm font-semibold uppercase tracking-wide text-foreground">Choose your room</span>
-            {available_rooms_count > 0 && (
-              <span className="text-xs sm:text-sm text-primary font-semibold">{available_rooms_count} available</span>
+            {room_variants.length > 0 && (
+              <span className="text-xs sm:text-sm text-primary font-semibold">
+                {room_variants.length} room {room_variants.length === 1 ? "variant" : "variants"}
+              </span>
             )}
           </div>
 

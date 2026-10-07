@@ -43,7 +43,7 @@ const DestinationsSection = () => {
 
   if (isLoading) {
     return (
-      <section className="relative overflow-hidden bg-background py-24">
+      <section className="relative overflow-hidden bg-background py-16">
         <div className="pointer-events-none absolute top-0 right-0 h-96 w-96 translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 h-96 w-96 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent/5 blur-3xl" />
 
@@ -100,7 +100,7 @@ const DestinationsSection = () => {
     : cities.slice(0, 6);
 
   return (
-    <section className="relative overflow-hidden bg-background py-24">
+    <section className="relative overflow-hidden bg-background py-16">
       {/* Decorative Blurs */}
       <div className="pointer-events-none absolute top-0 right-0 h-96 w-96 translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/5 blur-3xl" />
       <div className="pointer-events-none absolute bottom-0 left-0 h-96 w-96 -translate-x-1/2 translate-y-1/2 rounded-full bg-accent/5 blur-3xl" />

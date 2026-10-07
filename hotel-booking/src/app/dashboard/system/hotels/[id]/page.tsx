@@ -75,6 +75,7 @@ const BOOKING_STATUS_STYLE: Record<string, string> = {
   EXPIRED: 'bg-muted-foreground/15 text-muted-foreground', CANCELLED: 'bg-red-500/15 text-red-600',
   CHECKED_IN: 'bg-blue-500/15 text-blue-600', CHECKED_OUT: 'bg-violet-500/15 text-violet-600', NO_SHOW: 'bg-red-500/15 text-red-600',
 }
+const PROPERTY_CARD_STYLE = 'border-sky-400/20 bg-gradient-to-br from-sky-500/[0.045] via-card to-indigo-500/[0.035] shadow-sm shadow-slate-950/20 transition-colors hover:border-sky-400/35'
 
 function date(value?: string | null) {
   if (!value) return '—'
@@ -247,7 +248,7 @@ export default function HotelWorkspacePage() {
                 </div>
               </section>
 
-              <section className="rounded-md border border-border/60 bg-card p-4">
+              <section className={cn('rounded-md border p-4', PROPERTY_CARD_STYLE)}>
   <div className="mb-3 flex items-center justify-between">
     <div>
       <h3 className="text-sm font-semibold">Gallery</h3>
@@ -351,7 +352,7 @@ export default function HotelWorkspacePage() {
           <TabsContent value="property" className="space-y-4 py-4">
             {openCase && <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3"><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-semibold text-amber-600">PENDING DRAFT</p><p className="text-xs text-muted-foreground">CASE-{openCase.id} · {openCase.field_changes.length} field changes · Submitted {dateTime(openCase.submitted_at)}</p></div><button onClick={() => router.push(`/dashboard/system/review-queue/${openCase.id}`)} className="rounded-sm bg-amber-500 px-3 py-1.5 text-xs font-medium text-black">Review Draft</button></div><p className="mt-1 text-[11px] text-muted-foreground">Hotel Admin edits remain under review; System Admin edits here go live immediately.</p></div>}
 
-            <section className="rounded-md border border-border/60 bg-card p-4">
+            <section className={cn('rounded-md border p-4', PROPERTY_CARD_STYLE)}>
               <div className="mb-3 flex items-center justify-between"><div><h3 className="text-sm font-semibold">Property identity</h3><p className="text-xs text-muted-foreground">System-level identifiers and publication information.</p></div><span className="font-mono text-[10px] text-muted-foreground">HOTEL-{hotel.id}</span></div>
               <div className="grid grid-cols-2 gap-x-6 gap-y-2 md:grid-cols-4">
                 <InfoRow label="Hotel type" value={hotel.hotel_type?.name} icon={Building2} />
@@ -366,20 +367,20 @@ export default function HotelWorkspacePage() {
             </section>
 
             <div className="grid gap-4 lg:grid-cols-2">
-              <EditableSection title="General" fields={[{ key: 'name', label: 'Hotel Name', value: hotel.name }, { key: 'star_rating', label: 'Star Rating', value: d?.star_rating ?? null, type: 'number' }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
-              <EditableSection title="Location" fields={[{ key: 'address', label: 'Address', value: hotel.address }, { key: 'zip_code', label: 'Zip Code', value: hotel.zip_code }, { key: 'map_location', label: 'Google Maps Embed URL', value: hotel.map_location }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
-              <EditableSection title="Contacts" fields={[{ key: 'email', label: 'Official Email', value: hotel.email, type: 'email' }, { key: 'reception_no1', label: 'Reception No. 1', value: d?.reception_no1 ?? null }, { key: 'reception_no2', label: 'Reception No. 2', value: d?.reception_no2 ?? null }, { key: 'website', label: 'Website', value: d?.website ?? null }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
-              <EditableSection title="Stay Rules" fields={[{ key: 'check_in_time', label: 'Check-in', value: d?.check_in_time ?? null }, { key: 'check_out_time', label: 'Check-out', value: d?.check_out_time ?? null }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
-              <EditableSection title="Description" fields={[{ key: 'description', label: 'Description', value: d?.description ?? null }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
-              <EditableSection title="Emergency Contact" fields={[{ key: 'emergency_contact_name', label: 'Name', value: d?.emergency_contact_name ?? null }, { key: 'emergency_contact_designation', label: 'Designation', value: d?.emergency_contact_designation ?? null }, { key: 'emergency_contact_phone1', label: 'Phone 1', value: d?.emergency_contact_phone1 ?? null }, { key: 'emergency_contact_phone2', label: 'Phone 2', value: d?.emergency_contact_phone2 ?? null }, { key: 'emergency_contact_email', label: 'Email', value: d?.emergency_contact_email ?? null }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
+              <EditableSection className={PROPERTY_CARD_STYLE} title="General" fields={[{ key: 'name', label: 'Hotel Name', value: hotel.name }, { key: 'star_rating', label: 'Star Rating', value: d?.star_rating ?? null, type: 'number' }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
+              <EditableSection className={PROPERTY_CARD_STYLE} title="Location" fields={[{ key: 'address', label: 'Address', value: hotel.address }, { key: 'zip_code', label: 'Zip Code', value: hotel.zip_code }, { key: 'map_location', label: 'Google Maps Embed URL', value: hotel.map_location }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
+              <EditableSection className={PROPERTY_CARD_STYLE} title="Contacts" fields={[{ key: 'email', label: 'Official Email', value: hotel.email, type: 'email' }, { key: 'reception_no1', label: 'Reception No. 1', value: d?.reception_no1 ?? null }, { key: 'reception_no2', label: 'Reception No. 2', value: d?.reception_no2 ?? null }, { key: 'website', label: 'Website', value: d?.website ?? null }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
+              <EditableSection className={PROPERTY_CARD_STYLE} title="Stay Rules" fields={[{ key: 'check_in_time', label: 'Check-in', value: d?.check_in_time ?? null }, { key: 'check_out_time', label: 'Check-out', value: d?.check_out_time ?? null }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
+              <EditableSection className={PROPERTY_CARD_STYLE} title="Description" fields={[{ key: 'description', label: 'Description', value: d?.description ?? null }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
+              <EditableSection className={PROPERTY_CARD_STYLE} title="Emergency Contact" fields={[{ key: 'emergency_contact_name', label: 'Name', value: d?.emergency_contact_name ?? null }, { key: 'emergency_contact_designation', label: 'Designation', value: d?.emergency_contact_designation ?? null }, { key: 'emergency_contact_phone1', label: 'Phone 1', value: d?.emergency_contact_phone1 ?? null }, { key: 'emergency_contact_phone2', label: 'Phone 2', value: d?.emergency_contact_phone2 ?? null }, { key: 'emergency_contact_email', label: 'Email', value: d?.emergency_contact_email ?? null }]} onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}`, c)} />
             </div>
 
-            <section className="rounded-md border border-border/60 bg-card p-4">
+            <section className={cn('rounded-md border p-4', PROPERTY_CARD_STYLE)}>
               <div className="mb-3 flex items-center justify-between"><div><h3 className="text-sm font-semibold">Hotel Amenities</h3><p className="text-xs text-muted-foreground">Global System-Admin master data selected for this hotel.</p></div><span className="rounded-sm bg-secondary px-2 py-1 text-[11px] text-muted-foreground">{hotel.hotel_amenities.length} selected</span></div>
               {hotel.hotel_amenities.length === 0 ? <p className="text-xs text-muted-foreground">No hotel amenities selected.</p> : <div className="grid grid-cols-2 gap-2 md:grid-cols-3 lg:grid-cols-4">{hotel.hotel_amenities.map(({ amenity }) => <div key={amenity.id} className="flex items-center gap-2 rounded-md border border-border/40 bg-secondary/30 px-3 py-2 text-xs"><Check className="h-3.5 w-3.5 text-emerald-500" /><span>{amenity.name}</span></div>)}</div>}
             </section>
 
-            <section className="rounded-md border border-border/60 bg-card p-4">
+            <section className={cn('rounded-md border p-4', PROPERTY_CARD_STYLE)}>
               <div className="mb-3 flex items-center justify-between"><div><h3 className="text-sm font-semibold">Gallery</h3><p className="text-xs text-muted-foreground">Hotel-level property images.</p></div><span className="text-[11px] text-muted-foreground">{hotel.images.length} images</span></div>
               {hotel.images.length === 0 ? <div className="grid min-h-28 place-items-center rounded-md border border-dashed border-border/60 text-xs text-muted-foreground">No hotel images uploaded.</div> : <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
   {hotel.images.map((image) => (
@@ -423,13 +424,14 @@ export default function HotelWorkspacePage() {
 </div>}
             </section>
 
-            <section className="rounded-md border border-border/60 bg-card p-4">
+            <section className={cn('rounded-md border p-4', PROPERTY_CARD_STYLE)}>
               <div className="mb-3 flex items-center justify-between"><div><h3 className="text-sm font-semibold">Policies</h3><p className="text-xs text-muted-foreground">Read-only visibility of hotel policies.</p></div><span className="text-[11px] text-muted-foreground">{hotel.policies.length} records</span></div>
               {hotel.policies.length === 0 ? <p className="text-xs text-muted-foreground">No policies added.</p> : <div className="space-y-2">{hotel.policies.map((policy) => <div key={policy.id} className="rounded-md border border-border/40 bg-secondary/20 p-3"><div className="flex items-center justify-between gap-3"><span className="text-xs font-medium">{policy.name}</span><span className={cn('rounded-sm px-1.5 py-0.5 text-[10px]', policy.is_active ? 'bg-emerald-500/15 text-emerald-600' : 'bg-muted-foreground/15 text-muted-foreground')}>{policy.is_active ? 'Active' : 'Inactive'}</span></div><p className="mt-1 whitespace-pre-line text-xs leading-5 text-muted-foreground">{policy.description}</p></div>)}</div>}
             </section>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <EditableSection
+                className={PROPERTY_CARD_STYLE}
                 title="Owner"
                 fields={[
                   { key: 'full_name', label: 'Full Name', value: hotel.owner_detail?.full_name ?? null },
@@ -442,6 +444,7 @@ export default function HotelWorkspacePage() {
                 onSave={(c) => patch(`/api/system-admin/hotels/${hotelId}/owner`, c)}
               />
               <EditableSection
+                className={PROPERTY_CARD_STYLE}
                 title="Hotel Admin"
                 fields={[
                   { key: 'name', label: 'Name', value: hotel.hotel_admin?.name ?? null },
@@ -454,7 +457,7 @@ export default function HotelWorkspacePage() {
               />
             </div>
 
-            <section className="rounded-md border border-border/60 bg-card p-4"><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold">Documents</h3><span className="text-[11px] text-muted-foreground">{hotel.documents.length} files</span></div>{hotel.documents.length === 0 ? <p className="text-xs text-muted-foreground">No documents uploaded.</p> : <div className="divide-y divide-border/40">{hotel.documents.map((doc) => <div key={doc.id} className="flex items-center justify-between gap-4 py-2.5"><div><div className="text-xs font-medium">{doc.document_type.replaceAll('_', ' ')}</div><div className="text-[10px] text-muted-foreground">Uploaded {date(doc.created_at)}</div></div><a href={doc.file_url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">View file</a></div>)}</div>}</section>
+            <section className={cn('rounded-md border p-4', PROPERTY_CARD_STYLE)}><div className="mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold">Documents</h3><span className="text-[11px] text-muted-foreground">{hotel.documents.length} files</span></div>{hotel.documents.length === 0 ? <p className="text-xs text-muted-foreground">No documents uploaded.</p> : <div className="divide-y divide-border/40">{hotel.documents.map((doc) => <div key={doc.id} className="flex items-center justify-between gap-4 py-2.5"><div><div className="text-xs font-medium">{doc.document_type.replaceAll('_', ' ')}</div><div className="text-[10px] text-muted-foreground">Uploaded {date(doc.created_at)}</div></div><a href={doc.file_url} target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline">View file</a></div>)}</div>}</section>
           </TabsContent>
 
           <TabsContent value="rooms" className="py-4"><OpsTable><thead><tr><OpsTh>Room Type</OpsTh><OpsTh className="w-24 text-right">Variants</OpsTh><OpsTh className="w-24 text-right">Rooms</OpsTh><OpsTh className="w-40 text-right">Base Price Range</OpsTh><OpsTh className="w-24">Status</OpsTh></tr></thead><tbody>{rooms.length === 0 ? <tr><OpsTd className="text-center text-muted-foreground" colSpan={5}>No room types yet.</OpsTd></tr> : rooms.map((r) => <tr key={r.id} className="hover:bg-secondary/40"><OpsTd><div className="font-medium text-[13px]">{r.name}</div>{r.description && <div className="mt-0.5 max-w-xl truncate text-[11px] text-muted-foreground">{r.description}</div>}</OpsTd><OpsTd className="text-right font-mono text-xs">{r.variant_count}</OpsTd><OpsTd className="text-right font-mono text-xs">{r.room_count}</OpsTd><OpsTd className="text-right font-mono text-xs">{r.min_price != null ? `${money(r.min_price)}–${money(r.max_price)}` : '—'}</OpsTd><OpsTd><span className={cn('rounded-sm px-1.5 py-0.5 text-[11px]', r.is_active ? 'bg-emerald-500/15 text-emerald-600' : 'bg-muted-foreground/15 text-muted-foreground')}>{r.is_active ? 'Active' : 'Inactive'}</span></OpsTd></tr>)}</tbody></OpsTable></TabsContent>

@@ -9,8 +9,8 @@ export default function HomePage() {
     <div className="min-h-screen">
       <HeroSection />
       <FeaturedHotels />
-      <DestinationsSection />
       <HotelTypeCarousel />
+      <DestinationsSection />
       <NewsletterSection />
     </div>
   )

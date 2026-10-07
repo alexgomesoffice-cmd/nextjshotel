@@ -20,10 +20,12 @@ export function EditableSection({
   title,
   fields,
   onSave,
+  className,
 }: {
   title: string
   fields: EditableField[]
   onSave: (changes: Record<string, string>) => Promise<{ success: boolean; message?: string }>
+  className?: string
 }) {
   const [open, setOpen] = useState(false)
   const [values, setValues] = useState<Record<string, string>>({})
@@ -49,7 +51,7 @@ export function EditableSection({
   }
 
   return (
-    <section className="rounded-md border border-border/60 p-4">
+    <section className={`rounded-md border border-border/60 p-4 ${className ?? ''}`}>
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-semibold">{title}</h3>
         <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={openDialog}>
@@ -58,9 +60,11 @@ export function EditableSection({
       </div>
       <div className="grid grid-cols-2 gap-x-6 gap-y-2">
         {fields.map((f) => (
-          <div key={f.key} className="border-b border-border/40 py-1.5">
+          <div key={f.key} className="min-w-0 border-b border-border/40 py-1.5">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{f.label}</div>
-            <div className="text-sm">{f.value ?? '—'}</div>
+            <div className={`mt-0.5 min-w-0 text-sm ${f.key === 'map_location' ? 'break-all' : 'break-words'}`}>
+              {f.value ?? '—'}
+            </div>
           </div>
         ))}
       </div>

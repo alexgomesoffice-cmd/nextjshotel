@@ -399,21 +399,32 @@ const RoomTypeCard = ({
                   Top highlights
                 </p>
                 <div className="flex flex-wrap gap-2">
-{room_type_amenities.slice(0, 4).map((prop, i) => {
-  const Icon = getAmenityIcon(prop.amenity.icon);
+                  {room_type_amenities.slice(0, 4).map((prop, i) => {
+                    const Icon = getAmenityIcon(prop.amenity.icon);
 
-  return (
-    <span
-      key={i}
-      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 rounded-full px-3 py-1"
-    >
-      <Icon className="h-3 w-3 text-primary shrink-0" />
-      {prop.amenity.name}
-    </span>
-  );
-})}
-
-
+                    return (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1.5 text-xs text-muted-foreground border border-border/40 rounded-full px-3 py-1"
+                      >
+                        <Icon className="h-3 w-3 text-primary shrink-0" />
+                        {prop.amenity.name}
+                      </span>
+                    );
+                  })}
+                  {room_type_amenities.length > 4 && (
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onViewDetails?.();
+                      }}
+                      disabled={!onViewDetails}
+                      className="inline-flex items-center text-xs text-primary border border-border/40 rounded-full px-3 py-1 hover:border-primary/40 hover:bg-primary/5 disabled:cursor-default disabled:text-muted-foreground"
+                    >
+                      +{room_type_amenities.length - 4} more
+                    </button>
+                  )}
                 </div>
               </div>
             )}

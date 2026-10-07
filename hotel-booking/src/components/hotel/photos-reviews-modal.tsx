@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, type TransitionEvent as ReactTransitionEvent } from "react";
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight, Maximize2, Minimize2 } from "lucide-react";
 
 const transitionDuration = 400;
+const backdropTransitionDuration = 200;
 const transitionEasing = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 interface HotelImage {
@@ -23,9 +24,9 @@ interface PhotosModalProps {
 const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: PhotosModalProps) => {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [animationPhase, setAnimationPhase] = useState<"closed" | "opening" | "open" | "expanding" | "contracting" | "closing">("closed");
+  const [animationPhase, setAnimationPhase] = useState<"closed" | "opening" | "open" | "expanding" | "contracting" | "closing">(() => isOpen ? "opening" : "closed");
   const modalRef = useRef<HTMLDivElement | null>(null);
-  const animationTimerRef = useRef<number | null>(null);
+  const openingFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? "hidden" : "auto";
@@ -33,19 +34,15 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
   }, [isOpen]);
 
   useEffect(() => {
-    return () => {
-      if (animationTimerRef.current !== null) {
-        window.clearTimeout(animationTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
+    // This reset is required when the parent reopens the gallery with a new initial image.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isOpen) setCurrentIndex(initialIndex);
   }, [isOpen, initialIndex]);
 
   useEffect(() => {
     if (!isOpen) {
+      // The fullscreen state and animation state must be reset when the parent closes the modal.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsFullscreen(false);
       setAnimationPhase("closed");
       return;
@@ -57,25 +54,29 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
 
     syncFullscreenState();
     document.addEventListener("fullscreenchange", syncFullscreenState);
-
     setAnimationPhase("opening");
-    animationTimerRef.current = window.setTimeout(() => {
+
+    if (openingFrameRef.current !== null) {
+      window.cancelAnimationFrame(openingFrameRef.current);
+    }
+
+    openingFrameRef.current = window.requestAnimationFrame(() => {
+      openingFrameRef.current = null;
       setAnimationPhase("open");
-    }, 16);
+    });
 
     return () => {
       document.removeEventListener("fullscreenchange", syncFullscreenState);
-      if (animationTimerRef.current !== null) {
-        window.clearTimeout(animationTimerRef.current);
+      if (openingFrameRef.current !== null) {
+        window.cancelAnimationFrame(openingFrameRef.current);
+        openingFrameRef.current = null;
       }
     };
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) {
-      if (document.fullscreenElement) {
-        void document.exitFullscreen().catch(() => undefined);
-      }
+    if (!isOpen && document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
     }
   }, [isOpen]);
 
@@ -104,32 +105,42 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
     });
   }, []);
 
-  const handleClose = useCallback(async () => {
+  const handleClose = useCallback(() => {
     if (animationPhase === "closing") return;
 
-    try {
-      await exitFullscreen();
-    } catch (error) {
-      console.error("Fullscreen exit error:", error);
-    }
-
     setAnimationPhase("closing");
-    animationTimerRef.current = window.setTimeout(() => {
+
+    if (document.fullscreenElement) {
+      void exitFullscreen().catch((error) => {
+        console.error("Fullscreen exit error:", error);
+      });
+    }
+  }, [animationPhase, exitFullscreen]);
+
+  const handleViewerTransitionEnd = useCallback((event: ReactTransitionEvent<HTMLDivElement>) => {
+    if (animationPhase === "closing" && event.propertyName === "opacity") {
       onClose();
-    }, transitionDuration);
-  }, [animationPhase, exitFullscreen, onClose]);
+    }
+  }, [animationPhase, onClose]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (!isOpen) return;
+
     if (e.key === "Escape") {
       e.preventDefault();
+
       if (document.fullscreenElement) {
-        void exitFullscreen();
+        void exitFullscreen()
+          .then(handleClose)
+          .catch((error) => {
+            console.error("Fullscreen exit error:", error);
+          });
       } else {
-        void handleClose();
+        handleClose();
       }
       return;
     }
+
     if (e.key === "ArrowRight") handleNext();
     if (e.key === "ArrowLeft") handlePrev();
   }, [isOpen, exitFullscreen, handleClose, handleNext, handlePrev]);
@@ -141,7 +152,6 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
 
   const toggleFullscreen = useCallback(async () => {
     if (!modalRef.current) return;
-
     if (animationPhase === "closing" || animationPhase === "expanding" || animationPhase === "contracting") return;
 
     const enteringFullscreen = !document.fullscreenElement;
@@ -155,18 +165,18 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
       }
     } catch (error) {
       console.error("Fullscreen toggle error:", error);
+    } finally {
+      setAnimationPhase("open");
     }
-    animationTimerRef.current = window.setTimeout(() => {
-      setAnimationPhase(enteringFullscreen ? "open" : "open");
-    }, transitionDuration);
   }, [animationPhase, exitFullscreen]);
 
   const isClosing = animationPhase === "closing";
   const isOpening = animationPhase === "opening";
   const isFullscreenTransition = animationPhase === "expanding" || animationPhase === "contracting";
   const modalOpacity = isOpening || isClosing ? 0 : 1;
+  const viewerOpacity = isOpening || isClosing ? 0 : 1;
   const viewerTransform = isClosing
-    ? "translate3d(0, 10px, 0) scale(0.96)"
+    ? "translate3d(0, 8px, 0) scale(0.96)"
     : isOpening
       ? "translate3d(0, 8px, 0) scale(0.96)"
       : isFullscreenTransition
@@ -178,6 +188,10 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
     transitionDuration: `${transitionDuration}ms`,
     transitionTimingFunction: transitionEasing,
   };
+  const backdropTransitionStyle = {
+    ...transitionStyle,
+    transitionDuration: `${backdropTransitionDuration}ms`,
+  };
 
   if (!isOpen || !images || images.length === 0 || animationPhase === "closed") return null;
 
@@ -185,11 +199,15 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
     <div
       ref={modalRef}
       className="fixed inset-0 z-100 flex items-center justify-center bg-transparent backdrop-blur-xl"
+      style={{
+        backdropFilter: isClosing ? "none" : "blur(16px)",
+        transition: `backdrop-filter ${backdropTransitionDuration}ms ${transitionEasing}`,
+      }}
     >
       <div
         aria-hidden="true"
         className="absolute inset-0 bg-black transition-opacity pointer-events-none"
-        style={{ ...transitionStyle, opacity: backdropOpacity }}
+        style={{ ...backdropTransitionStyle, opacity: backdropOpacity }}
       />
       <div
         className="absolute top-0 left-0 right-0 p-4 md:p-6 flex items-center justify-between z-10 bg-linear-to-b from-black/80 to-transparent transition-[opacity,transform]"
@@ -210,7 +228,7 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
               <Minimize2 className={`absolute inset-0 h-5 w-5 transition-[opacity,transform] ${isFullscreen ? "scale-100 rotate-0 opacity-100" : "scale-75 -rotate-90 opacity-0"}`} style={transitionStyle} />
             </span>
           </button>
-          <button onClick={() => { void handleClose(); }} className="text-white/70 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" aria-label="Close gallery">
+          <button onClick={() => { handleClose(); }} className="text-white/70 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10" aria-label="Close gallery">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -218,8 +236,9 @@ const PhotosReviewsModal = ({ isOpen, onClose, images, initialIndex = 0 }: Photo
 
       <div className="relative w-full h-full max-h-screen flex items-center justify-center p-4 md:p-12">
         <div
+          onTransitionEnd={handleViewerTransitionEnd}
           className="relative w-full h-full max-w-6xl max-h-[85vh] flex items-center justify-center will-change-transform transition-[opacity,transform]"
-          style={{ ...transitionStyle, opacity: 1, transform: viewerTransform }}
+          style={{ ...transitionStyle, opacity: viewerOpacity, transform: viewerTransform }}
         >
           <Image
             key={images[currentIndex].id}

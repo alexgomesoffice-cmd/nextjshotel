@@ -118,6 +118,11 @@ enum NotificationType {
   GENERAL
 }
 
+enum AuthBackgroundKind {
+  LOGIN
+  REGISTRATION
+}
+
 // CancellationPolicy enum removed — cancellation policy fields were dropped
 // from both hotel_details and room_types per your instruction; nothing
 // references this enum anymore.
@@ -1311,6 +1316,21 @@ model end_user_notifications {
   @@index([recipient_id, is_read])
   @@index([created_at])
   @@map("end_user_notifications")
+}
+
+// ═══════════════════════════════════════════════════════
+// AUTH BACKGROUNDS
+// Independent login and registration page backgrounds managed by System Admin.
+// ═══════════════════════════════════════════════════════
+
+model auth_backgrounds {
+  id         Int                @id @default(autoincrement())
+  kind       AuthBackgroundKind @unique
+  image_url  String?            @db.VarChar(500)
+  created_at DateTime           @default(now())
+  updated_at DateTime           @updatedAt
+
+  @@map("auth_backgrounds")
 }
 
 // ═══════════════════════════════════════════════════════

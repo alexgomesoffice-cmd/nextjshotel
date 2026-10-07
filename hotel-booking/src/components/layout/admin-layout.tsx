@@ -21,6 +21,7 @@ import {
   Search,
   Bell,
   Plus,
+  Images,
   ChevronDown,
   ChevronsLeft,
   ChevronsRight,
@@ -74,10 +75,14 @@ const catalogNav: NavItem[] = [
 
 const platformNav: NavItem[] = [
   { label: 'System Admins', href: '/dashboard/system/admins', icon: ShieldCheck },
-  { label: 'Hero Banners', href: '/dashboard/system/hero-banners', icon:Sparkles },
   { label: 'Master Data Requests', href: '/dashboard/system/master-data-requests', icon: PackagePlus },
   { label: 'Notifications', href: '/dashboard/system/notifications', icon: Bell },
   { label: 'Platform Settings', href: '/dashboard/system/settings', icon: Settings },
+]
+
+const webGalleryNav: NavItem[] = [
+  { label: 'Hero Banners', href: '/dashboard/system/hero-banners', icon: Sparkles },
+  { label: 'Login & Registration', href: '/dashboard/system/web-gallery/login-registration', icon: Images },
 ]
 
 const routeCrumbs: Record<string, string> = {
@@ -95,6 +100,9 @@ const routeCrumbs: Record<string, string> = {
   '/dashboard/system/room-types': 'Catalog · Room Types',
   '/dashboard/system/room-facilities': 'Catalog · Room Facilities',
   '/dashboard/system/admins': 'System Admins',
+  '/dashboard/system/hero-banners': 'Web Gallery · Hero Banners',
+  '/dashboard/system/web-gallery': 'Web Gallery',
+  '/dashboard/system/web-gallery/login-registration': 'Web Gallery · Login & Registration',
   '/dashboard/system/master-data-requests': 'Master Data Requests',
   '/dashboard/system/notifications': 'Notifications',
   '/dashboard/system/settings': 'Platform Settings',
@@ -240,6 +248,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               </div>
             )}
             {renderNav(platformNav)}
+          </div>
+          <div className="space-y-0.5">
+            {!collapsed && (
+              <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                Web Gallery
+              </div>
+            )}
+            {renderNav(webGalleryNav)}
           </div>
         </nav>
 

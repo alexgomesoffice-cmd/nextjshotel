@@ -151,6 +151,7 @@ export default function SystemAdminPage() {
       { label: 'Manage Hotels', href: '/dashboard/system/hotels', icon: Hotel, tone: 'bg-emerald-500/10 text-emerald-600' },
       { label: 'Review Requests', href: '/dashboard/system/master-data-requests', icon: PackagePlus, tone: 'bg-amber-500/10 text-amber-600' },
       { label: 'Hero Banners', href: '/dashboard/system/hero-banners', icon: Sparkles, tone: 'bg-violet-500/10 text-violet-600' },
+      { label: 'Login & Registration', href: '/dashboard/system/web-gallery/login-registration', icon: Globe, tone: 'bg-cyan-500/10 text-cyan-600' },
       { label: 'Platform Settings', href: '/dashboard/system/settings', icon: Wrench, tone: 'bg-slate-500/10 text-slate-600' },
       { label: 'Cities', href: '/dashboard/system/cities', icon: MapPinned, tone: 'bg-cyan-500/10 text-cyan-600' },
     ],

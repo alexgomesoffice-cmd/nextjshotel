@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -15,6 +15,24 @@ export default function RegisterPage() {
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [backgroundImage, setBackgroundImage] = useState<string>('/uploads/cities/Chittagong_Port.jpg')
+
+  useEffect(() => {
+    const loadBackground = async () => {
+      try {
+        const res = await fetch('/api/public/auth-backgrounds?type=registration', { credentials: 'include' })
+        const data = await res.json()
+
+        if (res.ok && data?.success && data?.data?.image_url) {
+          setBackgroundImage(data.data.image_url)
+        }
+      } catch {
+        // Fall back to the default city image.
+      }
+    }
+
+    void loadBackground()
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
@@ -50,7 +68,7 @@ export default function RegisterPage() {
       }
 
       router.push('/login?registered=true')
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.')
     } finally {
       setLoading(false)
@@ -61,10 +79,9 @@ export default function RegisterPage() {
     <div className="relative min-h-screen w-full">
 
       {/* Background */}
-      <img
-        src="/loginImg.jpg"
-        alt="Hotel"
-        className="absolute inset-0 h-full w-full object-cover"
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url("${backgroundImage}")` }}
       />
 
       {/* Overlay */}

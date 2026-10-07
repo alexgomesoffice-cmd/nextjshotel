@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -26,6 +26,24 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [backgroundImage, setBackgroundImage] = useState<string>('/uploads/cities/Chittagong_Port.jpg')
+
+  useEffect(() => {
+    const loadBackground = async () => {
+      try {
+        const res = await fetch('/api/public/auth-backgrounds?type=login', { credentials: 'include' })
+        const data = await res.json()
+
+        if (res.ok && data?.success && data?.data?.image_url) {
+          setBackgroundImage(data.data.image_url)
+        }
+      } catch {
+        // Fall back to the default city image.
+      }
+    }
+
+    void loadBackground()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,7 +70,7 @@ function LoginForm() {
 
       setLoading(false)
       router.push(callbackUrl)
-    } catch (err) {
+    } catch {
       setError('Something went wrong. Please try again.')
       setLoading(false)
     }
@@ -62,10 +80,9 @@ function LoginForm() {
     <div className="relative min-h-screen w-full">
 
       {/* Background */}
-      <img
-        src="/loginImg.jpg"
-        alt="Hotel"
-        className="absolute inset-0 h-full w-full object-cover"
+      <div
+        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url("${backgroundImage}")` }}
       />
 
       {/* Dark overlay */}

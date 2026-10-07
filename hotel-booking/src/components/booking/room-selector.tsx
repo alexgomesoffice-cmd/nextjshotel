@@ -4,14 +4,6 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { AlertTriangle, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import RoomsSectionClient, { type RoomType } from "@/components/room/rooms-section-client";
 import BookingSidebar, { type SelectedVariant } from "./booking-sidebar";
 import { useHotelAvailability } from "@/hooks/use-hotel-availability";
@@ -487,17 +479,17 @@ export default function RoomSelector({
         </div>
 
         <div
-          aria-hidden={!isFiltersOpen || isMobileFilters}
-          inert={!isFiltersOpen || isMobileFilters}
+          aria-hidden={!isFiltersOpen}
+          inert={!isFiltersOpen}
           className={`grid transition-[grid-template-rows,opacity,transform] duration-200 ease-out ${
-            isFiltersOpen && !isMobileFilters
+            isFiltersOpen
               ? "grid-rows-[1fr] translate-y-0 opacity-100"
               : "pointer-events-none grid-rows-[0fr] -translate-y-1 opacity-0"
           }`}
         >
           <div className="min-h-0 overflow-hidden">
             <div className="border-t border-border/60 px-3 py-3 sm:px-4 sm:py-4">
-              <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-x-4 gap-y-4 sm:grid-cols-2 sm:gap-y-3 lg:grid-cols-4">
                 {[
                   { label: "Room Type", key: "roomTypes" as const, options: roomTypeOptions },
                   { label: "Bed Type", key: "bedTypes" as const, options: bedTypeOptions },
@@ -512,15 +504,15 @@ export default function RoomSelector({
                       <p className="text-xs text-muted-foreground">No options at this hotel.</p>
                     ) : (
                       <div
-                        className="custom-scrollbar max-h-28 space-y-1 overflow-y-auto overscroll-contain pr-1"
-                        data-lenis-prevent
-                        data-lenis-prevent-wheel
-                        data-lenis-prevent-touch
+                        className="grid grid-cols-2 gap-x-2 gap-y-1 sm:custom-scrollbar sm:block sm:max-h-28 sm:space-y-1 sm:overflow-y-auto sm:overscroll-contain sm:pr-1"
+                        data-lenis-prevent={!isMobileFilters ? "" : undefined}
+                        data-lenis-prevent-wheel={!isMobileFilters ? "" : undefined}
+                        data-lenis-prevent-touch={!isMobileFilters ? "" : undefined}
                       >
                         {group.options.map((option) => (
                           <label
                             key={option}
-                            className="flex min-h-8 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/50"
+                            className="flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/50 sm:min-h-8"
                           >
                             <Checkbox
                               checked={draftFilters[group.key].includes(option)}
@@ -546,64 +538,6 @@ export default function RoomSelector({
           </div>
         </div>
       </div>
-
-      <Sheet open={isFiltersOpen && isMobileFilters} onOpenChange={setIsFiltersOpen}>
-        <SheetContent
-          side="bottom"
-          showCloseButton
-          className="max-h-[85dvh] gap-0 overflow-hidden rounded-t-2xl px-0 pb-[max(1rem,env(safe-area-inset-bottom))]"
-        >
-          <SheetHeader className="border-b border-border/60 px-4 py-3 pr-12">
-            <SheetTitle>Room filters</SheetTitle>
-            <SheetDescription>Choose from options available at this hotel.</SheetDescription>
-          </SheetHeader>
-          <div
-            className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4"
-            data-lenis-prevent
-            data-lenis-prevent-wheel
-            data-lenis-prevent-touch
-          >
-            {[
-              { label: "Room Type", key: "roomTypes" as const, options: roomTypeOptions },
-              { label: "Bed Type", key: "bedTypes" as const, options: bedTypeOptions },
-              { label: "Room Amenities", key: "roomAmenities" as const, options: roomAmenityOptions },
-              { label: "Facilities", key: "facilities" as const, options: facilityOptions },
-            ].map((group) => (
-              <fieldset key={group.label} className="space-y-1.5">
-                <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {group.label}
-                </legend>
-                {group.options.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No options at this hotel.</p>
-                ) : (
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                    {group.options.map((option) => (
-                      <label
-                        key={option}
-                        className="flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/50"
-                      >
-                        <Checkbox
-                          checked={draftFilters[group.key].includes(option)}
-                          onCheckedChange={() => toggleSelection(group.key, option)}
-                        />
-                        <span className="break-words text-sm text-foreground">{option}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </fieldset>
-            ))}
-          </div>
-          <SheetFooter className="mt-0 flex-row justify-end border-t border-border/60 px-4 py-3">
-            <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
-              Clear
-            </Button>
-            <Button type="button" size="sm" onClick={applyFilters}>
-              Apply
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
 
       <div className="grid grid-cols-1 gap-6 items-start xl:grid-cols-3">
         <div className="xl:col-span-2">

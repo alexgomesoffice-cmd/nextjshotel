@@ -1,7 +1,17 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, SlidersHorizontal } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import RoomsSectionClient, { type RoomType } from "@/components/room/rooms-section-client";
 import BookingSidebar, { type SelectedVariant } from "./booking-sidebar";
 import { useHotelAvailability } from "@/hooks/use-hotel-availability";
@@ -13,10 +23,22 @@ interface PendingBookingState {
   selectedQuantities?: Record<number, number>;
 }
 
-// The old AC-only/Non-AC filter was tied to a single boolean field that no
-// longer exists (facilities are now an arbitrary named set per variant).
-// Removed rather than faked — no filter is shown until a real
-// facility-based filter is designed.
+type AcFilterMode = "all" | "ac" | "non-ac";
+
+type RoomFilters = {
+  roomTypes: string[];
+  bedTypes: string[];
+  roomAmenities: string[];
+  facilities: string[];
+};
+
+const normalizeFilterValue = (value: string) => value.trim().replace(/\s+/g, " ").toLowerCase();
+
+const isAirConditionedVariant = (variant: RoomType["room_variants"][number]) =>
+  variant.facilities.some((facility) => {
+    const normalized = normalizeFilterValue(facility.name);
+    return normalized.includes("air conditioning") || normalized.includes("ac");
+  });
 
 interface RoomSelectorProps {
   roomTypes: RoomType[];
@@ -39,7 +61,21 @@ export default function RoomSelector({
 }: RoomSelectorProps) {
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const restoredPendingState = useRef(false);
-  // (acFilter state removed alongside the AC-only/Non-AC filter)
+  const [acFilter, setAcFilter] = useState<AcFilterMode>("all");
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [isMobileFilters, setIsMobileFilters] = useState(false);
+  const [draftFilters, setDraftFilters] = useState<RoomFilters>({
+    roomTypes: [],
+    bedTypes: [],
+    roomAmenities: [],
+    facilities: [],
+  });
+  const [appliedFilters, setAppliedFilters] = useState<RoomFilters>({
+    roomTypes: [],
+    bedTypes: [],
+    roomAmenities: [],
+    facilities: [],
+  });
   const [isLoadingAvailability, setIsLoadingAvailability] = useState(false);
   const [highlightedRoomTypeId, setHighlightedRoomTypeId] = useState<number | null>(null);
 
@@ -48,6 +84,14 @@ export default function RoomSelector({
   const [sidebarGuests, setSidebarGuests] = useState(guests);
   const [guestWarning, setGuestWarning] = useState<string | null>(null);
   const [internalRoomTypes, setInternalRoomTypes] = useState(initialRoomTypes);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 639px)");
+    const updateViewport = () => setIsMobileFilters(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -192,7 +236,101 @@ export default function RoomSelector({
     return () => clearTimeout(t);
   }, [guestWarning]);
 
-  const filteredRoomTypes = roomTypes;
+  const roomTypeOptions = useMemo(
+    () => [...new Set(roomTypes.map((roomType) => roomType.name).filter(Boolean))],
+    [roomTypes]
+  );
+
+  const bedTypeOptions = useMemo(
+    () => [...new Set(
+      roomTypes.flatMap((roomType) => roomType.room_variants.flatMap((variant) => variant.bed_types.map((bedType) => bedType.bed_type.name)))
+    )].sort((a, b) => a.localeCompare(b)),
+    [roomTypes]
+  );
+
+  const roomAmenityOptions = useMemo(
+    () => [...new Set(
+      roomTypes.flatMap((roomType) => roomType.room_type_amenities.map((amenity) => amenity.amenity.name))
+    )].sort((a, b) => a.localeCompare(b)),
+    [roomTypes]
+  );
+
+  const facilityOptions = useMemo(
+    () => [...new Set(
+      roomTypes.flatMap((roomType) => roomType.room_variants.flatMap((variant) => variant.facilities.map((facility) => facility.name)))
+    )].sort((a, b) => a.localeCompare(b)),
+    [roomTypes]
+  );
+
+  const toggleSelection = (group: keyof RoomFilters, value: string) => {
+    setDraftFilters((current) => {
+      const selected = current[group];
+      const next = selected.includes(value)
+        ? selected.filter((item) => item !== value)
+        : [...selected, value];
+
+      return {
+        ...current,
+        [group]: next,
+      };
+    });
+  };
+
+  const clearFilters = () => {
+    setDraftFilters({
+      roomTypes: [],
+      bedTypes: [],
+      roomAmenities: [],
+      facilities: [],
+    });
+    setAppliedFilters({
+      roomTypes: [],
+      bedTypes: [],
+      roomAmenities: [],
+      facilities: [],
+    });
+    setIsFiltersOpen(false);
+  };
+
+  const applyFilters = () => {
+    setAppliedFilters(draftFilters);
+    setIsFiltersOpen(false);
+  };
+
+  const filterCount = Object.values(appliedFilters).reduce((total, items) => total + items.length, 0);
+
+  const matchesFilter = (roomType: RoomType) => {
+    const hasAirConditioning = roomType.room_variants.some((variant) => isAirConditionedVariant(variant));
+    if (acFilter === "ac" && !hasAirConditioning) return false;
+    if (acFilter === "non-ac" && hasAirConditioning) return false;
+
+    if (appliedFilters.roomTypes.length > 0 && !appliedFilters.roomTypes.includes(roomType.name)) return false;
+
+    if (appliedFilters.bedTypes.length > 0) {
+      const hasMatchingBed = roomType.room_variants.some((variant) =>
+        variant.bed_types.some((bedType) => appliedFilters.bedTypes.includes(bedType.bed_type.name))
+      );
+      if (!hasMatchingBed) return false;
+    }
+
+    if (appliedFilters.roomAmenities.length > 0) {
+      const hasMatchingAmenity = roomType.room_type_amenities.some((amenity) =>
+        appliedFilters.roomAmenities.includes(amenity.amenity.name)
+      );
+      if (!hasMatchingAmenity) return false;
+    }
+
+    if (appliedFilters.facilities.length > 0) {
+      const hasMatchingFacility = roomType.room_variants.some((variant) =>
+        variant.facilities.some((facility) => appliedFilters.facilities.includes(facility.name))
+      );
+      if (!hasMatchingFacility) return false;
+    }
+
+    return true;
+  };
+
+  const filteredRoomTypes = roomTypes.filter(matchesFilter);
 
   const selectedVariants = useMemo<SelectedVariant[]>(() => {
     const result: SelectedVariant[] = [];
@@ -301,6 +439,171 @@ export default function RoomSelector({
           </button>
         </div>
       )}
+
+      <div className="mb-5 overflow-hidden rounded-xl border border-border/60 bg-card/80 shadow-sm">
+        <div className="flex min-h-14 flex-nowrap items-center gap-1.5 px-2.5 py-2 sm:gap-2 sm:px-4">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <Button
+              type="button"
+              variant={acFilter === "ac" ? "default" : "outline"}
+              size="sm"
+              aria-pressed={acFilter === "ac"}
+              onClick={() => setAcFilter((current) => current === "ac" ? "all" : "ac")}
+              className="h-9 min-w-12 px-3 sm:min-w-[3.5rem]"
+            >
+              AC
+            </Button>
+            <Button
+              type="button"
+              variant={acFilter === "non-ac" ? "default" : "outline"}
+              size="sm"
+              aria-pressed={acFilter === "non-ac"}
+              onClick={() => setAcFilter((current) => current === "non-ac" ? "all" : "non-ac")}
+              className="h-9 px-3 sm:px-3.5"
+            >
+              Non-AC
+            </Button>
+          </div>
+
+          <Button
+            type="button"
+            variant={filterCount > 0 ? "secondary" : "outline"}
+            size="sm"
+            aria-expanded={isFiltersOpen}
+            onClick={() => {
+              setDraftFilters(appliedFilters);
+              setIsFiltersOpen((open) => !open);
+            }}
+            className="ml-auto h-9 shrink-0 gap-1.5 px-3 sm:gap-2 sm:px-3.5"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            <span>Filters</span>
+            {filterCount > 0 && (
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                {filterCount}
+              </span>
+            )}
+          </Button>
+        </div>
+
+        <div
+          aria-hidden={!isFiltersOpen || isMobileFilters}
+          inert={!isFiltersOpen || isMobileFilters}
+          className={`grid transition-[grid-template-rows,opacity,transform] duration-200 ease-out ${
+            isFiltersOpen && !isMobileFilters
+              ? "grid-rows-[1fr] translate-y-0 opacity-100"
+              : "pointer-events-none grid-rows-[0fr] -translate-y-1 opacity-0"
+          }`}
+        >
+          <div className="min-h-0 overflow-hidden">
+            <div className="border-t border-border/60 px-3 py-3 sm:px-4 sm:py-4">
+              <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  { label: "Room Type", key: "roomTypes" as const, options: roomTypeOptions },
+                  { label: "Bed Type", key: "bedTypes" as const, options: bedTypeOptions },
+                  { label: "Room Amenities", key: "roomAmenities" as const, options: roomAmenityOptions },
+                  { label: "Facilities", key: "facilities" as const, options: facilityOptions },
+                ].map((group) => (
+                  <fieldset key={group.label} className="min-w-0 space-y-1.5">
+                    <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.label}
+                    </legend>
+                    {group.options.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No options at this hotel.</p>
+                    ) : (
+                      <div
+                        className="custom-scrollbar max-h-28 space-y-1 overflow-y-auto overscroll-contain pr-1"
+                        data-lenis-prevent
+                        data-lenis-prevent-wheel
+                        data-lenis-prevent-touch
+                      >
+                        {group.options.map((option) => (
+                          <label
+                            key={option}
+                            className="flex min-h-8 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/50"
+                          >
+                            <Checkbox
+                              checked={draftFilters[group.key].includes(option)}
+                              onCheckedChange={() => toggleSelection(group.key, option)}
+                            />
+                            <span className="break-words text-xs text-foreground sm:text-sm">{option}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </fieldset>
+                ))}
+              </div>
+              <div className="mt-3 flex items-center justify-end gap-2 border-t border-border/60 pt-3">
+                <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
+                  Clear
+                </Button>
+                <Button type="button" size="sm" onClick={applyFilters}>
+                  Apply
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Sheet open={isFiltersOpen && isMobileFilters} onOpenChange={setIsFiltersOpen}>
+        <SheetContent
+          side="bottom"
+          showCloseButton
+          className="max-h-[85dvh] gap-0 overflow-hidden rounded-t-2xl px-0 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        >
+          <SheetHeader className="border-b border-border/60 px-4 py-3 pr-12">
+            <SheetTitle>Room filters</SheetTitle>
+            <SheetDescription>Choose from options available at this hotel.</SheetDescription>
+          </SheetHeader>
+          <div
+            className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4"
+            data-lenis-prevent
+            data-lenis-prevent-wheel
+            data-lenis-prevent-touch
+          >
+            {[
+              { label: "Room Type", key: "roomTypes" as const, options: roomTypeOptions },
+              { label: "Bed Type", key: "bedTypes" as const, options: bedTypeOptions },
+              { label: "Room Amenities", key: "roomAmenities" as const, options: roomAmenityOptions },
+              { label: "Facilities", key: "facilities" as const, options: facilityOptions },
+            ].map((group) => (
+              <fieldset key={group.label} className="space-y-1.5">
+                <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {group.label}
+                </legend>
+                {group.options.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No options at this hotel.</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1">
+                    {group.options.map((option) => (
+                      <label
+                        key={option}
+                        className="flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 hover:bg-muted/50"
+                      >
+                        <Checkbox
+                          checked={draftFilters[group.key].includes(option)}
+                          onCheckedChange={() => toggleSelection(group.key, option)}
+                        />
+                        <span className="break-words text-sm text-foreground">{option}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </fieldset>
+            ))}
+          </div>
+          <SheetFooter className="mt-0 flex-row justify-end border-t border-border/60 px-4 py-3">
+            <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
+              Clear
+            </Button>
+            <Button type="button" size="sm" onClick={applyFilters}>
+              Apply
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
 
       <div className="grid grid-cols-1 gap-6 items-start xl:grid-cols-3">
         <div className="xl:col-span-2">

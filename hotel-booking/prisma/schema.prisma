@@ -295,6 +295,7 @@ model cities {
 model hotel_types {
   id         Int      @id @default(autoincrement())
   name       String   @unique @db.VarChar(100)
+  image_url  String?  @db.VarChar(2048)
   is_active  Boolean  @default(true)
   created_at DateTime @default(now())
   hotels     hotels[]

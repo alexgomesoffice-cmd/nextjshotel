@@ -312,7 +312,7 @@ useEffect(() => {
                   </p>
 
                   <p className="mt-1 text-sm font-semibold">
-                    {roomSizes.join(" / ")} sq ft
+                    {roomSizes.join(" / ")}
                   </p>
                 </div>
               )}

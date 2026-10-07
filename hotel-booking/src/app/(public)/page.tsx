@@ -2,6 +2,7 @@ import { HeroSection } from '@/components/home/hero-section';
 import DestinationsSection from '@/components/home/destinations-section';
 import FeaturedHotels from '@/components/home/featured-hotels';
 import NewsletterSection from '@/components/home/newsletter-section';
+import HotelTypeCarousel from '@/components/home/hotel-type-carousel';
 
 export default function HomePage() {
   return (
@@ -9,6 +10,7 @@ export default function HomePage() {
       <HeroSection />
       <FeaturedHotels />
       <DestinationsSection />
+      <HotelTypeCarousel />
       <NewsletterSection />
     </div>
   )

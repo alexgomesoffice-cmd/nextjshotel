@@ -1,20 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth-middleware'
-import fs from 'fs/promises'
-import path from 'path'
-import { v4 as uuidv4 } from 'uuid'
-import sharp from 'sharp'
-
-const UPLOAD_DIR = path.join(process.cwd(), 'public', 'uploads', 'hero-banners')
-
-async function ensureDir() {
-  try {
-    await fs.access(UPLOAD_DIR)
-  } catch {
-    await fs.mkdir(UPLOAD_DIR, { recursive: true })
-  }
-}
+import {
+  deletePublicImage,
+  ImageUploadError,
+  removePublicImageFile,
+  storePublicImage,
+} from '@/lib/public-image-storage'
 
 export async function PATCH(
   req: NextRequest,
@@ -69,29 +61,9 @@ export async function PATCH(
     let finalImageUrl = existingBanner.image_url
 
     if (file) {
-      const MAX_FILE_SIZE = 1 * 1024 * 1024 // 1 MB
-      if (file.size > MAX_FILE_SIZE) {
-        return NextResponse.json({ success: false, message: 'Image must be 1 MB or smaller.' }, { status: 400 })
-      }
-
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
-      if (!allowedTypes.includes(file.type)) {
-        return NextResponse.json({ success: false, message: 'Only PNG, JPEG, and WEBP images are supported.' }, { status: 400 })
-      }
-
-      await ensureDir()
-      
-      const buffer = Buffer.from(await file.arrayBuffer())
-      const filename = `${uuidv4()}.webp`
-      const filepath = path.join(UPLOAD_DIR, filename)
-      
-      // Save new file
-      await sharp(buffer)
-        .webp({ quality: 80 })
-        .toFile(filepath)
-        
-      filepathToCleanup = filepath // mark for potential cleanup if DB fails
-      finalImageUrl = `/uploads/hero-banners/${filename}`
+      const storedImage = await storePublicImage(file, 'hero-banners')
+      filepathToCleanup = storedImage.filePath
+      finalImageUrl = storedImage.imageUrl
     } else if (removeImage) {
       finalImageUrl = null
     }
@@ -112,13 +84,7 @@ export async function PATCH(
     // Safe Old Image Cleanup
     if ((file || removeImage) && existingBanner.image_url) {
       try {
-        const oldFilename = path.basename(existingBanner.image_url)
-        const oldFilepath = path.join(UPLOAD_DIR, oldFilename)
-        
-        // Ensure the path is strictly inside the hero-banners dir to prevent traversal
-        if (oldFilepath.startsWith(UPLOAD_DIR)) {
-          await fs.unlink(oldFilepath)
-        }
+        await deletePublicImage(existingBanner.image_url, 'hero-banners')
       } catch (err) {
         console.error('Failed to cleanup old hero banner image:', err)
         // Non-fatal, just log it.
@@ -132,12 +98,16 @@ export async function PATCH(
     // Cleanup new file if DB update failed
     if (filepathToCleanup) {
       try {
-        await fs.unlink(filepathToCleanup)
+        await removePublicImageFile(filepathToCleanup, 'hero-banners')
       } catch (e) {
         console.error('Failed to cleanup newly created image after DB failure:', e)
       }
     }
-    
+
+    if (error instanceof ImageUploadError) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 400 })
+    }
+
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }

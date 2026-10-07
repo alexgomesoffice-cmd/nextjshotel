@@ -6,6 +6,11 @@ export async function GET() {
     const types = await prisma.hotel_types.findMany({
       where: { is_active: true },
       orderBy: { name: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        image_url: true,
+      },
     })
     
     return NextResponse.json({ success: true, data: types })

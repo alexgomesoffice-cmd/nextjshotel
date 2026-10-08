@@ -226,18 +226,20 @@ export default function HotelAdminPropertyPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SectionKey)}>
-        <TabsList className="flex-wrap h-auto">
-          {SECTIONS.map((s) => (
-            <TabsTrigger
-              key={s.key}
-              value={s.key}
-              className="gap-1.5"
-              disabled={openSection !== null && openSection !== s.key}
-            >
-              <s.icon className="h-3.5 w-3.5" /> {s.title}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <div className="min-w-0 overflow-x-auto overflow-y-hidden rounded-xl border border-border/60 bg-card/50 p-1.5 shadow-sm overscroll-x-contain">
+          <TabsList className="h-auto w-max min-w-max flex-nowrap justify-start gap-1 bg-transparent p-0">
+            {SECTIONS.map((s) => (
+              <TabsTrigger
+                key={s.key}
+                value={s.key}
+                className="min-h-10 shrink-0 gap-2 rounded-lg px-3 text-xs transition-colors sm:text-sm data-[state=active]:border-emerald-500/20 data-[state=active]:bg-emerald-500/10 data-[state=active]:text-emerald-700 data-[state=active]:shadow-none dark:data-[state=active]:text-emerald-300"
+                disabled={openSection !== null && openSection !== s.key}
+              >
+                <s.icon className="h-3.5 w-3.5" /> {s.title}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {SECTIONS.map((s) => {
           const counts = sectionCounts(s.key)
@@ -292,8 +294,8 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
           <Row label="Hotel Name" value={hotel?.name} pending={p('HOTEL', 'name')} />
           <Row label="Hotel Type" value={hotel?.hotel_type?.name} />
           <Row label="Star Rating" value={d.star_rating != null ? String(d.star_rating) : ''} pending={p('HOTEL', 'star_rating')} />
-          <div className="col-span-2">
-            <Row label="Description" value={d.description} pending={p('HOTEL', 'description')} />
+          <div className="col-span-1 sm:col-span-2">
+            <Row label="Description" value={d.description} pending={p('HOTEL', 'description')} scrollable />
           </div>
         </div>
       )
@@ -302,7 +304,7 @@ function SectionPreview({ sectionKey, hotel, pendingMap }: { sectionKey: Section
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Row label="City" value={hotel?.city?.name} />
           <Row label="Zip Code" value={hotel?.zip_code} pending={p('HOTEL', 'zip_code')} />
-          <div className="col-span-2">
+          <div className="col-span-1 sm:col-span-2">
             <Row label="Address" value={hotel?.address} pending={p('HOTEL', 'address')} />
           </div>
         </div>

@@ -99,8 +99,8 @@ export const SectionInlineEditor = ({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card/40 p-4 space-y-4 animate-fade-in-up">
-      <div className="flex items-start justify-between gap-3 flex-wrap">
+    <div className="space-y-4 animate-fade-in-up">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border/70 pb-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold">Editing {section.title}</p>
           <p className="text-xs text-muted-foreground">Current values stay live until the draft is approved.</p>
@@ -135,7 +135,7 @@ export const SectionInlineEditor = ({
       ) : isBusiness ? (
         <DocumentsEditor hotel={hotel} disabled={editingLocked} onChanged={onRefetch} />
       ) : (
-        <div className="space-y-3">
+        <div className="divide-y divide-border/70">
           {fields.map((f) => (
             <InlineFieldEditor
               key={keyOf(f)}
@@ -165,7 +165,7 @@ const InlineFieldEditor = ({
   const isDirty = displayed !== field.currentValue
 
   return (
-    <div className="rounded-xl border border-border bg-card/40 p-4">
+    <div className="py-4 first:pt-0 last:pb-0">
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">{field.label}</p>
@@ -178,7 +178,12 @@ const InlineFieldEditor = ({
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Current value</Label>
-          <div className="text-sm bg-muted/50 rounded-md px-3 py-2 border border-border/60 min-h-[40px] break-words">
+          <div
+            className={`min-h-10 break-words rounded-md border border-border/60 bg-muted/40 px-3 py-2 text-sm ${field.multiline ? 'custom-scrollbar max-h-36 overflow-y-auto whitespace-pre-wrap overscroll-contain' : ''}`}
+            data-lenis-prevent={field.multiline ? '' : undefined}
+            data-lenis-prevent-wheel={field.multiline ? '' : undefined}
+            data-lenis-prevent-touch={field.multiline ? '' : undefined}
+          >
             {field.currentValue || <span className="text-muted-foreground/60">—</span>}
           </div>
         </div>
@@ -187,7 +192,16 @@ const InlineFieldEditor = ({
             <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">New value</Label>
           </div>
           {field.multiline ? (
-            <Textarea rows={4} value={displayed} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+            <Textarea
+              rows={4}
+              value={displayed}
+              onChange={(e) => onChange(e.target.value)}
+              disabled={disabled}
+              className="custom-scrollbar field-sizing-fixed !h-36 !min-h-0 max-h-48 resize-y overflow-y-auto"
+              data-lenis-prevent
+              data-lenis-prevent-wheel
+              data-lenis-prevent-touch
+            />
           ) : (
             <Input
               type={field.type ?? 'text'}

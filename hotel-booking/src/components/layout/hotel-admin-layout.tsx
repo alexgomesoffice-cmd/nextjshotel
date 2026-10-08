@@ -261,7 +261,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
           </div>
         </header>
 
-        <main className="p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="mx-auto w-full max-w-[1200px] p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   )

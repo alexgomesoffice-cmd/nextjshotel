@@ -11,14 +11,24 @@ import {
 } from 'lucide-react'
 
 /* ---- Row: read-only label/value with pending overlay ---- */
-export const Row = ({ label, value, pending }: { label: string; value: React.ReactNode; pending?: string }) => (
+export const Row = ({ label, value, pending, scrollable = false }: { label: string; value: React.ReactNode; pending?: string; scrollable?: boolean }) => (
   <div className="min-w-0">
     <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
-    <div className="text-sm font-medium mt-0.5">
+    <div
+      className={cn('mt-0.5 text-sm font-medium', scrollable && 'custom-scrollbar max-h-36 overflow-y-auto whitespace-pre-wrap break-words pr-2 overscroll-contain')}
+      data-lenis-prevent={scrollable ? '' : undefined}
+      data-lenis-prevent-wheel={scrollable ? '' : undefined}
+      data-lenis-prevent-touch={scrollable ? '' : undefined}
+    >
       {value || <span className="text-muted-foreground/60">—</span>}
     </div>
     {pending !== undefined && pending !== String(value ?? '') && (
-      <div className="mt-1 inline-flex items-center gap-1.5 text-[11px] text-amber-600 bg-amber-500/10 border border-amber-500/30 rounded px-1.5 py-0.5">
+      <div
+        className={cn('mt-1 inline-flex items-center gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[11px] text-amber-600', scrollable && 'custom-scrollbar max-h-28 max-w-full overflow-y-auto whitespace-pre-wrap break-words align-top')}
+        data-lenis-prevent={scrollable ? '' : undefined}
+        data-lenis-prevent-wheel={scrollable ? '' : undefined}
+        data-lenis-prevent-touch={scrollable ? '' : undefined}
+      >
         <ArrowRight className="h-3 w-3" /> {pending}
       </div>
     )}
@@ -54,13 +64,12 @@ export const SectionShell = ({
   }[status.tone]
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm h-full">
-      <div className={cn('absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r opacity-60', accent)} />
-      <div className="p-5 flex flex-col h-full">
+    <div className="h-full overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <div className="flex h-full flex-col p-4 sm:p-5">
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-start gap-3 min-w-0">
-            <div className={cn('p-2.5 rounded-xl bg-gradient-to-br shrink-0', accent)}>
-              <Icon className="h-4 w-4 text-primary-foreground" />
+            <div className="shrink-0 rounded-lg bg-primary/10 p-2.5 text-primary">
+              <Icon className="h-4 w-4" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
@@ -367,7 +376,12 @@ export const FieldEditor = ({
 
       <div>
         <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Current (live)</p>
-        <div className="text-sm bg-muted/50 rounded-md px-3 py-2 border border-border/60 min-h-[36px]">
+        <div
+          className={`min-h-[36px] rounded-md border border-border/60 bg-muted/50 px-3 py-2 text-sm ${field.multiline ? 'custom-scrollbar max-h-36 overflow-y-auto whitespace-pre-wrap overscroll-contain' : ''}`}
+          data-lenis-prevent={field.multiline ? '' : undefined}
+          data-lenis-prevent-wheel={field.multiline ? '' : undefined}
+          data-lenis-prevent-touch={field.multiline ? '' : undefined}
+        >
           {field.currentValue || <span className="text-muted-foreground/60">—</span>}
         </div>
       </div>
@@ -382,7 +396,16 @@ export const FieldEditor = ({
           <div>
             <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">New value</p>
             {field.multiline ? (
-              <Textarea rows={4} value={displayed} onChange={(e) => onChange(e.target.value)} disabled={disabled} />
+              <Textarea
+                rows={4}
+                value={displayed}
+                onChange={(e) => onChange(e.target.value)}
+                disabled={disabled}
+                className="custom-scrollbar field-sizing-fixed !h-36 !min-h-0 max-h-48 resize-y overflow-y-auto"
+                data-lenis-prevent
+                data-lenis-prevent-wheel
+                data-lenis-prevent-touch
+              />
             ) : (
               <Input
                 type={field.type ?? 'text'}

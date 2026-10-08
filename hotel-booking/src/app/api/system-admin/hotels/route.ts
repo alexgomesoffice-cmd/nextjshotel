@@ -38,9 +38,9 @@ export async function GET(req: NextRequest) {
 
     if (search) {
       where.OR = [
-        { name: { contains: search } },
-        { address: { contains: search } },
-        { city: { name: { contains: search } } },
+        { name: { contains: search, mode: 'insensitive' } },
+        { address: { contains: search, mode: 'insensitive' } },
+        { city: { name: { contains: search, mode: 'insensitive' } } },
       ]
     }
 

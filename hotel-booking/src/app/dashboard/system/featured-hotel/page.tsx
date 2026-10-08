@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { OpsSectionHeader, OpsTable, OpsTh, OpsTd } from '@/components/admin/shared/primitives'
@@ -29,30 +29,41 @@ export default function FeaturedHotelPage() {
   const [savingId, setSavingId] = useState<number | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const res = await fetch(`/api/system-admin/hotels?limit=200&search=${encodeURIComponent(search)}`, { credentials: 'include' })
-      const data = await res.json()
+  useEffect(() => {
+    const controller = new AbortController()
+    let active = true
 
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.message || 'Hotels could not be loaded.')
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        const res = await fetch(
+          `/api/system-admin/hotels?limit=200&search=${encodeURIComponent(search.trim())}`,
+          { credentials: 'include', signal: controller.signal },
+        )
+        const data = await res.json()
+
+        if (!res.ok || !data?.success) {
+          throw new Error(data?.message || 'Hotels could not be loaded.')
+        }
+
+        if (active) setRows(Array.isArray(data?.data?.hotels) ? data.data.hotels : [])
+      } catch (loadError) {
+        if (!active || (loadError instanceof Error && loadError.name === 'AbortError')) return
+        console.error('Failed to load hotel list:', loadError)
+        setError(loadError instanceof Error ? loadError.message : 'Hotels could not be loaded.')
+        setRows([])
+      } finally {
+        if (active) setLoading(false)
       }
+    }, 250)
 
-      setRows(Array.isArray(data?.data?.hotels) ? data.data.hotels : [])
-    } catch (loadError) {
-      console.error('Failed to load hotel list:', loadError)
-      setError(loadError instanceof Error ? loadError.message : 'Hotels could not be loaded.')
-      setRows([])
-    } finally {
-      setLoading(false)
+    return () => {
+      active = false
+      window.clearTimeout(timeoutId)
+      controller.abort()
     }
   }, [search])
-
-  useEffect(() => {
-    void load()
-  }, [load])
 
   const handleToggle = async (hotelId: number, featured: boolean) => {
     try {
@@ -72,7 +83,11 @@ export default function FeaturedHotelPage() {
         throw new Error(data?.message || 'Featured hotel could not be updated.')
       }
 
-      await load()
+      setRows((currentRows) =>
+        currentRows.map((hotel) =>
+          hotel.id === hotelId ? { ...hotel, is_featured: featured } : hotel,
+        ),
+      )
     } catch (toggleError) {
       console.error('Failed to update featured hotel:', toggleError)
       setError(toggleError instanceof Error ? toggleError.message : 'Featured hotel could not be updated.')
@@ -80,12 +95,6 @@ export default function FeaturedHotelPage() {
       setSavingId(null)
     }
   }
-
-  const filteredRows = useMemo(() => {
-    const term = search.trim().toLowerCase()
-    if (!term) return rows
-    return rows.filter((hotel) => `${hotel.name} ${hotel.city?.name ?? ''}`.toLowerCase().includes(term))
-  }, [rows, search])
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-4 px-6 py-5">
@@ -129,12 +138,12 @@ export default function FeaturedHotelPage() {
             <tr>
               <OpsTd className="text-center text-muted-foreground" colSpan={4}>Loading hotels…</OpsTd>
             </tr>
-          ) : filteredRows.length === 0 ? (
+          ) : rows.length === 0 ? (
             <tr>
               <OpsTd className="text-center text-muted-foreground" colSpan={4}>No matching hotels.</OpsTd>
             </tr>
           ) : (
-            filteredRows.map((hotel) => {
+            rows.map((hotel) => {
               const isPublished = hotel.approval_status === 'PUBLISHED'
               const isDisabled = !isPublished || savingId === hotel.id
 

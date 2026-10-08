@@ -121,8 +121,7 @@ export default function HotelAdminLayout({ children }: { children: React.ReactNo
       items: [
         { icon:Bell, label: 'Notifications', path: '/dashboard/hotel/notifications'},
         { icon: Activity, label: 'Activity Log', path: '/dashboard/hotel/activity-log' },
-        { icon: Settings, label: 'Settings', path: '/dashboard/hotel/settings' },
-        
+        { icon: Settings, label: 'Account Settings', path: '/dashboard/hotel/settings' },
       ],
     },
   ]

@@ -74,12 +74,12 @@ const FeaturedHotels = () => {
   useEffect(() => {
     const fetchHotels = async () => {
       try {
-        const res = await fetch("/api/public/hotels?include_rooms=true");
+        const res = await fetch("/api/public/hotels?include_rooms=true&featured=true&limit=8");
         if (res.ok) {
           const data = await res.json();
 
           if (data.success && Array.isArray(data.data)) {
-            const sorted = data.data.sort(
+            const sorted = [...data.data].sort(
               (a: any, b: any) =>
                 (b.star_rating || 0) - (a.star_rating || 0)
             );

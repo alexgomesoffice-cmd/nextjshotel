@@ -119,6 +119,7 @@ export async function GET(req: NextRequest) {
         bookings30d: stat?._count.id ?? 0,
         revenue30d: stat?._sum.total_price ? parseFloat(stat._sum.total_price.toString()) : 0,
         approval_status: hotel.approval_status,
+        is_featured: hotel.is_featured,
         createdAt: hotel.created_at.toISOString(),
         cover_image_url: hotel.images?.[0]?.image_url ?? null,
         room_type_count: roomTypeCount,

@@ -163,6 +163,7 @@ export async function GET(req: NextRequest) {
     const limit         = parseInt(searchParams.get('limit') || '12');
     const skip          = (page - 1) * limit;
     const includeRooms  = searchParams.get('include_rooms') === 'true';
+    const featuredOnly  = searchParams.get('featured') === 'true';
     const checkIn       = searchParams.get('check_in');
     const checkOut      = searchParams.get('check_out');
     const hasDates      = !!(checkIn && checkOut);
@@ -213,6 +214,9 @@ export async function GET(req: NextRequest) {
 
     // ─── Hotel-level WHERE ────────────────────────────────────────────────────
     const where: Record<string, unknown> = { approval_status: 'PUBLISHED', deleted_at: null };
+    if (featuredOnly) {
+      where.is_featured = true;
+    }
 
     if (location) {
       const locStr = location.split(',')[0].trim();
@@ -454,6 +458,7 @@ export async function GET(req: NextRequest) {
         amenities:      (hotel.hotel_amenities || [])
           .slice(0, 6)
           .map((ha) => String(((ha as Record<string, unknown>).amenity as Record<string, unknown>).name)),
+        is_featured:    Boolean(hotel.is_featured),
         isFavorited:    favoriteHotelIds.has(hotel.id),
       };
 

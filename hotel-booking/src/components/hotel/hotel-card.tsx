@@ -8,6 +8,7 @@ import {
   MapPin, Star, Building2,
   Users, BedDouble, Ruler, ArrowUpRight,
   CheckCircle2, AlertTriangle, Info,
+  Sparkles,
 } from 'lucide-react';
 import { cn, formatDiscountLabel } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
@@ -78,6 +79,7 @@ export interface HotelCardProps {
   maxPrice?:         number;
   /** Populated by the capacity engine when a guests param was supplied. */
   accommodation?:    AccommodationContext | null;
+  is_featured?:       boolean;
   isFavorited?:      boolean;
   favoritePage?:      boolean;
 }
@@ -117,6 +119,18 @@ function renderStarIcons(starRating?: number) {
   return Array.from({ length: sanitizedRating }, (_, index) => (
     <Star key={`star-${index}`} className="size-3 fill-amber-400 text-amber-400" />
   ));
+}
+
+function FeaturedBadge({ className }: { className?: string }) {
+  return (
+    <span className={cn(
+      'inline-flex items-center gap-1 rounded-full border border-amber-300/50 bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-[0.12em] text-amber-200',
+      className,
+    )}>
+      <Sparkles className="h-2.5 w-2.5 fill-current" />
+      Featured
+    </span>
+  );
 }
 
 // ─── Accommodation Badge ──────────────────────────────────────────────────────
@@ -397,6 +411,7 @@ const HotelCard = ({
   minPrice,
   maxPrice,
   accommodation,
+  is_featured = false,
   isFavorited = false,
   favoritePage = false,
 }: HotelCardProps) => {
@@ -468,9 +483,12 @@ const HotelCard = ({
                       {star_rating} ★ Rating
                     </span>
                   )}
+                  {is_featured && (
+                    <FeaturedBadge className="bg-amber-500/15 text-amber-100 border-amber-300/60" />
+                  )}
                 </div>
 
-                <h3 className="line-clamp-2 text-base font-bold leading-tight sm:text-lg lg:text-2xl">
+                <h3 className="break-words text-base font-bold leading-tight sm:text-lg lg:text-2xl">
                   {name}
                 </h3>
 
@@ -607,6 +625,7 @@ export const HotelListCard = ({
   maxPrice,
   accommodation,
   amenities,
+  is_featured = false,
   isFavorited = false,
 }: HotelCardProps) => {
   const router = useRouter();
@@ -736,6 +755,7 @@ export const HotelListCard = ({
                 {renderStarIcons(star_rating)}
               </span>
             )}
+            {is_featured && <FeaturedBadge className="bg-amber-500/10 text-amber-700 border-amber-300/60 dark:text-amber-200" />}
           </div>
 
           <div className="flex items-start justify-between gap-2">

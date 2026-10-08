@@ -322,6 +322,7 @@ model hotels {
   zip_code        String?        @db.VarChar(20)
   map_location    String?        @db.Text // full Google Maps / location URLs can exceed 500 chars
   created_by      Int
+  is_featured     Boolean        @default(false)
   approval_status ApprovalStatus @default(UNPUBLISHED)
   published_at    DateTime?
   created_at      DateTime       @default(now())

@@ -102,32 +102,29 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    const transaction: Promise<unknown>[] = []
+    const hasAdminChanges = Object.keys(adminData).length > 0
+    const hasDetailChanges = Object.keys(detailData).length > 0
 
-    if (Object.keys(adminData).length > 0) {
-      transaction.push(
-        prisma.hotel_admins.update({
-          where: { id: adminId },
-          data: adminData,
-        }),
-      )
-    }
-
-    if (Object.keys(detailData).length > 0) {
-      transaction.push(
-        prisma.hotel_admin_details.upsert({
-          where: { hotel_admin_id: adminId },
-          create: { hotel_admin_id: adminId, ...detailData },
-          update: detailData,
-        }),
-      )
-    }
-
-    if (transaction.length === 0) {
+    if (!hasAdminChanges && !hasDetailChanges) {
       return NextResponse.json({ success: true, message: 'No profile changes to save' })
     }
 
-    await prisma.$transaction(transaction)
+    await prisma.$transaction(async (tx) => {
+      if (hasAdminChanges) {
+        await tx.hotel_admins.update({
+          where: { id: adminId },
+          data: adminData,
+        })
+      }
+
+      if (hasDetailChanges) {
+        await tx.hotel_admin_details.upsert({
+          where: { hotel_admin_id: adminId },
+          create: { hotel_admin_id: adminId, ...detailData },
+          update: detailData,
+        })
+      }
+    })
 
     return NextResponse.json({ success: true, message: 'Profile updated successfully' })
   } catch (error) {

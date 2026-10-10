@@ -100,7 +100,16 @@ useEffect(() => {
     !min || v.pricing.effectivePrice < min.pricing.effectivePrice ? v : min, null);
   const maxOccupancy = roomType.room_variants.reduce((max, v) => Math.max(max, v.max_occupancy ?? 0), 0);
   const roomSizes = [...new Set(roomType.room_variants.map((v) => v.room_size).filter(Boolean))];
-  const allBedTypes = roomType.room_variants.flatMap((v) => v.bed_types);
+  const allBedTypes = Array.from(
+    roomType.room_variants
+      .flatMap((variant) => variant.bed_types)
+      .reduce((bedsByName, bed) => {
+        const currentCount = bedsByName.get(bed.bed_type.name) ?? 0;
+        bedsByName.set(bed.bed_type.name, Math.max(currentCount, bed.count));
+        return bedsByName;
+      }, new Map<string, number>()),
+    ([name, count]) => ({ name, count }),
+  );
 
   return (
   <div
@@ -312,7 +321,7 @@ useEffect(() => {
                   </p>
 
                   <p className="mt-1 text-sm font-semibold">
-                    {roomSizes.join(" / ")}
+                    {roomSizes.join(" , ")} sqft
                   </p>
                 </div>
               )}
@@ -328,22 +337,19 @@ useEffect(() => {
                 </h3>
               </div>
 
-              <div className="space-y-2">
-                {allBedTypes.map((bed, idx) => (
+              <div className="grid grid-cols-2 gap-2">
+                {allBedTypes.map((bed) => (
                   <div
-                    key={idx}
-                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3.5 transition-colors hover:bg-muted/40"
+                    key={bed.name}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-muted/40"
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                      <Bed className="h-5 w-5" />
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Bed className="h-4 w-4" />
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold">
-                        {bed.bed_type.name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Quantity: {bed.count}
+                        {bed.name} x{bed.count}
                       </p>
                     </div>
                   </div>

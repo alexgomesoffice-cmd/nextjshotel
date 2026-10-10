@@ -414,9 +414,9 @@ function SearchContent() {
               ) : (
                 <div className="flex flex-col items-center justify-center py-24 text-center bg-card rounded-3xl border border-border/50">
                   <Building2 className="h-16 w-16 text-muted-foreground/20 mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No properties found</h3>
+                  <h3 className="text-xl font-semibold mb-2">Your Stay Is Still Out There</h3>
                   <p className="text-muted-foreground max-w-sm">
-                    Try adjusting your search criteria or removing some filters to see more results.
+                    Try changing your dates, adjusting your filters, or exploring a different destination to discover your perfect stay.
                   </p>
                   <Button
                     variant="outline"

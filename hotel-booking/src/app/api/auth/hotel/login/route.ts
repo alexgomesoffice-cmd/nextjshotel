@@ -8,7 +8,15 @@ import type { JwtPayload } from '@/types'
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
+    let body: unknown
+    try {
+      body = await req.json()
+    } catch {
+      return NextResponse.json(
+        { success: false, message: 'Invalid JSON body' },
+        { status: 400 }
+      )
+    }
     
     // Validate input
     const validation = loginSchema.safeParse(body)
@@ -40,7 +48,7 @@ export async function POST(req: NextRequest) {
 
     if (!actor || actor.deleted_at) {
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
+        { success: false, message: 'Credentials are wrong please try again' },
         { status: 401 }
       )
     }
@@ -97,7 +105,7 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json(
-        { success: false, message: 'Invalid credentials' },
+        { success: false, message: 'Credentials are wrong please try again' },
         { status: 401 }
       )
     }

@@ -14,17 +14,21 @@ No authenticated admin account or disposable admin dataset was available. No pri
 
 ### Authentication and authorization
 
+[fixed]
 1. **Account status is not rechecked when using an already-issued token.** The shared API authentication path verifies the token, blacklist, and role, but does not appear to re-check whether the current account has since been blocked, deactivated, or deleted. A token issued before an account status change may therefore continue to authorize API requests until it expires or is otherwise revoked.
    - Evidence: `src/lib/auth-middleware.ts`
    - Status: Code-inspection finding; no authenticated token was available for runtime verification.
 
+[not_fixed]
 2. **Multiple role cookies are selected in fixed precedence.** If a browser has more than one role token cookie, the middleware selects according to a fixed order rather than explicitly resolving the intended session. This can cause a request to use a different role token than the user expects and makes mixed-role session behavior brittle.
    - Evidence: `src/lib/auth-middleware.ts`
    - Status: Code-inspection finding.
 
+[fixed]
 3. **Malformed login JSON returns an internal-server-error response.** A malformed JSON body was sent to the login endpoint and produced HTTP 500 rather than a client-input error.
    - Evidence: Login API request handling.
    - Status: Runtime-tested without credentials; no login was completed.
+
 
 ### Hotel discovery and search
 

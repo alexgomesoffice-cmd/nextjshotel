@@ -67,8 +67,8 @@ function HotelCardItem({
       checkOut={searchParams.get("check_out") || undefined}
       guests={searchParams.get("guests") ? parseInt(searchParams.get("guests")!) : undefined}
       rooms={rooms && rooms > 0 ? rooms : undefined}
-      minPrice={searchParams.get("min_price") ? parseInt(searchParams.get("min_price")!) : undefined}
-      maxPrice={searchParams.get("max_price") ? parseInt(searchParams.get("max_price")!) : undefined}
+      minPrice={searchParams.get("min_price") !== null ? parseInt(searchParams.get("min_price")!) : undefined}
+      maxPrice={searchParams.get("max_price") !== null ? parseInt(searchParams.get("max_price")!) : undefined}
     />
   );
 }
@@ -184,8 +184,8 @@ function SearchContent() {
           checkOut={checkOut || undefined}
           guests={guestsVal ? parseInt(guestsVal, 10) : undefined}
           rooms={roomsVal ? parseInt(roomsVal, 10) : undefined}
-          minPrice={searchParams.get("min_price") ? parseInt(searchParams.get("min_price")!, 10) : undefined}
-          maxPrice={searchParams.get("max_price") ? parseInt(searchParams.get("max_price")!, 10) : undefined}
+          minPrice={searchParams.get("min_price") !== null ? parseInt(searchParams.get("min_price")!, 10) : undefined}
+          maxPrice={searchParams.get("max_price") !== null ? parseInt(searchParams.get("max_price")!, 10) : undefined}
         />
       : <HotelCardItem hotel={hotel} searchParams={searchParams} />
   );

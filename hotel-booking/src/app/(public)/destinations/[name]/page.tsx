@@ -181,8 +181,8 @@ function CityHotelsContent() {
                         checkIn={searchParams.get("check_in") || undefined}
                         checkOut={searchParams.get("check_out") || undefined}
                         guests={searchParams.get("guests") ? parseInt(searchParams.get("guests")!) : undefined}
-                        minPrice={searchParams.get("min_price") ? parseInt(searchParams.get("min_price")!) : undefined}
-                        maxPrice={searchParams.get("max_price") ? parseInt(searchParams.get("max_price")!) : undefined}
+                        minPrice={searchParams.get("min_price") !== null ? parseInt(searchParams.get("min_price")!) : undefined}
+                        maxPrice={searchParams.get("max_price") !== null ? parseInt(searchParams.get("max_price")!) : undefined}
                       />
                     </div>
                   ))}

@@ -147,6 +147,47 @@ function buildRoomDetailWhere(checkIn?: string | null, checkOut?: string | null)
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+    const pageParam = searchParams.get('page');
+    const limitParam = searchParams.get('limit');
+    const minPriceParam = searchParams.get('min_price');
+    const maxPriceParam = searchParams.get('max_price');
+
+    const page = pageParam === null ? 1 : Number(pageParam);
+    if (
+      (pageParam !== null && !/^\d+$/.test(pageParam)) ||
+      !Number.isSafeInteger(page) ||
+      page < 1
+    ) {
+      return NextResponse.json({ success: false, message: 'page must be a positive integer' }, { status: 400 });
+    }
+
+    const limit = limitParam === null ? 12 : Number(limitParam);
+    if (
+      (limitParam !== null && !/^\d+$/.test(limitParam)) ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1 ||
+      limit > 100
+    ) {
+      return NextResponse.json({ success: false, message: 'limit must be an integer between 1 and 100' }, { status: 400 });
+    }
+
+    const isValidPrice = (value: string | null): boolean =>
+      value === null || /^(?:\d+(?:\.\d*)?|\.\d+)$/.test(value);
+    if (!isValidPrice(minPriceParam) || !isValidPrice(maxPriceParam)) {
+      return NextResponse.json({ success: false, message: 'Prices must be non-negative numbers' }, { status: 400 });
+    }
+
+    const minPrice = minPriceParam === null ? null : Number(minPriceParam);
+    const maxPrice = maxPriceParam === null ? null : Number(maxPriceParam);
+    if (
+      (minPrice !== null && !Number.isFinite(minPrice)) ||
+      (maxPrice !== null && !Number.isFinite(maxPrice))
+    ) {
+      return NextResponse.json({ success: false, message: 'Prices must be finite numbers' }, { status: 400 });
+    }
+    if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+      return NextResponse.json({ success: false, message: 'min_price must not exceed max_price' }, { status: 400 });
+    }
 
     const location      = searchParams.get('location');
     const hotelTypesStr = searchParams.get('hotel_types');
@@ -154,14 +195,13 @@ export async function GET(req: NextRequest) {
     const bedTypesStr   = searchParams.get('bed_types');
     const starsStr      = searchParams.get('stars');
     const amenitiesStr  = searchParams.get('amenities');
-    const minPrice      = searchParams.get('min_price');
-    const maxPrice      = searchParams.get('max_price');
     const guestsParam   = searchParams.get('guests');
     const roomsParam    = searchParams.get('rooms');
     const sort          = searchParams.get('sort') || 'newest';
-    const page          = parseInt(searchParams.get('page') || '1');
-    const limit         = parseInt(searchParams.get('limit') || '12');
     const skip          = (page - 1) * limit;
+    if (!Number.isSafeInteger(skip)) {
+      return NextResponse.json({ success: false, message: 'page is outside the supported range' }, { status: 400 });
+    }
     const includeRooms  = searchParams.get('include_rooms') === 'true';
     const featuredOnly  = searchParams.get('featured') === 'true';
     const checkIn       = searchParams.get('check_in');
@@ -237,7 +277,7 @@ export async function GET(req: NextRequest) {
     // NOTE: max_occupancy >= guests is intentionally NOT included here.
     // Guest capacity is now evaluated post-fetch via the greedy capacity engine,
     // which supports multi-room combinations and correct SUGGESTED tier logic.
-    if (roomTypesStr || bedTypesStr || minPrice || maxPrice) {
+    if (roomTypesStr || bedTypesStr || minPrice !== null || maxPrice !== null) {
       const roomTypeFilter: Record<string, unknown> = { is_active: true };
 
       if (roomTypesStr) {
@@ -258,10 +298,10 @@ export async function GET(req: NextRequest) {
         };
       }
 
-      if (minPrice || maxPrice) {
+      if (minPrice !== null || maxPrice !== null) {
         const priceClause: Record<string, number> = {};
-        if (minPrice) priceClause.gte = Number(minPrice);
-        if (maxPrice) priceClause.lte = Number(maxPrice);
+        if (minPrice !== null) priceClause.gte = minPrice;
+        if (maxPrice !== null) priceClause.lte = maxPrice;
         variantFilter.price = priceClause;
       }
 

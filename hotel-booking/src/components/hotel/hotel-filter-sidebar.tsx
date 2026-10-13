@@ -72,8 +72,15 @@ const HotelFilterSidebar = () => {
     const amenities = searchParams.get("amenities")?.split(",").filter(Boolean) || [];
     const roomTypes = searchParams.get("room_types")?.split(",").filter(Boolean) || [];
     const bedTypes = searchParams.get("bed_types")?.split(",").filter(Boolean) || [];
-    const priceMin = searchParams.get("min_price") ? Number(searchParams.get("min_price")) : undefined;
-    const priceMax = searchParams.get("max_price") ? Number(searchParams.get("max_price")) : undefined;
+    const minPriceParam = searchParams.get("min_price");
+    const maxPriceParam = searchParams.get("max_price");
+    const parsePrice = (value: string | null): number | undefined => {
+      if (value === null) return undefined;
+      const price = Number(value);
+      return Number.isFinite(price) && price >= 0 ? price : undefined;
+    };
+    const priceMin = parsePrice(minPriceParam);
+    const priceMax = parsePrice(maxPriceParam);
 
     const nextFilters: HotelSearchFilters = {
       starRatings,
@@ -140,10 +147,10 @@ const HotelFilterSidebar = () => {
     if (newFilters.bedTypes.length > 0) params.set("bed_types", newFilters.bedTypes.join(","));
     else params.delete("bed_types");
 
-    if (newFilters.priceMin) params.set("min_price", newFilters.priceMin.toString());
+    if (newFilters.priceMin !== undefined) params.set("min_price", newFilters.priceMin.toString());
     else params.delete("min_price");
 
-    if (newFilters.priceMax) params.set("max_price", newFilters.priceMax.toString());
+    if (newFilters.priceMax !== undefined) params.set("max_price", newFilters.priceMax.toString());
     else params.delete("max_price");
 
     // Reset to page 1 when filtering
@@ -164,6 +171,7 @@ const HotelFilterSidebar = () => {
   };
 
   const handlePriceChange = (min?: number, max?: number) => {
+    if ((min !== undefined && min < 0) || (max !== undefined && max < 0)) return;
     const newFilters = { ...filters, priceMin: min, priceMax: max };
     setFilters(newFilters);
     // Usually debounce this or apply on blur/button click
@@ -193,8 +201,8 @@ const HotelFilterSidebar = () => {
     filters.amenities.length > 0 || 
     filters.roomTypes.length > 0 || 
     filters.bedTypes.length > 0 || 
-    filters.priceMin || 
-    filters.priceMax;
+    filters.priceMin !== undefined ||
+    filters.priceMax !== undefined;
 
   return (
     <div className="w-full bg-card border border-border/50 rounded-2xl p-5 shadow-sm top-24 animate-fade-in">
@@ -231,20 +239,44 @@ const HotelFilterSidebar = () => {
                 <div className="relative flex-1">
                   <input 
                     type="number" 
+                    min="0"
+                    step="any"
                     placeholder=" Min"
                     className="w-full h-9 pl-7 pr-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
-                    value={filters.priceMin || ''}
-                    onChange={(e) => handlePriceChange(e.target.value ? Number(e.target.value) : undefined, filters.priceMax)}
+                    value={filters.priceMin ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        handlePriceChange(undefined, filters.priceMax);
+                        return;
+                      }
+                      const price = Number(value);
+                      if (Number.isFinite(price) && price >= 0) {
+                        handlePriceChange(price, filters.priceMax);
+                      }
+                    }}
                   />
                 </div>
                 <span className="text-muted-foreground">-</span>
                 <div className="relative flex-1">
                   <input 
                     type="number" 
+                    min="0"
+                    step="any"
                     placeholder=" Max"
                     className="w-full h-9 pl-7 pr-2 rounded-md border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-primary transition-all"
-                    value={filters.priceMax || ''}
-                    onChange={(e) => handlePriceChange(filters.priceMin, e.target.value ? Number(e.target.value) : undefined)}
+                    value={filters.priceMax ?? ''}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === '') {
+                        handlePriceChange(filters.priceMin, undefined);
+                        return;
+                      }
+                      const price = Number(value);
+                      if (Number.isFinite(price) && price >= 0) {
+                        handlePriceChange(filters.priceMin, price);
+                      }
+                    }}
                   />
                 </div>
               </div>

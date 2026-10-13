@@ -31,7 +31,7 @@ No authenticated admin account or disposable admin dataset was available. No pri
 
 
 ### Hotel discovery and search
-
+[fixed]
 4. **Malformed public-search pagination or price query values can produce HTTP 500.** Invalid page/price inputs were sent to public search; the server returned 500 instead of rejecting the parameters with a clear 4xx response.
    - Evidence: Public hotel search API parameter parsing.
    - Status: Runtime-tested with non-mutating requests.

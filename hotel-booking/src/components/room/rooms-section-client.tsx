@@ -30,6 +30,7 @@ interface RoomsSectionClientProps {
   quantities: Record<number, number>;
   onQuantityChange: (variantId: number, qty: number) => void;
   guests?: number;
+  selectionCapacityInsufficient: boolean;
   highlightedRoomTypeId?: number;
   onClearHighlight?: () => void;
   activeRoomTypeId?: number;
@@ -42,6 +43,7 @@ export default function RoomsSectionClient({
   quantities,
   onQuantityChange,
   guests = 1,
+  selectionCapacityInsufficient,
   highlightedRoomTypeId,
   onClearHighlight,
   activeRoomTypeId,
@@ -100,6 +102,7 @@ export default function RoomsSectionClient({
               selectedQuantities={getQuantitiesForRoomType(roomType)}
               onQuantityChange={onQuantityChange}
               guests={guests}
+              selectionCapacityInsufficient={selectionCapacityInsufficient}
               forceExpanded={roomType.id === highlightedRoomTypeId}
               isHighlighted={roomType.id === highlightedRoomTypeId}
               onClearHighlight={onClearHighlight}

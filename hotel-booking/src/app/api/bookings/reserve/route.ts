@@ -9,6 +9,16 @@ import crypto from "crypto";
 import { emitToRoom } from "@/lib/socket-emit";
 import { OneRoomTypeBookingError, hasMultipleRoomTypes } from "@/lib/booking-room-type";
 
+class BookingCapacityError extends Error {
+  constructor(
+    readonly capacity: number | null,
+    readonly requestedGuests: number,
+  ) {
+    super("Selected room capacity is insufficient");
+    this.name = "BookingCapacityError";
+  }
+}
+
 /**
  * POST /api/bookings/reserve
  * Rewritten against the Room Type -> Room Variant -> Physical Room
@@ -116,7 +126,12 @@ export async function POST(req: NextRequest) {
     const bookingResult = await prisma.$transaction(async (tx) => {
       const transactionVariants = await tx.room_variants.findMany({
         where: { id: { in: variantIds } },
-        select: { id: true, room_type_id: true, room_type: { select: { hotel_id: true } } },
+        select: {
+          id: true,
+          room_type_id: true,
+          max_occupancy: true,
+          room_type: { select: { hotel_id: true } },
+        },
       });
       if (
         transactionVariants.length !== variantIds.length ||
@@ -128,6 +143,23 @@ export async function POST(req: NextRequest) {
         throw new OneRoomTypeBookingError();
       }
       const transactionVariantMap = new Map(transactionVariants.map((variant) => [variant.id, variant]));
+
+      let totalSelectedCapacity = 0;
+      for (const selection of normalizedSelections) {
+        const variant = transactionVariantMap.get(selection.variant_id);
+        const maxOccupancy = variant?.max_occupancy;
+        if (maxOccupancy == null || maxOccupancy <= 0) {
+          throw new BookingCapacityError(null, guests);
+        }
+
+        totalSelectedCapacity = Math.min(
+          guests,
+          totalSelectedCapacity + maxOccupancy * selection.quantity,
+        );
+      }
+      if (totalSelectedCapacity < guests) {
+        throw new BookingCapacityError(totalSelectedCapacity, guests);
+      }
 
       let totalPrice = 0;
       const selectedRoomsByVariant: Array<{ roomTypeId: number; variantId: number; rooms: Array<{ id: number }> }> = [];
@@ -252,6 +284,12 @@ export async function POST(req: NextRequest) {
     console.error("Booking Error:", error);
     if (error instanceof OneRoomTypeBookingError) {
       return NextResponse.json({ success: false, message: error.message }, { status: 400 });
+    }
+    if (error instanceof BookingCapacityError) {
+      const message = error.capacity === null
+        ? "Guest capacity is not configured for one or more selected rooms."
+        : `Selected rooms can accommodate up to ${error.capacity} guests, but ${error.requestedGuests} guests were requested.`;
+      return NextResponse.json({ success: false, message }, { status: 400 });
     }
     const message = error instanceof Error ? error.message : "Failed to process reservation";
     return NextResponse.json(

@@ -354,7 +354,7 @@ export default function RoomSelector({
   // Calculate whether the selected rooms can accommodate the guests.
   const selectionValidation = useMemo(() => {
     if (selectedVariants.length === 0) {
-      return { isValid: false, message: "" };
+      return { isValid: false, message: "", capacityInsufficient: false };
     }
 
     let totalCapacity = 0;
@@ -363,6 +363,7 @@ export default function RoomSelector({
       return {
         isValid: false,
         message: ONE_ROOM_TYPE_BOOKING_MESSAGE,
+        capacityInsufficient: false,
       };
     }
     for (const selectedVar of selectedVariants) {
@@ -383,11 +384,12 @@ export default function RoomSelector({
     if (totalCapacity < sidebarGuests) {
       return {
         isValid: false,
-        message: `Selected rooms accommodate ${totalCapacity} guest${totalCapacity !== 1 ? 's' : ''}. You need ${sidebarGuests} guest${sidebarGuests !== 1 ? 's' : ''}.`,
+        message: `Your selected rooms don't have enough capacity for ${sidebarGuests} guest${sidebarGuests !== 1 ? 's' : ''}. Please add another room or reduce the number of guests.`,
+        capacityInsufficient: true,
       };
     }
 
-    return { isValid: true, message: "", totalRooms };
+    return { isValid: true, message: "", totalRooms, capacityInsufficient: false };
   }, [selectedVariants, sidebarGuests, roomTypes]);
 
   return (
@@ -546,6 +548,7 @@ export default function RoomSelector({
             quantities={quantities}
             onQuantityChange={handleQuantityChange}
             guests={sidebarGuests}
+            selectionCapacityInsufficient={selectionValidation.capacityInsufficient}
             highlightedRoomTypeId={highlightedRoomTypeId ?? undefined}
             onClearHighlight={() => setHighlightedRoomTypeId(null)}
             activeRoomTypeId={activeRoomTypeId ?? undefined}

@@ -40,7 +40,7 @@ No authenticated admin account or disposable admin dataset was available. No pri
    - Status: Runtime-tested.
 
 ### Booking and inventory
-
+[fixed]
 6. **Requested guest capacity is not enforced during reservation creation.** The booking path does not appear to ensure that the requested guest count fits the selected room/room type capacity. A client may be able to reserve a room for more guests than it supports.
    - Evidence: Booking reservation and room-capacity validation paths.
    - Status: Code-inspection finding; no reservation was created.

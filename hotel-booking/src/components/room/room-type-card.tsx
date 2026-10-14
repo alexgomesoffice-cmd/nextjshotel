@@ -59,6 +59,7 @@ export interface RoomTypeCardProps {
   selectedQuantities: Record<number, number>;
   onQuantityChange: (variantId: number, quantity: number) => void;
   guests?: number;
+  selectionCapacityInsufficient: boolean;
   forceExpanded?: boolean;
   isHighlighted?: boolean;
   onClearHighlight?: () => void;
@@ -80,12 +81,13 @@ interface VariantRowProps {
   onQtyChange: (qty: number) => void;
   onViewRoomDetails?: () => void;
   guests?: number;
+  selectionCapacityInsufficient: boolean;
 }
 
 function VariantRow({
   variant, roomName, typeImages, bedTypes, occupancy_adults,
   quantity, available, onQtyChange, onViewRoomDetails,
-  guests = 1,
+  guests = 1, selectionCapacityInsufficient,
 }: VariantRowProps) {
   const images = variant.variant_images.length > 0 ? variant.variant_images : typeImages;
   const [imgIdx, setImgIdx] = useState(0);
@@ -96,10 +98,6 @@ function VariantRow({
   // Calculate if this variant can accommodate the requested guests
   const canAccommodate = canVariantAccommodate(maxOccupancy, available, guests);
   const recommendedQuantity = getRecommendedQuantity(maxOccupancy, available, guests);
-
-  // Determine if current quantity is insufficient
-  const totalCapacity = quantity * maxOccupancy;
-  const isInsufficientQuantity = quantity > 0 && totalCapacity < guests;
 
   const bedLabel = bedTypes.map(b => b.bed_type.name).join(", ");
   const title = bedLabel ? `${roomName} • ${bedLabel}` : roomName;
@@ -271,7 +269,7 @@ function VariantRow({
             </div>
 
             {/* Warning if selected quantity is insufficient */}
-            {isInsufficientQuantity && (
+            {quantity > 0 && selectionCapacityInsufficient && (
               <div className="text-[10px] text-amber-600 dark:text-amber-400 text-center px-2 py-1 bg-amber-500/10 border border-amber-500/30 rounded">
                 Not enough for {guests} guests
               </div>
@@ -289,7 +287,7 @@ const RoomTypeCard = ({
   id, name, description,
   type_images, room_type_amenities, available_rooms_count,
   room_variants, onViewDetails, selectedQuantities, onQuantityChange,
-  guests = 1, forceExpanded = false, isHighlighted = false, onClearHighlight,
+  guests = 1, selectionCapacityInsufficient, forceExpanded = false, isHighlighted = false, onClearHighlight,
   onViewRoomDetails, isSelectionDisabled = false, activeRoomTypeName
 }: RoomTypeCardProps) => {
   const [isExpanded, setIsExpanded] = useState(forceExpanded && !isSelectionDisabled);
@@ -512,6 +510,7 @@ const RoomTypeCard = ({
                 onQtyChange={qty => onQuantityChange(variant.id, qty)}
                 onViewRoomDetails={() => onViewRoomDetails?.(variant.id)}
                 guests={guests}
+                selectionCapacityInsufficient={selectionCapacityInsufficient}
               />
             ))
           )}

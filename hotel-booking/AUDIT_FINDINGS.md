@@ -44,7 +44,7 @@ No authenticated admin account or disposable admin dataset was available. No pri
 6. **Requested guest capacity is not enforced during reservation creation.** The booking path does not appear to ensure that the requested guest count fits the selected room/room type capacity. A client may be able to reserve a room for more guests than it supports.
    - Evidence: Booking reservation and room-capacity validation paths.
    - Status: Code-inspection finding; no reservation was created.
-
+[fixed]
 7. **A confirmed-booking cancellation path may leave the physical room unavailable.** The cancellation logic can update the booking without restoring the associated room's availability/status. This risks leaving inventory unavailable after cancellation.
    - Evidence: Booking cancellation and room-status update paths.
    - Status: Code-inspection finding; no booking was cancelled.

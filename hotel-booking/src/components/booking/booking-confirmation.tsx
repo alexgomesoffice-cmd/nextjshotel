@@ -123,7 +123,10 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const [confirming, setConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const [confirmed, setConfirmed] = useState(booking.status === "BOOKED");
+  const [cancelled, setCancelled] = useState(booking.status === "CANCELLED");
   const liveStatus = useBookingStatus(booking.booking_reference, booking.status);
 
   useEffect(() => {
@@ -131,7 +134,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
     return () => clearInterval(interval);
   }, []);
 
-  const effectiveStatus = confirmed || liveStatus === "BOOKED" ? "BOOKED" : liveStatus === "RESERVED"
+  const effectiveStatus = cancelled ? "CANCELLED" : confirmed || liveStatus === "BOOKED" ? "BOOKED" : liveStatus === "RESERVED"
     ? booking.reserved_until && new Date(booking.reserved_until).getTime() <= currentTime
       ? "EXPIRED"
       : "RESERVED"
@@ -146,6 +149,7 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
   
   const isReserved = effectiveStatus === "RESERVED";
   const reservedUntilFuture = isReserved && booking.reserved_until && new Date(booking.reserved_until).getTime() > currentTime;
+  const canCancel = effectiveStatus === "BOOKED" || (isReserved && !!reservedUntilFuture);
 
   async function confirmBooking() {
     setConfirming(true);
@@ -162,6 +166,31 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
       setConfirmError(error instanceof Error ? error.message : "Unable to confirm booking");
     } finally {
       setConfirming(false);
+    }
+  }
+
+  async function cancelBooking() {
+    if (!window.confirm("Cancel this booking? This will release the selected rooms.")) return;
+
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      const response = await fetch(`/api/bookings/${booking.booking_reference}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({}),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to cancel booking");
+      }
+      setCancelled(true);
+      setConfirmed(false);
+    } catch (error) {
+      setCancelError(error instanceof Error ? error.message : "Unable to cancel booking");
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -464,6 +493,10 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
                   <div className="rounded-xl border border-destructive/25 bg-destructive/10 p-4 text-sm text-destructive">
                     This reservation has expired and the rooms have been released.
                   </div>
+                ) : effectiveStatus === "CANCELLED" ? (
+                  <div className="rounded-xl border border-destructive/25 bg-destructive/10 p-4 text-sm text-destructive">
+                    This booking has been cancelled and the rooms have been released.
+                  </div>
                 ) : (
                   <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-700 dark:text-emerald-400">
                     Your booking is secured.
@@ -517,6 +550,22 @@ export default function BookingConfirmation({ booking }: BookingConfirmationProp
                       By confirming, you agree to the hotel&apos;s policies and terms of service.
                     </p>
                   </div>
+                )}
+                {cancelError && (
+                  <div role="alert" className="mb-3 flex items-start gap-2 rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <p>{cancelError}</p>
+                  </div>
+                )}
+                {canCancel && (
+                  <Button
+                    variant="destructive"
+                    className="mt-3 h-11 w-full font-semibold"
+                    onClick={cancelBooking}
+                    disabled={cancelling || confirming}
+                  >
+                    {cancelling ? "Cancelling..." : "Cancel booking"}
+                  </Button>
                 )}
                 <div className="mt-5 flex items-start gap-2 border-t border-border/70 pt-4 text-xs leading-relaxed text-muted-foreground">
                   <Info className="mt-0.5 h-4 w-4 shrink-0" />

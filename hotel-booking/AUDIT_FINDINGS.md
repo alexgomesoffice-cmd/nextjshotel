@@ -35,7 +35,7 @@ No authenticated admin account or disposable admin dataset was available. No pri
 4. **Malformed public-search pagination or price query values can produce HTTP 500.** Invalid page/price inputs were sent to public search; the server returned 500 instead of rejecting the parameters with a clear 4xx response.
    - Evidence: Public hotel search API parameter parsing.
    - Status: Runtime-tested with non-mutating requests.
-
+[nothing-to-fix]
 5. **Homepage smoke test succeeded.** The homepage returned HTTP 200 during the local check. This confirms only that the page loaded at that time; it does not establish that all destination, filter, image, or detail-page flows work correctly.
    - Status: Runtime-tested.
 
@@ -48,7 +48,7 @@ No authenticated admin account or disposable admin dataset was available. No pri
 7. **A confirmed-booking cancellation path may leave the physical room unavailable.** The cancellation logic can update the booking without restoring the associated room's availability/status. This risks leaving inventory unavailable after cancellation.
    - Evidence: Booking cancellation and room-status update paths.
    - Status: Code-inspection finding; no booking was cancelled.
-
+[fixed]
 8. **A customer-facing cancellation action was not found in the reviewed interface.** The booking/API behavior and the customer-facing UI do not appear to expose a corresponding cancel action in the flow inspected, which can prevent users from cancelling through the app even where a cancellation endpoint exists.
    - Evidence: Reviewed customer booking interface and cancellation paths.
    - Status: UI/API inspection; authenticated customer flow was not exercised.
@@ -186,3 +186,79 @@ Auth cookies lack the secure option. The login routes set httpOnly and sameSite,
 
 Conclusion
 The module is wired into the expected login and verification flows, and its HMAC signing/verifying approach is internally consistent. The main concerns are inconsistent blacklist enforcement, single-token logout when multiple role cookies exist, fixed cookie precedence and lifetime, and the Socket.IO service’s separate verifier/default secret behavior.
+
+# Image Upload Route Audit
+
+**Scope:** Image/file upload handlers and their in-repository callers across End User, System Admin, Hotel Admin, and Sub Admin surfaces in `hotel-booking/src`. This is a static route/caller audit; no files were uploaded. Image URL fields and APIs that only read or save an already-existing URL are distinguished from binary upload handlers.
+
+## Summary and counts
+
+- **9 distinct image-upload URL patterns** have frontend callers: five Hotel Admin room/property routes and four System Admin routes.
+- **1 additional image-upload URL pattern**, `POST /api/upload`, is an unused alias for the System Admin generic uploader.
+- Therefore, **10 image-upload URL patterns exist in total**, of which one has no discovered UI caller.
+- The Hotel Admin document endpoint is an additional file-upload API, but is listed separately because its purpose is hotel documents (PDF/JPG), not image galleries.
+- No End User image-upload endpoint or UI caller was found. The End User image table exists in Prisma and is read by the profile API, but no app code was found that creates or updates those image rows.
+- System Admin-created System Admin, Hotel Admin, and hotel-owner photos are uploaded through the generic System Admin uploader; these are not separate role-specific upload APIs.
+
+## Route and caller inventory
+
+| API route | Caller(s) found | Purpose and audit notes |
+|---|---|---|
+| `POST /api/hotel-admin/hotel/images` | `src/app/dashboard/hotel/images/page.tsx`; `src/components/hotel-admin/property/section-dialog.tsx` | Hotel gallery; uploaded files are staged for case review. |
+| `POST /api/hotel-admin/room-types/[id]/images` | `src/app/dashboard/hotel/room-types/new/page.tsx`; `src/app/dashboard/hotel/room-types/[id]/page.tsx`; `src/components/hotel-admin/rooms/room-type-form-dialog.tsx` | Room-type gallery; writes image rows directly. |
+| `POST /api/hotel-admin/room-variants/[variantId]/images` | `src/components/hotel-admin/rooms/variant-card.tsx` through `ImageManager` | Variant gallery; appends images directly. |
+| `POST /api/hotel-admin/rooms/[id]/images` | `src/app/dashboard/sub/rooms/[id]/page.tsx` | Physical-room gallery; appends images directly. The route accepts both Hotel Admin and Sub Admin. |
+| `POST /api/hotel-admin/rooms` | `src/app/dashboard/hotel/rooms/new/page.tsx`; `src/components/hotel-admin/rooms/room-form-dialog.tsx` | Room creation optionally accepts images and attaches them to the selected/shared variant gallery. This overlaps with the variant-image API's write behavior but also creates rooms and resolves variants. |
+| `POST /api/system-admin/uploads` | `src/app/dashboard/system/hotels/new/page.tsx`; `src/app/dashboard/system/cities/city-form.tsx`; `src/components/admin/cities/city-form-dialog.tsx`; `src/components/admin/admins/admin-form-dialog.tsx` | Generic data-URL image writer. Used for hotel/city images and System Admin, Hotel Admin, and hotel-owner photos; user-provided `uploadSubDir` chooses the destination. The hotel-creation page also routes its document fields here, which causes the mismatch described below. |
+| `POST /api/system-admin/hotel-types/[id]/image` | `src/components/admin/hotel-types/hotel-type-form-dialog.tsx` | Replaces a hotel-type image and updates its row using the shared storage helper; `DELETE` removes it. |
+| `PATCH /api/system-admin/hero-banners/[id]` | `src/components/system-admin/hero-banners/hero-banner-card.tsx` via `src/app/dashboard/system/hero-banners/page.tsx` | Updates banner text and optionally uploads or removes the image in the same operation. |
+| `POST /api/system-admin/web-gallery/login-registration/[kind]` | `src/app/dashboard/system/web-gallery/login-registration/page.tsx` | Replaces the login or registration background; `DELETE` removes it. |
+| `POST /api/upload` | No caller found | Exact alias: `src/app/api/upload/route.ts` re-exports the same `POST` handler as `/api/system-admin/uploads`. No distinct behavior or UI use was found. |
+
+### Related image data that does not have its own image-upload API
+
+- **End User photos:** `/api/user/profile` returns active `end_user_images`, but its `PATCH` schema has no image field. End User registration also creates no image row. No `end_user_images.create` call or End User image-upload UI was found. The table appears unsupported by current app flows rather than served by an unlocated upload route.
+- **System Admin photos:** The generic uploader stores the file; `POST /api/system-admin/admins` can then save the resulting `image_url`. System Admin profile and admin-edit APIs found in this audit do not upload or update a photo.
+- **Hotel Admin and hotel-owner photos:** The System Admin hotel-creation form uploads these photos through `/api/system-admin/uploads` and passes the resulting URLs into `POST /api/system-admin/hotels`. Hotel Admin profile GET/PATCH routes do not expose photo updates.
+- Other endpoints that select/return hotel, room, guest, or booking image URLs are read APIs, not upload handlers. APIs accepting `image_url` in JSON store a URL reference; they do not upload a file themselves.
+- `POST /api/hotel-admin/documents` is an adjacent file-upload API, not an image gallery API. It is called by `src/components/hotel-admin/property/section-dialog.tsx`, is Hotel Admin-only, accepts `.pdf` or `.jpg` up to 5 MB, writes to `public/uploads/hotel-documents`, and stages the document reference for review.
+
+## Inconsistencies and risks
+
+1. **Validation differs substantially between upload handlers.**
+   - Hotel gallery, room-type gallery, and physical-room gallery impose a 1 MB per-file limit but do not check MIME type before processing.
+   - Room-variant image upload and room creation's optional image handling show no explicit per-file size or MIME allowlist before reading the file into memory and passing it to Sharp.
+   - The generic System Admin uploader accepts `data:image/<type>;base64,...` but has no explicit size limit, strict allowlist, or decoded-content verification. It writes the decoded bytes as-is.
+   - The shared helper `src/lib/public-image-storage.ts`, used by hotel-type and hero-banner images, enforces 1 MB, PNG/JPEG/WebP MIME, and decoded-format checks.
+   - Login/registration backgrounds enforce 5 MB and PNG/JPEG/WebP MIME in their own route. The image constants in `src/lib/constants.ts` do not govern this handler.
+   - The System Admin hotel-creation UI reuses an image-only upload function for its document fields. The file picker allows PDF/JPG, but the upload API only accepts `data:image/...`; PDF files are rejected as an invalid data format. The separate Hotel Admin document API does accept PDF/JPG, but the System Admin creation UI does not call it.
+
+2. **The image-storage implementations are duplicated and have different failure cleanup.**
+   - The shared helper removes incomplete output and its callers attempt to remove a newly stored image if a database write fails.
+   - Several Hotel Admin routes write files directly with Sharp. In the hotel gallery route, files are written before case staging; a staging failure leaves the files behind. In room-type, variant, physical-room, and room-creation uploads, a later database failure can likewise leave newly written files without database records.
+   - The auth-background route has custom replacement logic: it deletes the old file before the database update completes, so a later update failure can leave the old database URL pointing to a deleted file.
+   - These differing lifecycles can produce orphaned files or broken image URLs.
+
+3. **Storage paths are not governed by one consistent path configuration.**
+   - `src/lib/constants.ts` defines `UPLOAD_DIRS`, `MAX_IMAGE_SIZE`, and `ALLOWED_IMAGE_TYPES`, but no imports/usages of those upload exports were found anywhere in `src`; only the unrelated auth constants from the same module are imported by login routes. The upload declarations are therefore currently configuration without effect.
+   - The handlers instead hard-code their own directories and validation policies. `src/lib/public-image-storage.ts` also declares its own 1 MB and MIME/format constants rather than using `constants.ts`. No in-code rationale for this divergence was found.
+   - `UPLOAD_DIRS.roomTypes` points to `public/uploads/rooms/types`, while room-type images are actually written to `public/uploads/room-types`. `UPLOAD_DIRS.roomUnits` points to `public/uploads/rooms/units`, while room/variant images are written to `public/uploads/rooms`.
+   - `UPLOAD_DIRS.staffSysAdmin` points to `public/uploads/staff/sys-admin`, but the System Admin admin-photo caller uses the generic uploader with `uploadSubDir: 'admins'`. The owner and Hotel Admin photos use `uploadSubDir: 'hotels'`.
+   - `UPLOAD_DIRS.hotels`, `cities`, `users`, `staffHotelAdmin`, and `staffSubAdmin` are likewise not referenced by active upload handlers. `cities` and several profile photos are instead written through the caller-selected generic subdirectory. No End User upload flow uses `UPLOAD_DIRS.users`.
+   - The generic upload route may use an `UPLOAD_DIR` environment override for disk writes but always returns a URL rooted at `/uploads`; if the override points outside the application's served public uploads directory, the returned URL may not resolve to the stored file.
+
+4. **Role permissions are inconsistent across room-image routes.**
+   - The physical-room image route permits both `HOTEL_ADMIN` and `HOTEL_SUB_ADMIN` for uploads.
+   - The room-variant upload route permits only `HOTEL_ADMIN` to POST, although its GET handler permits both roles.
+   - Room creation with images and room-type image upload are Hotel Admin-only.
+   - This is a potential permission mismatch: the schema’s documented Sub Admin responsibilities exclude room creation/management. Confirm intended Sub Admin image permissions.
+
+5. **Confirmed duplicate/unused upload surface:** `/api/upload` re-exports the same System Admin-only handler as `/api/system-admin/uploads`; it has no found UI caller. It is a duplicate URL rather than a distinct implementation and is the clearest candidate for removal after confirming there are no external consumers.
+
+6. **Overlapping behavior, but not a confirmed duplicate endpoint:** `POST /api/hotel-admin/rooms` can attach images to a variant gallery while creating rooms; `POST /api/hotel-admin/room-variants/[variantId]/images` appends images to an existing variant gallery. They both write `room_images` rows with `room_variant_id`, but support different workflows. Treating either API as unnecessary would require moving one UI workflow and verifying that room creation still handles new and matched variants correctly.
+
+7. **A legacy upload utility appears unused.** `src/lib/upload.ts` has no imports or callers in `src`; it is Multer-based utility code, not a Next.js API route. Its policy also differs from active routes (JPEG/WebP only and a 1 MB limit despite a 5 MB comment). It appears to be dead/legacy code, not an additional active upload API.
+
+## Follow-up
+
+Before changing code, confirm the desired policy for per-file and total-request limits, allowed image formats, Sub Admin permissions, canonical storage destinations, and whether End User/profile-photo upload is intended. Confirm no external consumer relies on `/api/upload` before removing the alias. A later implementation should centralize validation/storage configuration and coordinate file cleanup with database/case writes.

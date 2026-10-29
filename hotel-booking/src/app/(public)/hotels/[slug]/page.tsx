@@ -337,7 +337,7 @@ export default async function HotelDetailPage({
 
                   <div>
                     <h3 className="font-semibold text-lg">
-                      Check-in Hours & Contact
+                      Check-in Hours & Contacts
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       Arrival details and property contact information

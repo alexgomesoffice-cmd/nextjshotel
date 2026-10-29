@@ -443,7 +443,7 @@ export default function RoomSelector({
               size="sm"
               aria-pressed={acFilter === "ac"}
               onClick={() => setAcFilter((current) => current === "ac" ? "all" : "ac")}
-              className="h-9 min-w-12 px-3 sm:min-w-[3.5rem]"
+              className="h-9 min-w-12 px-3 sm:min-w-14"
             >
               AC
             </Button>

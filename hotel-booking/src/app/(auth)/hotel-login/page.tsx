@@ -32,11 +32,6 @@ export default function HotelLoginPage() {
         return
       }
 
-      // Store admin info for UI display only
-      localStorage.setItem('admin_name', data.data.admin.name)
-      localStorage.setItem('admin_role', data.data.admin.role)
-      localStorage.setItem('hotel_id', data.data.admin.hotel_id.toString())
-
       // Redirect based on role
       if (data.data.admin.role === 'HOTEL_ADMIN') {
         router.push('/dashboard/hotel')

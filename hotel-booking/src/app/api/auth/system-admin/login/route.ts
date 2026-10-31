@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     if (!admin || admin.deleted_at) {
       return NextResponse.json(
-        { success: false, message: 'Credentials are wrong please try again' },
+        { success: false, message: 'Credentials are wrong or Account has been deleted. please try again' },
         { status: 401 }
       )
     }

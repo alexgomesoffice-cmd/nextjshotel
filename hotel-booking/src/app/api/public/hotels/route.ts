@@ -410,7 +410,7 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    let hotels = allHotels;
+    const hotels = allHotels;
 
     // ─── Fetch Favorites ──────────────────────────────────────────────────────
     const favoriteHotelIds = new Set<number>();

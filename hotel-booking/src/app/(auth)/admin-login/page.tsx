@@ -36,8 +36,6 @@ export default function AdminLoginPage() {
         return
       }
 
-      localStorage.setItem('admin_name', data.data.admin.name)
-      localStorage.setItem('admin_role', 'SYSTEM_ADMIN')
 
       router.push('/dashboard/system')
     } catch {

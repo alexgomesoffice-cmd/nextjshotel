@@ -52,7 +52,7 @@ No authenticated admin account or disposable admin dataset was available. No pri
 8. **A customer-facing cancellation action was not found in the reviewed interface.** The booking/API behavior and the customer-facing UI do not appear to expose a corresponding cancel action in the flow inspected, which can prevent users from cancelling through the app even where a cancellation endpoint exists.
    - Evidence: Reviewed customer booking interface and cancellation paths.
    - Status: UI/API inspection; authenticated customer flow was not exercised.
-
+[not-required]
 9. **Availability endpoint accepts bad dates with a 400 response.** An invalid availability-date request was rejected with HTTP 400 in the safe runtime checks. This is the expected response for that tested invalid input.
    - Status: Runtime-tested; not a defect observed in that case.
 
